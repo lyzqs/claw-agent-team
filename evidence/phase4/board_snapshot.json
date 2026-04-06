@@ -1,0 +1,95 @@
+{
+  "project_view": [
+    {
+      "project_key": "agent-team-core",
+      "name": "Agent Team Core",
+      "status": "active",
+      "total_issues": 4,
+      "closed_issues": 1,
+      "agent_queue_issues": 3,
+      "human_queue_issues": 0
+    }
+  ],
+  "agent_queue": [
+    {
+      "issue_no": 4,
+      "title": "Run unified execution_adapter provider-error demo",
+      "priority": "p1",
+      "status": "ready",
+      "assigned_employee_key": "agent-team-core.dev",
+      "active_attempt_no": 1,
+      "updated_at_ms": 1775475638741
+    },
+    {
+      "issue_no": 3,
+      "title": "Run unified execution_adapter timeout demo",
+      "priority": "p1",
+      "status": "ready",
+      "assigned_employee_key": "agent-team-core.dev",
+      "active_attempt_no": 1,
+      "updated_at_ms": 1775474867427
+    },
+    {
+      "issue_no": 2,
+      "title": "Run unified execution_adapter abort demo",
+      "priority": "p1",
+      "status": "ready",
+      "assigned_employee_key": "agent-team-core.dev",
+      "active_attempt_no": 1,
+      "updated_at_ms": 1775474836285
+    }
+  ],
+  "human_queue": [],
+  "employee_view": [
+    {
+      "employee_key": "agent-team-core.dev",
+      "display_name": "Agent Team Core Dev",
+      "role": "dev",
+      "status": "active",
+      "session_key": "agent:main:project:agent-team-core:dev",
+      "runtime_type": "openclaw_session",
+      "assigned_issue_count": 4,
+      "active_queue_count": 3
+    },
+    {
+      "employee_key": "agent-team-core.ops",
+      "display_name": "Agent Team Core Ops",
+      "role": "ops",
+      "status": "active",
+      "session_key": "agent:main:project:agent-team-core:ops",
+      "runtime_type": "openclaw_session",
+      "assigned_issue_count": 0,
+      "active_queue_count": 0
+    },
+    {
+      "employee_key": "agent-team-core.pm",
+      "display_name": "Agent Team Core PM",
+      "role": "pm",
+      "status": "active",
+      "session_key": "agent:main:project:agent-team-core:pm",
+      "runtime_type": "openclaw_session",
+      "assigned_issue_count": 0,
+      "active_queue_count": 0
+    },
+    {
+      "employee_key": "agent-team-core.qa",
+      "display_name": "Agent Team Core QA",
+      "role": "qa",
+      "status": "active",
+      "session_key": "agent:main:project:agent-team-core:qa",
+      "runtime_type": "openclaw_session",
+      "assigned_issue_count": 0,
+      "active_queue_count": 0
+    },
+    {
+      "employee_key": "shared.ceo",
+      "display_name": "Shared CEO",
+      "role": "ceo",
+      "status": "active",
+      "session_key": "agent:main:org:ceo",
+      "runtime_type": "openclaw_session",
+      "assigned_issue_count": 0,
+      "active_queue_count": 0
+    }
+  ]
+}

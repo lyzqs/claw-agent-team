@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent Team Board v1</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; margin: 0; background: #0b1020; color: #e8ecf3; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    h1,h2 { margin: 0 0 12px; }
+    .muted { color: #94a3b8; }
+    .grid { display: grid; gap: 16px; }
+    .cards { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .card { background: #121a2b; border: 1px solid #24314f; border-radius: 16px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.18); }
+    .k { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; }
+    .v { font-size: 28px; font-weight: 700; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #24314f; vertical-align: top; }
+    th { color: #93c5fd; font-size: 13px; }
+    .pill { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 12px; background: #1e293b; border: 1px solid #334155; }
+    .empty { padding: 12px; color: #94a3b8; }
+    code { color: #c4b5fd; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Agent Team Board v1</h1>
+    <p class="muted">第一版载体：轻量 Web UI。数据来源：ledger snapshot 单向投影。</p>
+
+    <div id="summary" class="grid cards"></div>
+
+    <div class="grid" style="margin-top:20px;">
+      <div class="card">
+        <h2>Project View</h2>
+        <div id="projectView"></div>
+      </div>
+      <div class="card">
+        <h2>Agent Queue</h2>
+        <div id="agentQueue"></div>
+      </div>
+      <div class="card">
+        <h2>Human Queue</h2>
+        <div id="humanQueue"></div>
+      </div>
+      <div class="card">
+        <h2>Employee View</h2>
+        <div id="employeeView"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const data = {
+      project_view: [
+        { project_key: 'agent-team-core', name: 'Agent Team Core', status: 'active', total_issues: 4, closed_issues: 1, agent_queue_issues: 3, human_queue_issues: 0 }
+      ],
+      agent_queue: [
+        { issue_no: 4, title: 'Run unified execution_adapter provider-error demo', priority: 'p1', status: 'ready', assigned_employee_key: 'agent-team-core.dev', active_attempt_no: 1 },
+        { issue_no: 3, title: 'Run unified execution_adapter timeout demo', priority: 'p1', status: 'ready', assigned_employee_key: 'agent-team-core.dev', active_attempt_no: 1 },
+        { issue_no: 2, title: 'Run unified execution_adapter abort demo', priority: 'p1', status: 'ready', assigned_employee_key: 'agent-team-core.dev', active_attempt_no: 1 }
+      ],
+      human_queue: [],
+      employee_view: [
+        { employee_key: 'agent-team-core.dev', role: 'dev', status: 'active', session_key: 'agent:main:project:agent-team-core:dev', active_queue_count: 3 },
+        { employee_key: 'agent-team-core.ops', role: 'ops', status: 'active', session_key: 'agent:main:project:agent-team-core:ops', active_queue_count: 0 },
+        { employee_key: 'agent-team-core.pm', role: 'pm', status: 'active', session_key: 'agent:main:project:agent-team-core:pm', active_queue_count: 0 },
+        { employee_key: 'agent-team-core.qa', role: 'qa', status: 'active', session_key: 'agent:main:project:agent-team-core:qa', active_queue_count: 0 },
+        { employee_key: 'shared.ceo', role: 'ceo', status: 'active', session_key: 'agent:main:org:ceo', active_queue_count: 0 }
+      ]
+    };
+
+    const metrics = [
+      ['项目数', data.project_view.length],
+      ['Agent Queue', data.agent_queue.length],
+      ['Human Queue', data.human_queue.length],
+      ['员工数', data.employee_view.length],
+    ];
+
+    document.getElementById('summary').innerHTML = metrics.map(([k,v]) =>
+      `<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`
+    ).join('');
+
+    function renderTable(rows, cols) {
+      if (!rows.length) return '<div class="empty">当前为空</div>';
+      const head = `<tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr>`;
+      const body = rows.map(r => `<tr>${cols.map(c => `<td>${r[c[0]] ?? ''}</td>`).join('')}</tr>`).join('');
+      return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+    }
+
+    document.getElementById('projectView').innerHTML = renderTable(data.project_view, [
+      ['project_key', 'Project'], ['status', 'Status'], ['total_issues', 'Total'], ['closed_issues', 'Closed'], ['agent_queue_issues', 'Agent Queue'], ['human_queue_issues', 'Human Queue']
+    ]);
+    document.getElementById('agentQueue').innerHTML = renderTable(data.agent_queue, [
+      ['issue_no', 'Issue'], ['title', 'Title'], ['priority', 'Priority'], ['status', 'Status'], ['assigned_employee_key', 'Assigned'], ['active_attempt_no', 'Attempt']
+    ]);
+    document.getElementById('humanQueue').innerHTML = renderTable(data.human_queue, [
+      ['issue_no', 'Issue'], ['title', 'Title'], ['status', 'Status']
+    ]);
+    document.getElementById('employeeView').innerHTML = renderTable(data.employee_view, [
+      ['employee_key', 'Employee'], ['role', 'Role'], ['status', 'Status'], ['session_key', 'Session Key'], ['active_queue_count', 'Active Queue']
+    ]);
+  </script>
+</body>
+</html>

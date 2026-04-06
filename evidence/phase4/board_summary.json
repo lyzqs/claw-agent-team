@@ -1,0 +1,17 @@
+{
+  "project_count": 1,
+  "agent_queue_count": 3,
+  "human_queue_count": 0,
+  "employee_count": 5,
+  "project_view": [
+    {
+      "project_key": "agent-team-core",
+      "name": "Agent Team Core",
+      "status": "active",
+      "total_issues": 4,
+      "closed_issues": 1,
+      "agent_queue_issues": 3,
+      "human_queue_issues": 0
+    }
+  ]
+}

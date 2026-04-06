@@ -1,0 +1,43 @@
+{
+  "request": {
+    "source_type": "issue",
+    "source_id": "demo-issue-5.7",
+    "event_type": "checkpoint_recorded",
+    "channel": "telegram",
+    "target": "-5114007576",
+    "body_md": "[Agent Team] Issue #7 checkpoint_recorded\nTitle: Prototype notification adapter wiring\nSummary: Dry-run delivery path verified through openclaw message send.",
+    "title": null,
+    "metadata": {
+      "phase": "5.7",
+      "mode": "demo"
+    },
+    "notification_id": "notif_661ca770c3e6",
+    "idempotency_key": "phase-5.7-demo",
+    "silent": false
+  },
+  "result": {
+    "notification_id": "notif_661ca770c3e6",
+    "accepted": true,
+    "channel": "telegram",
+    "target": "-5114007576",
+    "delivery_status": "sent",
+    "delivery_ref": "telegram:-5114007576",
+    "delivered_at_ms": null,
+    "error_code": null,
+    "error_summary": null,
+    "dry_run": true,
+    "raw_result": {
+      "action": "send",
+      "channel": "telegram",
+      "dryRun": true,
+      "handledBy": "core",
+      "payload": {
+        "channel": "telegram",
+        "to": "telegram:-5114007576",
+        "via": "direct",
+        "mediaUrl": null,
+        "dryRun": true
+      }
+    }
+  }
+}

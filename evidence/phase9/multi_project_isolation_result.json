@@ -1,0 +1,129 @@
+{
+  "projects": [
+    {
+      "project_key": "agent-team-core",
+      "name": "Agent Team Core",
+      "status": "active"
+    },
+    {
+      "project_key": "agent-team-labs",
+      "name": "Agent Team Labs",
+      "status": "active"
+    }
+  ],
+  "shared_roles": [
+    {
+      "employee_key": "shared.ceo",
+      "employment_scope": "shared",
+      "project_id": null,
+      "session_key": "agent:main:org:ceo",
+      "memory_scope": "org"
+    }
+  ],
+  "project_runtime_views": [
+    {
+      "project_key": "agent-team-core",
+      "employee_key": "agent-team-core.dev",
+      "binding_key": "agent-team-core.dev.primary",
+      "session_key": "agent:main:project:agent-team-core:dev",
+      "memory_scope": "project:agent-team-core",
+      "workspace_path": "/root/.openclaw/workspace/agent-team-prototype"
+    },
+    {
+      "project_key": "agent-team-core",
+      "employee_key": "agent-team-core.dev.hire1",
+      "binding_key": "agent-team-core.dev.hire1.primary",
+      "session_key": "agent:main:project:agent-team-core:dev:hire1",
+      "memory_scope": "project:agent-team-core",
+      "workspace_path": "/root/.openclaw/workspace/agent-team-prototype"
+    },
+    {
+      "project_key": "agent-team-core",
+      "employee_key": "agent-team-core.ops",
+      "binding_key": "agent-team-core.ops.primary",
+      "session_key": "agent:main:project:agent-team-core:ops",
+      "memory_scope": "project:agent-team-core",
+      "workspace_path": "/root/.openclaw/workspace/agent-team-prototype"
+    },
+    {
+      "project_key": "agent-team-core",
+      "employee_key": "agent-team-core.pm",
+      "binding_key": "agent-team-core.pm.primary",
+      "session_key": "agent:main:project:agent-team-core:pm",
+      "memory_scope": "project:agent-team-core",
+      "workspace_path": "/root/.openclaw/workspace/agent-team-prototype"
+    },
+    {
+      "project_key": "agent-team-core",
+      "employee_key": "agent-team-core.qa",
+      "binding_key": "agent-team-core.qa.primary",
+      "session_key": "agent:main:project:agent-team-core:qa",
+      "memory_scope": "project:agent-team-core",
+      "workspace_path": "/root/.openclaw/workspace/agent-team-prototype"
+    },
+    {
+      "project_key": "agent-team-labs",
+      "employee_key": "agent-team-labs.dev",
+      "binding_key": "agent-team-labs.dev.primary",
+      "session_key": "agent:main:project:agent-team-labs:dev",
+      "memory_scope": "project:agent-team-labs",
+      "workspace_path": "/root/.openclaw/workspace/agent-team-prototype/projects/agent-team-labs"
+    },
+    {
+      "project_key": "agent-team-labs",
+      "employee_key": "agent-team-labs.ops",
+      "binding_key": "agent-team-labs.ops.primary",
+      "session_key": "agent:main:project:agent-team-labs:ops",
+      "memory_scope": "project:agent-team-labs",
+      "workspace_path": "/root/.openclaw/workspace/agent-team-prototype/projects/agent-team-labs"
+    },
+    {
+      "project_key": "agent-team-labs",
+      "employee_key": "agent-team-labs.pm",
+      "binding_key": "agent-team-labs.pm.primary",
+      "session_key": "agent:main:project:agent-team-labs:pm",
+      "memory_scope": "project:agent-team-labs",
+      "workspace_path": "/root/.openclaw/workspace/agent-team-prototype/projects/agent-team-labs"
+    },
+    {
+      "project_key": "agent-team-labs",
+      "employee_key": "agent-team-labs.qa",
+      "binding_key": "agent-team-labs.qa.primary",
+      "session_key": "agent:main:project:agent-team-labs:qa",
+      "memory_scope": "project:agent-team-labs",
+      "workspace_path": "/root/.openclaw/workspace/agent-team-prototype/projects/agent-team-labs"
+    }
+  ],
+  "issue_views": [
+    {
+      "project_key": "agent-team-core",
+      "issue_no": 7,
+      "title": "Project A isolation proof task",
+      "status": "closed",
+      "owner_employee_key": "agent-team-core.pm",
+      "assigned_employee_key": "agent-team-core.dev"
+    },
+    {
+      "project_key": "agent-team-labs",
+      "issue_no": 1,
+      "title": "Project B isolation proof task",
+      "status": "closed",
+      "owner_employee_key": "agent-team-labs.pm",
+      "assigned_employee_key": "agent-team-labs.dev"
+    }
+  ],
+  "created_sample_issues": {
+    "agent-team-core": 7,
+    "agent-team-labs": 1
+  },
+  "isolation_checks": {
+    "project_boundary_defined": true,
+    "shared_ceo_rule": true,
+    "workspace_isolation": true,
+    "memory_isolation": true,
+    "issue_isolation": true,
+    "queue_isolation": true,
+    "budget_boundary_placeholder": true,
+    "passed": true
+  }
+}

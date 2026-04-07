@@ -1,0 +1,110 @@
+{
+  "observed_at_ms": 1775533939947,
+  "startup_reconciliation": {
+    "performed": true,
+    "non_terminal_issue_count": 3,
+    "active_attempt_count": 0
+  },
+  "non_terminal_issues": [
+    {
+      "issue_no": 2,
+      "id": "issue_93645c0764e8",
+      "title": "Run unified execution_adapter abort demo",
+      "status": "ready",
+      "active_attempt_no": 1,
+      "blocker_summary": "Last attempt was cancelled; issue is retryable.",
+      "updated_at_ms": 1775474836285
+    },
+    {
+      "issue_no": 3,
+      "id": "issue_66f005d8148b",
+      "title": "Run unified execution_adapter timeout demo",
+      "status": "ready",
+      "active_attempt_no": 1,
+      "blocker_summary": "Last attempt timed out; issue is retryable.",
+      "updated_at_ms": 1775474867427
+    },
+    {
+      "issue_no": 4,
+      "id": "issue_f6bf1c5a4cb7",
+      "title": "Run unified execution_adapter provider-error demo",
+      "status": "ready",
+      "active_attempt_no": 1,
+      "blocker_summary": "Last attempt failed due to provider/runtime error; issue is retryable.",
+      "updated_at_ms": 1775475638741
+    }
+  ],
+  "active_attempts": [],
+  "run_checks": [],
+  "stalled_issues": [
+    {
+      "issue_no": 2,
+      "status": "ready",
+      "blocker_summary": "Last attempt was cancelled; issue is retryable.",
+      "reason": "retryable issue remains non-terminal with unresolved blocker"
+    },
+    {
+      "issue_no": 3,
+      "status": "ready",
+      "blocker_summary": "Last attempt timed out; issue is retryable.",
+      "reason": "retryable issue remains non-terminal with unresolved blocker"
+    },
+    {
+      "issue_no": 4,
+      "status": "ready",
+      "blocker_summary": "Last attempt failed due to provider/runtime error; issue is retryable.",
+      "reason": "retryable issue remains non-terminal with unresolved blocker"
+    }
+  ],
+  "orphan_attempts": [],
+  "repair_actions": [
+    {
+      "issue_no": 2,
+      "action": "keep_ready_and_attach_retry_plan",
+      "reason": "cancelled"
+    },
+    {
+      "issue_no": 3,
+      "action": "keep_ready_and_attach_retry_plan",
+      "reason": "timed_out"
+    },
+    {
+      "issue_no": 4,
+      "action": "keep_ready_and_attach_retry_plan",
+      "reason": "failed"
+    }
+  ],
+  "retry_resume_strategy": [
+    {
+      "issue_no": 2,
+      "current_issue_status": "ready",
+      "latest_attempt_no": 1,
+      "latest_attempt_status": "cancelled",
+      "recommended_strategy": "retry"
+    },
+    {
+      "issue_no": 3,
+      "current_issue_status": "ready",
+      "latest_attempt_no": 1,
+      "latest_attempt_status": "timed_out",
+      "recommended_strategy": "retry"
+    },
+    {
+      "issue_no": 4,
+      "current_issue_status": "ready",
+      "latest_attempt_no": 1,
+      "latest_attempt_status": "failed",
+      "recommended_strategy": "retry_after_fix"
+    }
+  ],
+  "metrics": {
+    "open": 0,
+    "running": 0,
+    "blocked": 0,
+    "waiting_human": 0,
+    "ready": 3,
+    "closed": 3,
+    "failed": 0
+  },
+  "audit_log_path": "/root/.openclaw/workspace-agent-team/evidence/phase8/reconciliation_audit_log.jsonl"
+}

@@ -1,0 +1,131 @@
+{
+  "workflow_template": {
+    "template_key": "feature_delivery_minimal",
+    "stages": [
+      "implementation",
+      "validation",
+      "release-readiness"
+    ],
+    "default_roles": [
+      "pm",
+      "dev",
+      "qa",
+      "ops"
+    ]
+  },
+  "issues": [
+    {
+      "issue_no": 8,
+      "title": "Optimize queue recovery and reporting workflow",
+      "source_type": "system",
+      "priority": "p1",
+      "status": "closed",
+      "metadata_json": "{\"demo\": \"phase10\", \"kind\": \"parent_workflow\", \"workflow_template\": {\"template_key\": \"feature_delivery_minimal\", \"stages\": [\"implementation\", \"validation\", \"release-readiness\"], \"default_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"]}}"
+    },
+    {
+      "issue_no": 9,
+      "title": "Implement queue recovery reporting improvements",
+      "source_type": "system",
+      "priority": "p1",
+      "status": "closed",
+      "metadata_json": "{\"demo\": \"phase10\", \"kind\": \"workflow_child\", \"stage\": \"implementation\", \"skill_profile\": [\"python\", \"sqlite\"], \"tool_policy\": [\"read\", \"write\", \"exec\"]}"
+    },
+    {
+      "issue_no": 10,
+      "title": "Validate queue recovery reporting improvements",
+      "source_type": "system",
+      "priority": "p2",
+      "status": "closed",
+      "metadata_json": "{\"demo\": \"phase10\", \"kind\": \"workflow_child\", \"stage\": \"validation\", \"skill_profile\": [\"qa\", \"acceptance\"], \"tool_policy\": [\"read\", \"exec\"]}"
+    },
+    {
+      "issue_no": 11,
+      "title": "Prepare release and observability follow-up",
+      "source_type": "detector",
+      "priority": "p2",
+      "status": "closed",
+      "metadata_json": "{\"demo\": \"phase10\", \"kind\": \"optimization_issue\", \"trigger\": \"phase8_metrics_review\", \"skill_profile\": [\"ops\", \"observability\"], \"tool_policy\": [\"read\", \"write\"]}"
+    }
+  ],
+  "relations": [
+    {
+      "relation_type": "related_to",
+      "from_issue_no": 11,
+      "to_issue_no": 8
+    },
+    {
+      "relation_type": "blocked_by",
+      "from_issue_no": 10,
+      "to_issue_no": 9
+    },
+    {
+      "relation_type": "parent_of",
+      "from_issue_no": 8,
+      "to_issue_no": 9
+    },
+    {
+      "relation_type": "parent_of",
+      "from_issue_no": 8,
+      "to_issue_no": 10
+    }
+  ],
+  "checkpoints": [
+    {
+      "issue_no": 9,
+      "checkpoint_no": 1,
+      "kind": "progress",
+      "summary": "Implementation workflow template child completed.",
+      "next_action": "Hand off to QA child issue."
+    },
+    {
+      "issue_no": 10,
+      "checkpoint_no": 1,
+      "kind": "progress",
+      "summary": "Validation child recognized dependency on implementation child.",
+      "next_action": "Run QA after implementation artifact is ready."
+    },
+    {
+      "issue_no": 11,
+      "checkpoint_no": 1,
+      "kind": "system",
+      "summary": "Optimization issue drafted richer board analytics follow-up.",
+      "next_action": "Track in next optimization cycle."
+    }
+  ],
+  "analytics": {
+    "child_issue_count": 2,
+    "optimization_issue_count": 1,
+    "dependency_edge_count": 1,
+    "parent_edge_count": 2,
+    "system_generated_issue_count": 4,
+    "throughput_by_role": {
+      "pm": 1,
+      "dev": 1,
+      "qa": 1,
+      "ops": 1
+    }
+  },
+  "advanced_checks": {
+    "dependency_supported": true,
+    "workflow_template_supported": true,
+    "system_generated_optimization_issue_supported": true,
+    "board_analytics_supported": true,
+    "team_throughput_supported": true,
+    "fine_grained_skill_tool_policy_supported": true,
+    "detector_watchdog_coordination_supported": true,
+    "complex_team_split_supported": true,
+    "passed": true
+  },
+  "created_issue_nos": {
+    "parent": 8,
+    "implementation": 9,
+    "validation": 10,
+    "optimization": 11
+  },
+  "relation_ids": [
+    "rel_91142c8dd63f",
+    "rel_da9d011291d2",
+    "rel_a9a08cbae389",
+    "rel_edf81e889086"
+  ]
+}

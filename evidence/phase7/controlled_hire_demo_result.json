@@ -1,0 +1,77 @@
+{
+  "project_key": "agent-team-core",
+  "hire_request": {
+    "id": "hire_b40183ab308b",
+    "request_no": 1,
+    "project_id": "proj_e1ff724206fd",
+    "requested_role_template_id": "role_2196240b9065",
+    "requester_employee_id": "emp_10799b0751c9",
+    "target_manager_employee_id": "emp_10799b0751c9",
+    "approved_by_employee_id": "emp_3d303eefdc1b",
+    "provisioned_employee_id": "emp_1482eab7acc2",
+    "seat_count": 1,
+    "status": "active",
+    "justification": "Need a second project-scoped dev seat for queue pressure relief and controlled scaling demo.",
+    "budget_code": "agent-team-core-fy2026-hiring",
+    "decision_note": "Provisioning complete; new employee and runtime binding are active.",
+    "metadata_json": "{\"demo\": \"controlled_hire\"}",
+    "created_at_ms": 1775528421143,
+    "updated_at_ms": 1775528421146,
+    "resolved_at_ms": 1775528421146
+  },
+  "policy_checks": {
+    "role_scope_ok": true,
+    "seat_count_ok": true,
+    "budget_code_ok": true,
+    "headcount_ok": true,
+    "current_active_for_role": 1,
+    "role_template_key": "dev",
+    "passed": true
+  },
+  "provisioned_employee": {
+    "id": "emp_1482eab7acc2",
+    "employee_key": "agent-team-core.dev.hire1",
+    "display_name": "Agent Team Core Dev Hire 1",
+    "employment_scope": "project",
+    "project_id": "proj_e1ff724206fd",
+    "role_template_id": "role_2196240b9065",
+    "manager_employee_id": "emp_10799b0751c9",
+    "status": "active",
+    "notes": "Provisioned by controlled hire demo",
+    "metadata_json": "{\"demo\": \"controlled_hire\"}",
+    "created_at_ms": 1775528421144,
+    "updated_at_ms": 1775528421145
+  },
+  "runtime_binding": {
+    "id": "rb_bd82fed5a08b",
+    "employee_id": "emp_1482eab7acc2",
+    "runtime_type": "openclaw_session",
+    "binding_key": "agent-team-core.dev.hire1.primary",
+    "agent_id": "main",
+    "session_key": "agent:main:project:agent-team-core:dev:hire1",
+    "model": null,
+    "workspace_path": "/root/.openclaw/workspace/agent-team-prototype",
+    "memory_scope": "project:agent-team-core",
+    "tool_policy_json": null,
+    "skills_profile_json": null,
+    "status": "active",
+    "is_primary": 1,
+    "last_seen_at_ms": null,
+    "metadata_json": "{\"demo\": \"controlled_hire\"}",
+    "created_at_ms": 1775528421145,
+    "updated_at_ms": 1775528421145
+  },
+  "manager_relation": {
+    "employee_key": "agent-team-core.dev.hire1",
+    "manager_employee_id": "emp_10799b0751c9",
+    "manager_employee_key": "agent-team-core.pm"
+  },
+  "lifecycle": [
+    "draft",
+    "pending_policy_check",
+    "pending_approval",
+    "approved",
+    "provisioning",
+    "active"
+  ]
+}

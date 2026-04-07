@@ -1,0 +1,161 @@
+{
+  "project_key": "agent-team-core",
+  "cases": {
+    "human_info_roundtrip": {
+      "issue_id": "issue_ea22eebb94da",
+      "issue_no": 5,
+      "waiting_state_snapshot": {
+        "issue": {
+          "issue_no": 5,
+          "title": "Human info roundtrip demo",
+          "status": "waiting_human_info",
+          "active_attempt_no": null,
+          "blocker_summary": "Missing canonical sample phrase for validation.",
+          "required_human_input": "Provide one exact accepted sample phrase."
+        },
+        "checkpoints": [
+          {
+            "checkpoint_no": 1,
+            "kind": "human_request",
+            "summary": "Need missing acceptance input from human",
+            "next_action": "Wait for human info"
+          }
+        ]
+      },
+      "execution": {
+        "dispatch": {
+          "dispatch_ref": "dispatch_66204bf672a4",
+          "accepted": true,
+          "session_key": "agent:main:project:agent-team-core:dev"
+        },
+        "attempt_no": 1,
+        "wait_result": {
+          "matched": true,
+          "assistant_text": "OK_HUMAN_INFO_dispatch_66204bf672a4",
+          "timestamp": 1775522239804
+        }
+      },
+      "final_snapshot": {
+        "issue": {
+          "issue_no": 5,
+          "title": "Human info roundtrip demo",
+          "status": "closed",
+          "active_attempt_no": 1,
+          "blocker_summary": null,
+          "required_human_input": null
+        },
+        "checkpoints": [
+          {
+            "checkpoint_no": 1,
+            "kind": "human_request",
+            "summary": "Need missing acceptance input from human",
+            "next_action": "Wait for human info"
+          },
+          {
+            "checkpoint_no": 1,
+            "kind": "review",
+            "summary": "Human provided the missing info",
+            "next_action": "Return to agent queue"
+          },
+          {
+            "checkpoint_no": 1,
+            "kind": "handoff",
+            "summary": "returned_to_agent_queue after info supplied",
+            "next_action": "Dispatch to dev runtime"
+          },
+          {
+            "checkpoint_no": 1,
+            "kind": "handoff",
+            "summary": "Dispatch after waiting_human_info resolution",
+            "next_action": "Wait for exact marker from execution adapter"
+          },
+          {
+            "checkpoint_no": 2,
+            "kind": "progress",
+            "summary": "Execution resumed successfully after human queue roundtrip",
+            "next_action": "Close issue"
+          }
+        ]
+      }
+    },
+    "human_approval_roundtrip": {
+      "issue_id": "issue_609461c6a4fd",
+      "issue_no": 6,
+      "waiting_state_snapshot": {
+        "issue": {
+          "issue_no": 6,
+          "title": "Human approval roundtrip demo",
+          "status": "waiting_human_approval",
+          "active_attempt_no": null,
+          "blocker_summary": "Publish simulation requires explicit approval.",
+          "required_human_input": "Approve or reject the outbound publish step."
+        },
+        "checkpoints": [
+          {
+            "checkpoint_no": 1,
+            "kind": "human_request",
+            "summary": "Need explicit human approval before continuing",
+            "next_action": "Wait for human approval"
+          }
+        ]
+      },
+      "execution": {
+        "dispatch": {
+          "dispatch_ref": "dispatch_68827b9295ac",
+          "accepted": true,
+          "session_key": "agent:main:project:agent-team-core:dev"
+        },
+        "attempt_no": 1,
+        "wait_result": {
+          "matched": true,
+          "assistant_text": "OK_HUMAN_APPROVAL_dispatch_68827b9295ac",
+          "timestamp": 1775522256264
+        }
+      },
+      "final_snapshot": {
+        "issue": {
+          "issue_no": 6,
+          "title": "Human approval roundtrip demo",
+          "status": "closed",
+          "active_attempt_no": 1,
+          "blocker_summary": null,
+          "required_human_input": null
+        },
+        "checkpoints": [
+          {
+            "checkpoint_no": 1,
+            "kind": "human_request",
+            "summary": "Need explicit human approval before continuing",
+            "next_action": "Wait for human approval"
+          },
+          {
+            "checkpoint_no": 1,
+            "kind": "review",
+            "summary": "Human approved the requested action",
+            "next_action": "Return to agent queue"
+          },
+          {
+            "checkpoint_no": 1,
+            "kind": "handoff",
+            "summary": "returned_to_agent_queue after approval granted",
+            "next_action": "Dispatch to dev runtime"
+          },
+          {
+            "checkpoint_no": 1,
+            "kind": "handoff",
+            "summary": "Dispatch after waiting_human_approval resolution",
+            "next_action": "Wait for exact marker from execution adapter"
+          },
+          {
+            "checkpoint_no": 2,
+            "kind": "progress",
+            "summary": "Execution resumed successfully after human queue roundtrip",
+            "next_action": "Close issue"
+          }
+        ]
+      }
+    }
+  },
+  "agent_queue_count": 3,
+  "human_queue_count": 0
+}

@@ -1,0 +1,153 @@
+{
+  "project_view": [
+    {
+      "project_key": "agent-team-core",
+      "name": "Agent Team Core",
+      "status": "active",
+      "total_issues": 18,
+      "closed_issues": 12,
+      "agent_queue_issues": 6,
+      "human_queue_issues": 0
+    },
+    {
+      "project_key": "agent-team-labs",
+      "name": "Agent Team Labs",
+      "status": "active",
+      "total_issues": 1,
+      "closed_issues": 1,
+      "agent_queue_issues": 0,
+      "human_queue_issues": 0
+    }
+  ],
+  "agent_queue": [
+    {
+      "id": "issue_b722ccf9cd1f",
+      "project_id": "proj_e1ff724206fd",
+      "issue_no": 18,
+      "title": "Routing policy validation issue",
+      "priority": "p2",
+      "status": "review",
+      "assigned_employee_id": "emp_1d0773e7001f",
+      "active_attempt_no": null,
+      "updated_at_ms": 1775796571623
+    },
+    {
+      "id": "issue_70773c5e01a4",
+      "project_id": "proj_e1ff724206fd",
+      "issue_no": 14,
+      "title": "API adapter cancel live check",
+      "priority": "p2",
+      "status": "ready",
+      "assigned_employee_id": "emp_1d0773e7001f",
+      "active_attempt_no": 1,
+      "updated_at_ms": 1775789400832
+    },
+    {
+      "id": "issue_272ccdc9c41b",
+      "project_id": "proj_e1ff724206fd",
+      "issue_no": 12,
+      "title": "API service live check issue",
+      "priority": "p2",
+      "status": "ready",
+      "assigned_employee_id": "emp_1d0773e7001f",
+      "active_attempt_no": null,
+      "updated_at_ms": 1775752154944
+    },
+    {
+      "id": "issue_f6bf1c5a4cb7",
+      "project_id": "proj_e1ff724206fd",
+      "issue_no": 4,
+      "title": "Run unified execution_adapter provider-error demo",
+      "priority": "p1",
+      "status": "ready",
+      "assigned_employee_id": "emp_1d0773e7001f",
+      "active_attempt_no": 1,
+      "updated_at_ms": 1775475638741
+    },
+    {
+      "id": "issue_66f005d8148b",
+      "project_id": "proj_e1ff724206fd",
+      "issue_no": 3,
+      "title": "Run unified execution_adapter timeout demo",
+      "priority": "p1",
+      "status": "ready",
+      "assigned_employee_id": "emp_1d0773e7001f",
+      "active_attempt_no": 1,
+      "updated_at_ms": 1775474867427
+    },
+    {
+      "id": "issue_93645c0764e8",
+      "project_id": "proj_e1ff724206fd",
+      "issue_no": 2,
+      "title": "Run unified execution_adapter abort demo",
+      "priority": "p1",
+      "status": "ready",
+      "assigned_employee_id": "emp_1d0773e7001f",
+      "active_attempt_no": 1,
+      "updated_at_ms": 1775474836285
+    }
+  ],
+  "human_queue": [],
+  "employee_view": [
+    {
+      "employee_key": "agent-team-core.dev",
+      "role": "dev",
+      "status": "active",
+      "session_key": "agent:agent-team-dev:main"
+    },
+    {
+      "employee_key": "agent-team-core.dev.hire1",
+      "role": "dev",
+      "status": "active",
+      "session_key": "agent:main:project:agent-team-core:dev:hire1"
+    },
+    {
+      "employee_key": "agent-team-core.ops",
+      "role": "ops",
+      "status": "active",
+      "session_key": "agent:agent-team-ops:main"
+    },
+    {
+      "employee_key": "agent-team-core.pm",
+      "role": "pm",
+      "status": "active",
+      "session_key": "agent:agent-team-pm:main"
+    },
+    {
+      "employee_key": "agent-team-core.qa",
+      "role": "qa",
+      "status": "active",
+      "session_key": "agent:agent-team-qa:main"
+    },
+    {
+      "employee_key": "agent-team-labs.dev",
+      "role": "dev",
+      "status": "active",
+      "session_key": "agent:main:project:agent-team-labs:dev"
+    },
+    {
+      "employee_key": "agent-team-labs.ops",
+      "role": "ops",
+      "status": "active",
+      "session_key": "agent:main:project:agent-team-labs:ops"
+    },
+    {
+      "employee_key": "agent-team-labs.pm",
+      "role": "pm",
+      "status": "active",
+      "session_key": "agent:main:project:agent-team-labs:pm"
+    },
+    {
+      "employee_key": "agent-team-labs.qa",
+      "role": "qa",
+      "status": "active",
+      "session_key": "agent:main:project:agent-team-labs:qa"
+    },
+    {
+      "employee_key": "shared.ceo",
+      "role": "ceo",
+      "status": "active",
+      "session_key": "agent:agent-team-ceo:main"
+    }
+  ]
+}

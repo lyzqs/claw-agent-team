@@ -1,0 +1,42 @@
+{
+  "validated_at": "2026-04-10T03:19:57Z",
+  "flow": "pm -> dev -> ceo",
+  "issue": {
+    "id": "issue_c2b613e0f5ca",
+    "issue_no": 16,
+    "title": "Minimal multi-role chain live check",
+    "status": "closed"
+  },
+  "pm_agent": {
+    "agent_id": "agent-team-pm",
+    "session_key": "agent:agent-team-pm:main",
+    "reply": "PM_CHAIN_READY"
+  },
+  "dev_agent": {
+    "agent_id": "agent-team-dev",
+    "session_key": "agent:agent-team-dev:main",
+    "reply": "DEV_CHAIN_READY"
+  },
+  "dev_execution": {
+    "dispatch_ref": "dispatch_76da7a1e47bc",
+    "attempt_id": "attempt_48a8581f6a61",
+    "attempt_no": 1,
+    "observed_reply": "DEV_CHAIN_DONE",
+    "attempt_status": "succeeded",
+    "issue_status_after_observe": "review"
+  },
+  "handoff": {
+    "to_employee_key": "shared.ceo",
+    "status": "review",
+    "note": "Dev completed execution; awaiting CEO review."
+  },
+  "ceo_agent": {
+    "agent_id": "agent-team-ceo",
+    "session_key": "agent:agent-team-ceo:main",
+    "reply": "CEO_CHAIN_APPROVED"
+  },
+  "final_resolution": {
+    "resolution": "completed",
+    "closed_at_ms": 1775791997156
+  }
+}

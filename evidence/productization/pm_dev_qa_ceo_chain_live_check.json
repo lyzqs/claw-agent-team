@@ -1,0 +1,42 @@
+{
+  "validated_at": "2026-04-10T03:52:56Z",
+  "flow": "pm -> dev -> qa -> ceo",
+  "issue": {
+    "id": "issue_21f1261e2928",
+    "issue_no": 17,
+    "title": "Minimal PM-Dev-QA-CEO chain live check",
+    "status": "closed"
+  },
+  "pm_agent": {
+    "agent_id": "agent-team-pm",
+    "session_key": "agent:agent-team-pm:main",
+    "reply": "PM_QA_CHAIN_READY"
+  },
+  "dev_agent": {
+    "agent_id": "agent-team-dev",
+    "session_key": "agent:agent-team-dev:main",
+    "reply": "DEV_QA_CHAIN_READY"
+  },
+  "dev_execution": {
+    "dispatch_ref": "dispatch_f189185d6951",
+    "attempt_id": "attempt_65467575d675",
+    "attempt_no": 1,
+    "observed_reply": "DEV_QA_CHAIN_DONE",
+    "attempt_status": "succeeded",
+    "issue_status_after_observe": "review"
+  },
+  "qa_agent": {
+    "agent_id": "agent-team-qa",
+    "session_key": "agent:agent-team-qa:main",
+    "reply": "QA_CHAIN_APPROVED"
+  },
+  "ceo_agent": {
+    "agent_id": "agent-team-ceo",
+    "session_key": "agent:agent-team-ceo:main",
+    "reply": "CEO_QA_CHAIN_APPROVED"
+  },
+  "final_resolution": {
+    "resolution": "completed",
+    "closed_at_ms": 1775793176659
+  }
+}

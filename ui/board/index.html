@@ -26,6 +26,10 @@
     .toolbar { display: flex; gap: 12px; align-items: center; margin: 12px 0 20px; flex-wrap: wrap; }
     button { background: #1d4ed8; color: white; border: 0; border-radius: 10px; padding: 8px 14px; cursor: pointer; }
     button:hover { background: #2563eb; }
+    .danger { background: #b91c1c; }
+    .danger:hover { background: #dc2626; }
+    .secondary { background: #475569; }
+    .secondary:hover { background: #64748b; }
     .issue-item { padding: 10px 12px; border: 1px solid #24314f; border-radius: 12px; margin-bottom: 10px; cursor: pointer; }
     .issue-item:hover { background: #172036; }
     .issue-item.active { border-color: #60a5fa; background: #172036; }
@@ -33,13 +37,14 @@
     .kv { display: grid; grid-template-columns: 140px 1fr; gap: 8px; margin-top: 8px; }
     .kv div:nth-child(odd) { color: #94a3b8; }
     code { color: #c4b5fd; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
     @media (max-width: 1200px) { .cols3 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Agent Team Board v1</h1>
-    <p class="muted">活数据 Board + Issue Detail + Attempt Timeline</p>
+    <p class="muted">活数据 Board + Issue Detail + Attempt Timeline + 最小操作按钮</p>
 
     <div class="toolbar">
       <button id="reloadBtn">重新加载数据</button>
@@ -94,6 +99,15 @@
       return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
     }
 
+    async function apiPost(path, payload) {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return await res.json();
+    }
+
     function renderBoard(data) {
       const metrics = [
         ['项目数', data.project_view?.length || 0],
@@ -101,11 +115,9 @@
         ['Human Queue', data.human_queue?.length || 0],
         ['员工数', data.employee_view?.length || 0],
       ];
-
       document.getElementById('summary').innerHTML = metrics.map(([k, v]) =>
         `<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`
       ).join('');
-
       document.getElementById('projectView').innerHTML = renderTable(data.project_view, [
         ['project_key', 'Project'], ['status', 'Status'], ['total_issues', 'Total'], ['closed_issues', 'Closed'], ['agent_queue_issues', 'Agent Queue'], ['human_queue_issues', 'Human Queue'],
       ]);
@@ -147,9 +159,33 @@
       });
     }
 
+    function getSelectedIssueObj() {
+      return issuesData.find(x => x.issue.id === selectedIssueId) || issuesData[0];
+    }
+
+    async function doClose(issueId) {
+      const out = await apiPost('/api/close', { issue_id: issueId, resolution: 'completed' });
+      await loadData();
+      return out;
+    }
+
+    async function doCancel(dispatchRef) {
+      const out = await apiPost('/api/cancel', { dispatch_ref: dispatchRef, reason: 'cancelled_from_ui' });
+      await loadData();
+      return out;
+    }
+
+    async function doRetry(issueId, latestAttempt) {
+      if (!latestAttempt?.runtime_binding_id) {
+        alert('当前 issue 没有 runtime_binding_id，无法直接 retry');
+        return;
+      }
+      alert('当前 UI 版本暂不支持从 attempt 自动恢复 payload。后端接口已就绪，下一步可补可视化 retry payload 编辑器。');
+    }
+
     function renderIssueDetail() {
       const root = document.getElementById('issueDetail');
-      const issueObj = issuesData.find(x => x.issue.id === selectedIssueId) || issuesData[0];
+      const issueObj = getSelectedIssueObj();
       if (!issueObj) {
         root.innerHTML = '<div class="empty">暂无 issue detail</div>';
         document.getElementById('attemptTimeline').innerHTML = '<div class="empty">暂无 timeline</div>';
@@ -157,6 +193,9 @@
       }
       selectedIssueId = issueObj.issue.id;
       const issue = issueObj.issue;
+      const attempts = issueObj.attempts || [];
+      const latest = attempts.length ? attempts[attempts.length - 1] : null;
+
       root.innerHTML = `
         <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
         <div style="margin-top:8px;">
@@ -173,14 +212,38 @@
           <div>Description</div><div>${issue.description_md || ''}</div>
           <div>Acceptance</div><div>${issue.acceptance_criteria_md || ''}</div>
         </div>
+        <div class="actions">
+          <button class="secondary" id="retryBtn">Retry</button>
+          <button class="danger" id="cancelBtn">Cancel Latest Attempt</button>
+          <button id="closeBtn">Close Issue</button>
+        </div>
       `;
 
-      const attempts = issueObj.attempts || [];
+      const retryBtn = document.getElementById('retryBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+      const closeBtn = document.getElementById('closeBtn');
+      retryBtn.onclick = async () => doRetry(issue.id, latest);
+      closeBtn.onclick = async () => {
+        if (!confirm(`确认关闭 issue #${issue.issue_no}？`)) return;
+        const out = await doClose(issue.id);
+        alert(out.ok ? 'Issue 已关闭' : `关闭失败: ${out.error || 'unknown error'}`);
+      };
+      cancelBtn.onclick = async () => {
+        if (!latest?.dispatch_ref) {
+          alert('当前没有可取消的 latest attempt dispatch_ref');
+          return;
+        }
+        if (!confirm(`确认取消 latest attempt #${latest.attempt_no}？`)) return;
+        const out = await doCancel(latest.dispatch_ref);
+        alert(out.ok ? 'Latest attempt 已取消' : `取消失败: ${out.error || 'unknown error'}`);
+      };
+
       if (!attempts.length) {
         document.getElementById('attemptTimeline').innerHTML = '<div class="empty">暂无 attempt / timeline</div>';
+        cancelBtn.disabled = true;
+        retryBtn.disabled = true;
         return;
       }
-      const latest = attempts[attempts.length - 1];
       const timeline = issueObj.timelines?.[latest.id] || [];
       document.getElementById('attemptTimeline').innerHTML = `
         <div><strong>Latest Attempt #${latest.attempt_no}</strong></div>

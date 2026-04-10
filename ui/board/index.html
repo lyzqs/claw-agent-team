@@ -7,12 +7,13 @@
   <style>
     :root { color-scheme: dark; }
     body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; margin: 0; background: #0b1020; color: #e8ecf3; }
-    .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
-    h1,h2 { margin: 0 0 12px; }
+    .wrap { max-width: 1500px; margin: 0 auto; padding: 24px; }
+    h1,h2,h3 { margin: 0 0 12px; }
     .muted { color: #94a3b8; }
     .grid { display: grid; gap: 16px; }
     .cards { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     .cols2 { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+    .cols3 { grid-template-columns: 1.1fr 0.9fr 1.2fr; }
     .card { background: #121a2b; border: 1px solid #24314f; border-radius: 16px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.18); }
     .k { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; }
     .v { font-size: 28px; font-weight: 700; margin-top: 8px; }
@@ -21,18 +22,24 @@
     th { color: #93c5fd; font-size: 13px; }
     .empty { padding: 12px; color: #94a3b8; }
     .ok { color: #86efac; }
-    .warn { color: #fbbf24; }
     .err { color: #fca5a5; }
-    code { color: #c4b5fd; }
     .toolbar { display: flex; gap: 12px; align-items: center; margin: 12px 0 20px; flex-wrap: wrap; }
     button { background: #1d4ed8; color: white; border: 0; border-radius: 10px; padding: 8px 14px; cursor: pointer; }
     button:hover { background: #2563eb; }
+    .issue-item { padding: 10px 12px; border: 1px solid #24314f; border-radius: 12px; margin-bottom: 10px; cursor: pointer; }
+    .issue-item:hover { background: #172036; }
+    .issue-item.active { border-color: #60a5fa; background: #172036; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: #1e293b; border: 1px solid #334155; margin-right: 6px; }
+    .kv { display: grid; grid-template-columns: 140px 1fr; gap: 8px; margin-top: 8px; }
+    .kv div:nth-child(odd) { color: #94a3b8; }
+    code { color: #c4b5fd; }
+    @media (max-width: 1200px) { .cols3 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Agent Team Board v1</h1>
-    <p class="muted">第一版活数据载体。数据来源：<code>ui/board/data.json</code>（由 service 导出）。</p>
+    <p class="muted">活数据 Board + Issue Detail + Attempt Timeline</p>
 
     <div class="toolbar">
       <button id="reloadBtn">重新加载数据</button>
@@ -59,9 +66,27 @@
         <div id="employeeView"></div>
       </div>
     </div>
+
+    <div class="grid cols3" style="margin-top:20px;">
+      <div class="card">
+        <h2>Issue List</h2>
+        <div id="issueList"></div>
+      </div>
+      <div class="card">
+        <h2>Issue Detail</h2>
+        <div id="issueDetail"></div>
+      </div>
+      <div class="card">
+        <h2>Attempt Timeline</h2>
+        <div id="attemptTimeline"></div>
+      </div>
+    </div>
   </div>
 
   <script>
+    let issuesData = [];
+    let selectedIssueId = null;
+
     function renderTable(rows, cols) {
       if (!rows || !rows.length) return '<div class="empty">当前为空</div>';
       const head = `<tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr>`;
@@ -69,7 +94,7 @@
       return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
     }
 
-    function render(data) {
+    function renderBoard(data) {
       const metrics = [
         ['项目数', data.project_view?.length || 0],
         ['Agent Queue', data.agent_queue?.length || 0],
@@ -82,47 +107,111 @@
       ).join('');
 
       document.getElementById('projectView').innerHTML = renderTable(data.project_view, [
-        ['project_key', 'Project'],
-        ['status', 'Status'],
-        ['total_issues', 'Total'],
-        ['closed_issues', 'Closed'],
-        ['agent_queue_issues', 'Agent Queue'],
-        ['human_queue_issues', 'Human Queue'],
+        ['project_key', 'Project'], ['status', 'Status'], ['total_issues', 'Total'], ['closed_issues', 'Closed'], ['agent_queue_issues', 'Agent Queue'], ['human_queue_issues', 'Human Queue'],
       ]);
-
       document.getElementById('agentQueue').innerHTML = renderTable(data.agent_queue, [
-        ['issue_no', 'Issue'],
-        ['title', 'Title'],
-        ['priority', 'Priority'],
-        ['status', 'Status'],
-        ['assigned_employee_id', 'Assigned Employee ID'],
-        ['active_attempt_no', 'Attempt'],
+        ['issue_no', 'Issue'], ['title', 'Title'], ['priority', 'Priority'], ['status', 'Status'], ['active_attempt_no', 'Attempt'],
       ]);
-
       document.getElementById('humanQueue').innerHTML = renderTable(data.human_queue, [
-        ['issue_no', 'Issue'],
-        ['title', 'Title'],
-        ['status', 'Status'],
-        ['blocker_summary', 'Blocker'],
-        ['required_human_input', 'Required Input'],
+        ['issue_no', 'Issue'], ['title', 'Title'], ['status', 'Status'], ['required_human_input', 'Required Input'],
       ]);
-
       document.getElementById('employeeView').innerHTML = renderTable(data.employee_view, [
-        ['employee_key', 'Employee'],
-        ['role', 'Role'],
-        ['status', 'Status'],
-        ['session_key', 'Session Key'],
+        ['employee_key', 'Employee'], ['role', 'Role'], ['status', 'Status'], ['session_key', 'Session Key'],
       ]);
+    }
+
+    function renderIssueList() {
+      const root = document.getElementById('issueList');
+      if (!issuesData.length) {
+        root.innerHTML = '<div class="empty">暂无 issue</div>';
+        return;
+      }
+      root.innerHTML = issuesData.map(item => {
+        const issue = item.issue;
+        const active = issue.id === selectedIssueId ? 'active' : '';
+        return `
+          <div class="issue-item ${active}" data-issue-id="${issue.id}">
+            <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
+            <div style="margin-top:6px;">
+              <span class="pill">${issue.status}</span>
+              <span class="pill">${issue.priority}</span>
+            </div>
+          </div>`;
+      }).join('');
+      root.querySelectorAll('.issue-item').forEach(el => {
+        el.addEventListener('click', () => {
+          selectedIssueId = el.dataset.issueId;
+          renderIssueList();
+          renderIssueDetail();
+        });
+      });
+    }
+
+    function renderIssueDetail() {
+      const root = document.getElementById('issueDetail');
+      const issueObj = issuesData.find(x => x.issue.id === selectedIssueId) || issuesData[0];
+      if (!issueObj) {
+        root.innerHTML = '<div class="empty">暂无 issue detail</div>';
+        document.getElementById('attemptTimeline').innerHTML = '<div class="empty">暂无 timeline</div>';
+        return;
+      }
+      selectedIssueId = issueObj.issue.id;
+      const issue = issueObj.issue;
+      root.innerHTML = `
+        <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
+        <div style="margin-top:8px;">
+          <span class="pill">${issue.status}</span>
+          <span class="pill">${issue.priority}</span>
+        </div>
+        <div class="kv">
+          <div>Issue ID</div><div><code>${issue.id}</code></div>
+          <div>Owner</div><div><code>${issue.owner_employee_id || ''}</code></div>
+          <div>Assigned</div><div><code>${issue.assigned_employee_id || ''}</code></div>
+          <div>Attempt No</div><div>${issue.active_attempt_no ?? ''}</div>
+          <div>Blocker</div><div>${issue.blocker_summary || ''}</div>
+          <div>Required Input</div><div>${issue.required_human_input || ''}</div>
+          <div>Description</div><div>${issue.description_md || ''}</div>
+          <div>Acceptance</div><div>${issue.acceptance_criteria_md || ''}</div>
+        </div>
+      `;
+
+      const attempts = issueObj.attempts || [];
+      if (!attempts.length) {
+        document.getElementById('attemptTimeline').innerHTML = '<div class="empty">暂无 attempt / timeline</div>';
+        return;
+      }
+      const latest = attempts[attempts.length - 1];
+      const timeline = issueObj.timelines?.[latest.id] || [];
+      document.getElementById('attemptTimeline').innerHTML = `
+        <div><strong>Latest Attempt #${latest.attempt_no}</strong></div>
+        <div class="kv">
+          <div>Attempt ID</div><div><code>${latest.id}</code></div>
+          <div>Status</div><div>${latest.status}</div>
+          <div>Dispatch Ref</div><div><code>${latest.dispatch_ref || ''}</code></div>
+          <div>Result</div><div>${latest.result_summary || latest.failure_summary || ''}</div>
+        </div>
+        ${timeline.length ? renderTable(timeline, [
+          ['checkpoint_no', '#'], ['kind', 'Kind'], ['summary', 'Summary'], ['next_action', 'Next'], ['percent_complete', '%'],
+        ]) : '<div class="empty">暂无 checkpoint timeline</div>'}
+      `;
     }
 
     async function loadData() {
       const status = document.getElementById('status');
       status.textContent = '正在加载…';
       try {
-        const res = await fetch(`./data.json?t=${Date.now()}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        render(data);
+        const [boardRes, issuesRes] = await Promise.all([
+          fetch(`./data.json?t=${Date.now()}`),
+          fetch(`./issues.json?t=${Date.now()}`),
+        ]);
+        if (!boardRes.ok) throw new Error(`board HTTP ${boardRes.status}`);
+        if (!issuesRes.ok) throw new Error(`issues HTTP ${issuesRes.status}`);
+        const board = await boardRes.json();
+        issuesData = await issuesRes.json();
+        if (!selectedIssueId && issuesData.length) selectedIssueId = issuesData[0].issue.id;
+        renderBoard(board);
+        renderIssueList();
+        renderIssueDetail();
         status.innerHTML = '<span class="ok">已加载真实数据</span>';
       } catch (err) {
         status.innerHTML = `<span class="err">加载失败：${err.message}</span>`;

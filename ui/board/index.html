@@ -3,106 +3,176 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Agent Team 控制台 v1</title>
+  <title>Agent Team 控制台</title>
   <style>
-    :root { color-scheme: dark; }
-    body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; margin: 0; background: #0b1020; color: #e8ecf3; }
-    .wrap { max-width: 1600px; margin: 0 auto; padding: 24px; }
-    h1,h2,h3 { margin: 0 0 12px; }
-    .muted { color: #94a3b8; }
-    .desc { color: #cbd5e1; font-size: 14px; line-height: 1.6; }
-    .grid { display: grid; gap: 16px; }
-    .cards { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-    .cols2 { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
-    .cols3 { grid-template-columns: 1.1fr 0.9fr 1.2fr; }
-    .card { background: #121a2b; border: 1px solid #24314f; border-radius: 16px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.18); }
-    .k { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; }
-    .v { font-size: 28px; font-weight: 700; margin-top: 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #24314f; vertical-align: top; }
-    th { color: #93c5fd; font-size: 13px; }
-    .empty { padding: 12px; color: #94a3b8; }
-    .ok { color: #86efac; }
-    .err { color: #fca5a5; }
-    .toolbar { display: flex; gap: 12px; align-items: center; margin: 12px 0 20px; flex-wrap: wrap; }
-    button { background: #1d4ed8; color: white; border: 0; border-radius: 10px; padding: 8px 14px; cursor: pointer; }
-    button:hover { background: #2563eb; }
-    .danger { background: #b91c1c; }
-    .danger:hover { background: #dc2626; }
-    .secondary { background: #475569; }
-    .secondary:hover { background: #64748b; }
-    .success { background: #15803d; }
-    .success:hover { background: #16a34a; }
-    .issue-item, .hq-item, .agent-block { padding: 10px 12px; border: 1px solid #24314f; border-radius: 12px; margin-bottom: 10px; }
-    .issue-item { cursor: pointer; }
-    .issue-item:hover, .hq-item:hover { background: #172036; }
-    .issue-item.active { border-color: #60a5fa; background: #172036; }
-    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: #1e293b; border: 1px solid #334155; margin-right: 6px; }
-    .kv { display: grid; grid-template-columns: 140px 1fr; gap: 8px; margin-top: 8px; }
-    .kv div:nth-child(odd) { color: #94a3b8; }
-    code { color: #c4b5fd; }
-    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-    .toast { position: fixed; right: 20px; bottom: 20px; background: #111827; border: 1px solid #374151; color: white; padding: 12px 14px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.25); display: none; z-index: 9999; }
-    .toast.show { display: block; }
-    .agent-issues { margin-top: 8px; }
-    .agent-issues li { margin: 6px 0; }
-    @media (max-width: 1200px) { .cols3 { grid-template-columns: 1fr; } }
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #121a2b;
+      --panel-2: #172036;
+      --line: #24314f;
+      --text: #e8ecf3;
+      --muted: #94a3b8;
+      --blue: #60a5fa;
+      --green: #34d399;
+      --red: #f87171;
+      --yellow: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 1700px; margin: 0 auto; padding: 20px; }
+    h1,h2,h3 { margin: 0; }
+    .muted { color: var(--muted); }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:18px; }
+    .topbar-left { display:flex; flex-direction:column; gap:6px; }
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    button {
+      background:#1d4ed8; color:white; border:0; border-radius:10px; padding:8px 14px; cursor:pointer; font-weight:600;
+    }
+    button:hover { background:#2563eb; }
+    .danger { background:#b91c1c; }
+    .danger:hover { background:#dc2626; }
+    .secondary { background:#475569; }
+    .secondary:hover { background:#64748b; }
+    .success { background:#15803d; }
+    .success:hover { background:#16a34a; }
+    .chip { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--line); border-radius:999px; color:var(--muted); }
+    .summary { display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:14px; margin-bottom:18px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.18);
+    }
+    .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+    .v { font-size:28px; font-weight:700; margin-top:8px; }
+    .board-header { display:flex; justify-content:space-between; align-items:center; margin: 8px 0 12px; }
+    .filters { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+    .filters input, .filters select {
+      background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px;
+    }
+    .storyboard {
+      display:grid; grid-template-columns: 260px repeat(auto-fit, minmax(260px, 1fr)) 260px; gap:16px; align-items:start;
+      overflow-x:auto; padding-bottom:8px;
+    }
+    .lane {
+      background: rgba(255,255,255,0.02); border:1px solid var(--line); border-radius: 16px; min-height: 500px; padding: 12px;
+    }
+    .lane h3 { font-size: 18px; margin-bottom: 6px; }
+    .lane-sub { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+    .issue-card {
+      background: white; color:#111827; border-radius: 14px; padding: 14px; margin-bottom: 12px; cursor:pointer; box-shadow: 0 4px 18px rgba(0,0,0,.15);
+      border-left: 5px solid #2563eb;
+    }
+    .issue-card:hover { transform: translateY(-1px); }
+    .issue-card .title { font-weight: 700; margin-bottom: 8px; line-height:1.35; }
+    .issue-card .meta { font-size: 12px; color: #475569; display:flex; flex-wrap:wrap; gap:6px; }
+    .issue-card .meta span { background:#f1f5f9; border-radius:999px; padding:2px 8px; }
+    .issue-card .desc { font-size: 13px; color:#334155; margin-top: 10px; }
+    .lane-empty { color: var(--muted); padding:12px 4px; }
+    .explorer { margin-top: 24px; }
+    .explorer-grid { display:grid; grid-template-columns: 330px 1fr; gap: 16px; }
+    .issue-list-item {
+      padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; cursor:pointer; background: var(--panel);
+    }
+    .issue-list-item.active { border-color: var(--blue); background: var(--panel-2); }
+    .issue-list-item:hover { background: var(--panel-2); }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#1e293b; border:1px solid #334155; margin-right:6px; }
+    .kv { display:grid; grid-template-columns: 140px 1fr; gap:8px; margin-top:8px; }
+    .kv div:nth-child(odd) { color: var(--muted); }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .pager { display:flex; gap:8px; align-items:center; margin-top: 12px; }
+    .toast {
+      position: fixed; right: 20px; bottom: 20px; background: #111827; border: 1px solid #374151; color: white;
+      padding: 12px 14px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.25); display:none; z-index:9999;
+    }
+    .toast.show { display:block; }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(2,6,23,.75); display:none; align-items:center; justify-content:center; padding:18px; z-index: 9998;
+    }
+    .modal-backdrop.show { display:flex; }
+    .modal {
+      width:min(960px, 100%); max-height:90vh; overflow:auto; background: var(--panel); border:1px solid var(--line); border-radius: 18px; padding: 18px;
+    }
+    .modal-top { display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; }
+    table { width:100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:#93c5fd; font-size:13px; }
+    code { color:#c4b5fd; }
+    .hidden { display:none; }
+    @media (max-width: 1200px) {
+      .storyboard { grid-template-columns: 1fr; }
+      .explorer-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Agent Team 控制台 v1</h1>
-    <p class="muted">活数据总览 + Agent Workload + Issue 详情 + Attempt 时间线 + Human Queue 操作</p>
-
-    <div class="toolbar">
-      <button id="reloadBtn">重新加载数据</button>
-      <button id="runBtn" class="success">恢复流程</button>
-      <button id="pauseBtn" class="danger">暂停流程</button>
-      <span id="status" class="muted">正在加载…</span>
-    </div>
-
-    <div id="summary" class="grid cards"></div>
-
-    <div class="grid cols2" style="margin-top:20px;">
-      <div class="card">
-        <h2>项目视图</h2>
-        <div id="projectView"></div>
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Agent Team 控制台</h1>
+        <div class="muted">故事墙（Storyboard）+ Issue Explorer + 弹窗详情</div>
       </div>
-      <div class="card">
-        <h2>Agent 队列</h2>
-        <div id="agentQueue"></div>
-      </div>
-      <div class="card">
-        <h2>Human Queue（待人工处理）</h2>
-        <div class="desc" style="margin-bottom:10px;">这里显示当前卡在人工输入/批准/动作决策的 issue。点击按钮后会真实调用后端接口。</div>
-        <div id="humanQueue"></div>
-      </div>
-      <div class="card">
-        <h2>员工视图</h2>
-        <div class="desc" style="margin-bottom:10px;">这里显示的是数据库里的角色实例（employee_instances），不是现实员工人数。</div>
-        <div id="employeeView"></div>
+      <div class="toolbar">
+        <button id="reloadBtn">重新加载数据</button>
+        <button id="runBtn" class="success">恢复流程</button>
+        <button id="pauseBtn" class="danger">暂停流程</button>
+        <span id="workflowChip" class="chip">流程状态加载中…</span>
       </div>
     </div>
 
-    <div class="card" style="margin-top:20px;">
-      <h2>Agent Workload（按 Agent 看 Issue）</h2>
-      <div class="desc" style="margin-bottom:10px;">这里直接回答“每个 issue 属于哪个 agent，以及每个 agent 下都有哪些 issue”。</div>
-      <div id="agentWorkload"></div>
+    <div id="summary" class="summary"></div>
+
+    <div class="card">
+      <div class="board-header">
+        <div>
+          <h2>故事墙</h2>
+          <div class="muted">第一列是人工队列，中间是各个 Agent 正在处理/持有的 Issue，最后一列是已关闭。</div>
+        </div>
+      </div>
+      <div class="filters">
+        <input id="searchInput" placeholder="按标题搜索 issue" />
+        <select id="agentFilter"></select>
+        <select id="statusFilter"></select>
+        <select id="sortSelect">
+          <option value="issue_no_desc">按 Issue 号倒序</option>
+          <option value="issue_no_asc">按 Issue 号正序</option>
+          <option value="updated_desc">按更新时间倒序</option>
+        </select>
+      </div>
+      <div id="storyboard" class="storyboard"></div>
     </div>
 
-    <div class="grid cols3" style="margin-top:20px;">
+    <div class="explorer">
       <div class="card">
-        <h2>Issue 列表</h2>
-        <div id="issueList"></div>
+        <div class="board-header">
+          <div>
+            <h2>所有 Issue</h2>
+            <div class="muted">支持按 agent、状态、关键词筛选，并分页查看。</div>
+          </div>
+        </div>
+        <div class="explorer-grid">
+          <div>
+            <div id="issueList"></div>
+            <div class="pager">
+              <button id="prevPageBtn" class="secondary">上一页</button>
+              <span id="pageInfo" class="muted"></span>
+              <button id="nextPageBtn" class="secondary">下一页</button>
+            </div>
+          </div>
+          <div id="issuePreview" class="card" style="background:#0f172a"></div>
+        </div>
       </div>
-      <div class="card">
-        <h2>Issue 详情</h2>
-        <div id="issueDetail"></div>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-top">
+        <div>
+          <h2 id="modalTitle">Issue 详情</h2>
+          <div id="modalSubtitle" class="muted"></div>
+        </div>
+        <button id="closeModalBtn" class="secondary">关闭</button>
       </div>
-      <div class="card">
-        <h2>Attempt 时间线</h2>
-        <div id="attemptTimeline"></div>
-      </div>
+      <div id="modalBody"></div>
     </div>
   </div>
 
@@ -112,7 +182,10 @@
     let issuesData = [];
     let boardData = null;
     let workflowControl = { mode: 'running' };
+    let filteredIssues = [];
     let selectedIssueId = null;
+    let currentPage = 1;
+    const pageSize = 8;
 
     function showToast(msg, isError=false) {
       const el = document.getElementById('toast');
@@ -122,12 +195,7 @@
       setTimeout(() => el.classList.remove('show'), 2600);
     }
 
-    function renderTable(rows, cols) {
-      if (!rows || !rows.length) return '<div class="empty">当前为空</div>';
-      const head = `<tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr>`;
-      const body = rows.map(r => `<tr>${cols.map(c => `<td>${r[c[0]] ?? ''}</td>`).join('')}</tr>`).join('');
-      return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
-    }
+    function isPaused() { return workflowControl?.mode === 'paused'; }
 
     async function apiPost(path, payload) {
       const res = await fetch(path, {
@@ -152,120 +220,6 @@
       return out;
     }
 
-    async function resolveHuman(issueId, resolution, note='') {
-      const out = await apiPost('/api/human/resolve', { issue_id: issueId, resolution, note });
-      await loadData();
-      return out;
-    }
-
-    function isPaused() {
-      return workflowControl?.mode === 'paused';
-    }
-
-    function renderBoard(data) {
-      const metrics = [
-        ['项目数', data.project_view?.length || 0],
-        ['Agent 队列', data.agent_queue?.length || 0],
-        ['待人工处理', data.human_queue?.length || 0],
-        ['角色实例数', data.employee_view?.length || 0],
-      ];
-      document.getElementById('summary').innerHTML = metrics.map(([k, v]) => `<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
-      const statusEl = document.getElementById('status');
-      const modeText = workflowControl.mode === 'paused' ? '总流程已暂停' : '总流程运行中';
-      const modeClass = workflowControl.mode === 'paused' ? 'err' : 'ok';
-      statusEl.innerHTML = `<span class="${modeClass}">${modeText}</span>`;
-      document.getElementById('projectView').innerHTML = renderTable(data.project_view, [
-        ['project_key', '项目'], ['status', '状态'], ['total_issues', '总 Issue'], ['closed_issues', '已关闭'], ['agent_queue_issues', 'Agent 队列'], ['human_queue_issues', '人工队列'],
-      ]);
-      document.getElementById('agentQueue').innerHTML = renderTable(data.agent_queue, [
-        ['issue_no', 'Issue'], ['title', '标题'], ['priority', '优先级'], ['status', '状态'], ['active_attempt_no', 'Attempt'],
-      ]);
-      renderHumanQueue(data.human_queue || []);
-      document.getElementById('employeeView').innerHTML = renderTable(data.employee_view, [
-        ['employee_key', '实例 Key'], ['display_name', '显示名'], ['role', '角色'], ['project_key', '项目'], ['agent_id', 'Agent'],
-      ]);
-      renderAgentWorkload(data.agent_workload || []);
-    }
-
-    function renderAgentWorkload(items) {
-      const root = document.getElementById('agentWorkload');
-      if (!items.length) {
-        root.innerHTML = '<div class="empty">当前为空</div>';
-        return;
-      }
-      root.innerHTML = items.map(item => `
-        <div class="agent-block">
-          <div><strong>${item.agent_id}</strong> <span class="pill">${item.role || ''}</span></div>
-          <div class="muted" style="margin-top:6px;">${item.display_name || ''} · ${item.employee_key || ''}</div>
-          <div class="muted" style="margin-top:4px;"><code>${item.session_key || ''}</code></div>
-          <ul class="agent-issues">
-            ${item.issues.length ? item.issues.map(issue => `<li>#${issue.issue_no} ${issue.title} <span class="pill">${issue.status}</span></li>`).join('') : '<li class="muted">当前无 issue</li>'}
-          </ul>
-        </div>
-      `).join('');
-    }
-
-    function renderHumanQueue(items) {
-      const root = document.getElementById('humanQueue');
-      if (!items.length) {
-        root.innerHTML = '<div class="empty">当前为空</div>';
-        return;
-      }
-      const paused = isPaused();
-      root.innerHTML = items.map(item => `
-        <div class="hq-item">
-          <div><strong>#${item.issue_no}</strong> ${item.title}</div>
-          <div style="margin-top:6px;"><span class="pill">${item.status}</span></div>
-          <div class="muted" style="margin-top:8px;">${item.blocker_summary || ''}</div>
-          <div class="muted" style="margin-top:4px;">需要：${item.required_human_input || ''}</div>
-          <div class="actions">
-            <button class="success" data-action="approve" data-issue-id="${item.id}" ${paused ? 'disabled' : ''}>批准</button>
-            <button class="danger" data-action="reject" data-issue-id="${item.id}" ${paused ? 'disabled' : ''}>拒绝</button>
-            <button class="secondary" data-action="needs_info" data-issue-id="${item.id}" ${paused ? 'disabled' : ''}>需要补充信息</button>
-          </div>
-        </div>
-      `).join('');
-      root.querySelectorAll('button[data-action]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const issueId = btn.dataset.issueId;
-          const action = btn.dataset.action;
-          const out = await resolveHuman(issueId, action, `resolved_from_ui:${action}`);
-          showToast(out.ok ? `人工队列已处理：${action}` : `处理失败: ${out.error || 'unknown error'}`, !out.ok);
-        });
-      });
-    }
-
-    function renderIssueList() {
-      const root = document.getElementById('issueList');
-      if (!issuesData.length) {
-        root.innerHTML = '<div class="empty">暂无 issue</div>';
-        return;
-      }
-      root.innerHTML = issuesData.map(item => {
-        const issue = item.issue;
-        const active = issue.id === selectedIssueId ? 'active' : '';
-        return `
-          <div class="issue-item ${active}" data-issue-id="${issue.id}">
-            <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
-            <div style="margin-top:6px;">
-              <span class="pill">${issue.status}</span>
-              <span class="pill">${issue.priority}</span>
-            </div>
-          </div>`;
-      }).join('');
-      root.querySelectorAll('.issue-item').forEach(el => {
-        el.addEventListener('click', () => {
-          selectedIssueId = el.dataset.issueId;
-          renderIssueList();
-          renderIssueDetail();
-        });
-      });
-    }
-
-    function getSelectedIssueObj() {
-      return issuesData.find(x => x.issue.id === selectedIssueId) || issuesData[0];
-    }
-
     async function doClose(issueId) {
       const out = await apiPost('/api/close', { issue_id: issueId, resolution: 'completed' });
       await loadData();
@@ -283,90 +237,250 @@
         showToast('当前 issue 没有 runtime_binding_id，无法直接 retry', true);
         return;
       }
-      showToast('Retry 入口已到位，下一步补 payload 编辑器后即可完整从 UI 重试。', false);
+      showToast('Retry 下一步补 payload 编辑器后即可完整重试。', false);
     }
 
-    function renderIssueDetail() {
-      const root = document.getElementById('issueDetail');
-      const issueObj = getSelectedIssueObj();
-      if (!issueObj) {
-        root.innerHTML = '<div class="empty">暂无 issue detail</div>';
-        document.getElementById('attemptTimeline').innerHTML = '<div class="empty">暂无 timeline</div>';
+    async function resolveHuman(issueId, resolution, note='') {
+      const out = await apiPost('/api/human/resolve', { issue_id: issueId, resolution, note });
+      await loadData();
+      return out;
+    }
+
+    function issueAgentMap(issueId) {
+      return (boardData?.agent_workload || []).find(a => a.issues.some(i => i.issue_id === issueId));
+    }
+
+    function renderSummary() {
+      const metrics = [
+        ['项目数', boardData.project_view?.length || 0],
+        ['Agent 队列', boardData.agent_queue?.length || 0],
+        ['待人工处理', boardData.human_queue?.length || 0],
+        ['角色实例数', boardData.employee_view?.length || 0],
+      ];
+      document.getElementById('summary').innerHTML = metrics.map(([k, v]) => `<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+      const chip = document.getElementById('workflowChip');
+      chip.textContent = workflowControl.mode === 'paused' ? '总流程已暂停' : '总流程运行中';
+      chip.style.color = workflowControl.mode === 'paused' ? '#fca5a5' : '#86efac';
+    }
+
+    function getAllIssuesEnriched() {
+      return issuesData.map(item => {
+        const issue = item.issue;
+        const agent = issueAgentMap(issue.id);
+        return {
+          ...item,
+          current_agent_id: agent?.agent_id || 'unassigned',
+          current_agent_role: agent?.role || '',
+          current_agent_session: agent?.session_key || '',
+        };
+      });
+    }
+
+    function getFilteredIssues() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const agentFilter = document.getElementById('agentFilter').value;
+      const statusFilter = document.getElementById('statusFilter').value;
+      const sort = document.getElementById('sortSelect').value;
+
+      let arr = getAllIssuesEnriched().filter(item => {
+        const issue = item.issue;
+        const matchQ = !q || issue.title.toLowerCase().includes(q) || issue.description_md.toLowerCase().includes(q);
+        const matchAgent = !agentFilter || item.current_agent_id === agentFilter;
+        const matchStatus = !statusFilter || issue.status === statusFilter;
+        return matchQ && matchAgent && matchStatus;
+      });
+
+      if (sort === 'issue_no_desc') arr.sort((a,b) => b.issue.issue_no - a.issue.issue_no);
+      if (sort === 'issue_no_asc') arr.sort((a,b) => a.issue.issue_no - b.issue.issue_no);
+      if (sort === 'updated_desc') arr.sort((a,b) => (b.issue.updated_at_ms || 0) - (a.issue.updated_at_ms || 0));
+      return arr;
+    }
+
+    function renderFilters() {
+      const agentSel = document.getElementById('agentFilter');
+      const statusSel = document.getElementById('statusFilter');
+      const agents = [...new Set(getAllIssuesEnriched().map(x => x.current_agent_id))].sort();
+      const statuses = [...new Set(issuesData.map(x => x.issue.status))].sort();
+      agentSel.innerHTML = `<option value="">全部 Agent</option>` + agents.map(a => `<option value="${a}">${a}</option>`).join('');
+      statusSel.innerHTML = `<option value="">全部状态</option>` + statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    function issueCard(issueWrap) {
+      const issue = issueWrap.issue;
+      const agent = issueWrap.current_agent_id;
+      return `
+        <div class="issue-card" data-issue-id="${issue.id}">
+          <div class="title">#${issue.issue_no} ${issue.title}</div>
+          <div class="meta">
+            <span>${issue.status}</span>
+            <span>${issue.priority}</span>
+            <span>${agent}</span>
+          </div>
+          <div class="desc">${(issue.description_md || '').slice(0, 100)}</div>
+        </div>
+      `;
+    }
+
+    function renderStoryboard() {
+      const items = getFilteredIssues();
+      const human = items.filter(x => ['waiting_human_info','waiting_human_action','waiting_human_approval'].includes(x.issue.status));
+      const closed = items.filter(x => x.issue.status === 'closed');
+      const activeByAgent = {};
+      for (const item of items.filter(x => !['closed','waiting_human_info','waiting_human_action','waiting_human_approval'].includes(x.issue.status))) {
+        const k = item.current_agent_id || 'unassigned';
+        if (!activeByAgent[k]) activeByAgent[k] = [];
+        activeByAgent[k].push(item);
+      }
+      const lanes = [];
+      lanes.push({ title: '人工队列', subtitle: `${human.length} 个`, items: human });
+      for (const agent of (boardData.agent_workload || [])) {
+        const itemsForAgent = activeByAgent[agent.agent_id] || [];
+        lanes.push({ title: agent.agent_id, subtitle: `${itemsForAgent.length} 个进行中/待处理`, items: itemsForAgent });
+      }
+      lanes.push({ title: '已关闭', subtitle: `${closed.length} 个`, items: closed });
+
+      document.getElementById('storyboard').innerHTML = lanes.map(lane => `
+        <div class="lane">
+          <h3>${lane.title}</h3>
+          <div class="lane-sub">${lane.subtitle}</div>
+          ${lane.items.length ? lane.items.map(issueCard).join('') : '<div class="lane-empty">当前为空</div>'}
+        </div>
+      `).join('');
+
+      document.querySelectorAll('.issue-card').forEach(el => {
+        el.addEventListener('click', () => openIssueModal(el.dataset.issueId));
+      });
+    }
+
+    function renderIssueList() {
+      filteredIssues = getFilteredIssues();
+      const start = (currentPage - 1) * pageSize;
+      const pageItems = filteredIssues.slice(start, start + pageSize);
+      const root = document.getElementById('issueList');
+      if (!pageItems.length) {
+        root.innerHTML = '<div class="empty">暂无 issue</div>';
+      } else {
+        root.innerHTML = pageItems.map(item => {
+          const issue = item.issue;
+          const active = issue.id === selectedIssueId ? 'active' : '';
+          return `
+            <div class="issue-item ${active}" data-issue-id="${issue.id}">
+              <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
+              <div style="margin-top:6px;">
+                <span class="pill">${issue.status}</span>
+                <span class="pill">${issue.priority}</span>
+                <span class="pill">${item.current_agent_id}</span>
+              </div>
+            </div>`;
+        }).join('');
+        root.querySelectorAll('.issue-item').forEach(el => {
+          el.addEventListener('click', () => {
+            selectedIssueId = el.dataset.issueId;
+            renderIssueList();
+            renderIssuePreview();
+          });
+        });
+      }
+      const totalPages = Math.max(1, Math.ceil(filteredIssues.length / pageSize));
+      document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页 · 共 ${filteredIssues.length} 条`;
+      document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+      document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+    }
+
+    function renderIssuePreview() {
+      const wrap = getAllIssuesEnriched().find(x => x.issue.id === selectedIssueId) || filteredIssues[0];
+      const root = document.getElementById('issuePreview');
+      if (!wrap) {
+        root.innerHTML = '<div class="empty">暂无 issue 详情</div>';
         return;
       }
-      selectedIssueId = issueObj.issue.id;
-      const issue = issueObj.issue;
-      const attempts = issueObj.attempts || [];
-      const latest = attempts.length ? attempts[attempts.length - 1] : null;
-      const agentMap = (boardData?.agent_workload || []).find(a => a.issues.some(i => i.issue_id === issue.id));
-
+      const issue = wrap.issue;
+      const latest = wrap.attempts?.length ? wrap.attempts[wrap.attempts.length - 1] : null;
       root.innerHTML = `
         <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
-        <div style="margin-top:8px;">
-          <span class="pill">${issue.status}</span>
-          <span class="pill">${issue.priority}</span>
-        </div>
+        <div style="margin-top:8px;"><span class="pill">${issue.status}</span><span class="pill">${issue.priority}</span><span class="pill">${wrap.current_agent_id}</span></div>
         <div class="kv">
-          <div>Issue ID</div><div><code>${issue.id}</code></div>
-          <div>当前 Agent</div><div><code>${agentMap?.agent_id || 'unassigned'}</code></div>
+          <div>当前 Agent</div><div><code>${wrap.current_agent_id}</code></div>
+          <div>当前角色</div><div>${wrap.current_agent_role || ''}</div>
+          <div>Session</div><div><code>${wrap.current_agent_session || ''}</code></div>
+          <div>Blocker</div><div>${issue.blocker_summary || ''}</div>
+          <div>Required Input</div><div>${issue.required_human_input || ''}</div>
+          <div>Description</div><div>${issue.description_md || ''}</div>
+        </div>
+        <div class="actions" style="margin-top:12px;">
+          <button onclick="openIssueModal('${issue.id}')">打开弹窗详情</button>
+        </div>
+      `;
+    }
+
+    async function renderHumanResolve(issueId, action) {
+      const out = await resolveHuman(issueId, action, `resolved_from_ui:${action}`);
+      showToast(out.ok ? `人工队列已处理：${action}` : `处理失败: ${out.error || 'unknown error'}`, !out.ok);
+    }
+
+    function modalActions(issueWrap) {
+      const issue = issueWrap.issue;
+      const latest = issueWrap.attempts?.length ? issueWrap.attempts[issueWrap.attempts.length - 1] : null;
+      const paused = isPaused();
+      return `
+        <div class="actions">
+          <button class="secondary" ${paused ? 'disabled' : ''} onclick="window.retryIssue('${issue.id}')">重试</button>
+          <button class="danger" ${paused || !latest?.dispatch_ref ? 'disabled' : ''} onclick="window.cancelIssue('${latest?.dispatch_ref || ''}')">取消最新 Attempt</button>
+          <button onclick="window.closeIssue('${issue.id}')">关闭 Issue</button>
+        </div>
+      `;
+    }
+
+    function openIssueModal(issueId) {
+      const wrap = getAllIssuesEnriched().find(x => x.issue.id === issueId);
+      if (!wrap) return;
+      const issue = wrap.issue;
+      const latest = wrap.attempts?.length ? wrap.attempts[wrap.attempts.length - 1] : null;
+      const timeline = latest ? (wrap.timelines?.[latest.id] || []) : [];
+      document.getElementById('modalTitle').textContent = `#${issue.issue_no} ${issue.title}`;
+      document.getElementById('modalSubtitle').textContent = `${wrap.current_agent_id} · ${issue.status}`;
+      document.getElementById('modalBody').innerHTML = `
+        <div class="kv">
+          <div>当前 Agent</div><div><code>${wrap.current_agent_id}</code></div>
+          <div>当前角色</div><div>${wrap.current_agent_role || ''}</div>
+          <div>Session</div><div><code>${wrap.current_agent_session || ''}</code></div>
           <div>Owner</div><div><code>${issue.owner_employee_id || ''}</code></div>
           <div>Assigned</div><div><code>${issue.assigned_employee_id || ''}</code></div>
-          <div>Attempt No</div><div>${issue.active_attempt_no ?? ''}</div>
           <div>Blocker</div><div>${issue.blocker_summary || ''}</div>
           <div>Required Input</div><div>${issue.required_human_input || ''}</div>
           <div>Description</div><div>${issue.description_md || ''}</div>
           <div>Acceptance</div><div>${issue.acceptance_criteria_md || ''}</div>
         </div>
-        <div class="actions">
-          <button class="secondary" id="retryBtn">重试</button>
-          <button class="danger" id="cancelBtn">取消最新 Attempt</button>
-          <button id="closeBtn">关闭 Issue</button>
-        </div>
-      `;
-
-      const retryBtn = document.getElementById('retryBtn');
-      const cancelBtn = document.getElementById('cancelBtn');
-      const closeBtn = document.getElementById('closeBtn');
-      const paused = isPaused();
-      retryBtn.disabled = paused;
-      cancelBtn.disabled = paused || !latest?.dispatch_ref;
-      closeBtn.disabled = false;
-
-      retryBtn.onclick = async () => doRetry(issue.id, latest);
-      closeBtn.onclick = async () => {
-        if (!confirm(`确认关闭 issue #${issue.issue_no}？`)) return;
-        const out = await doClose(issue.id);
-        showToast(out.ok ? 'Issue 已关闭' : `关闭失败: ${out.error || 'unknown error'}`, !out.ok);
-      };
-      cancelBtn.onclick = async () => {
-        if (!latest?.dispatch_ref) {
-          showToast('当前没有可取消的 latest attempt dispatch_ref', true);
-          return;
-        }
-        if (!confirm(`确认取消 latest attempt #${latest.attempt_no}？`)) return;
-        const out = await doCancel(latest.dispatch_ref);
-        showToast(out.ok ? 'Latest attempt 已取消' : `取消失败: ${out.error || 'unknown error'}`, !out.ok);
-      };
-
-      if (!attempts.length) {
-        document.getElementById('attemptTimeline').innerHTML = '<div class="empty">暂无 attempt / timeline</div>';
-        cancelBtn.disabled = true;
-        retryBtn.disabled = true;
-        return;
-      }
-      const timeline = issueObj.timelines?.[latest.id] || [];
-      document.getElementById('attemptTimeline').innerHTML = `
-        <div><strong>最新 Attempt #${latest.attempt_no}</strong></div>
-        <div class="kv">
-          <div>Attempt ID</div><div><code>${latest.id}</code></div>
-          <div>状态</div><div>${latest.status}</div>
-          <div>Dispatch Ref</div><div><code>${latest.dispatch_ref || ''}</code></div>
-          <div>结果</div><div>${latest.result_summary || latest.failure_summary || ''}</div>
-        </div>
+        ${modalActions(wrap)}
+        <h3 style="margin-top:18px;">Attempt Timeline</h3>
         ${timeline.length ? renderTable(timeline, [
           ['checkpoint_no', '#'], ['kind', '类型'], ['summary', '摘要'], ['next_action', '下一步'], ['percent_complete', '进度%'],
-        ]) : '<div class="empty">暂无 checkpoint timeline</div>'}
+        ]) : '<div class="empty">暂无 timeline</div>'}
       `;
+      document.getElementById('modalBackdrop').classList.add('show');
+    }
+
+    function closeIssueModal() {
+      document.getElementById('modalBackdrop').classList.remove('show');
+    }
+
+    window.closeIssue = async function(issueId) {
+      if (!confirm('确认关闭这个 Issue？')) return;
+      const out = await doClose(issueId);
+      showToast(out.ok ? 'Issue 已关闭' : `关闭失败: ${out.error || 'unknown error'}`, !out.ok);
+      closeIssueModal();
+    }
+    window.cancelIssue = async function(dispatchRef) {
+      if (!dispatchRef) { showToast('当前没有可取消的 dispatch_ref', true); return; }
+      if (!confirm('确认取消最新 Attempt？')) return;
+      const out = await doCancel(dispatchRef);
+      showToast(out.ok ? 'Latest attempt 已取消' : `取消失败: ${out.error || 'unknown error'}`, !out.ok);
+      closeIssueModal();
+    }
+    window.retryIssue = async function(issueId) {
+      const wrap = getAllIssuesEnriched().find(x => x.issue.id === issueId);
+      const latest = wrap?.attempts?.length ? wrap.attempts[wrap.attempts.length - 1] : null;
+      await doRetry(issueId, latest);
     }
 
     async function loadData() {
@@ -384,10 +498,12 @@
         boardData = await boardRes.json();
         issuesData = await issuesRes.json();
         workflowControl = controlRes.result;
-        if (!selectedIssueId && issuesData.length) selectedIssueId = issuesData[0].issue.id;
-        renderBoard(boardData);
+        renderSummary();
+        renderFilters();
+        currentPage = 1;
+        renderStoryboard();
         renderIssueList();
-        renderIssueDetail();
+        renderIssuePreview();
       } catch (err) {
         status.innerHTML = `<span class="err">加载失败：${err.message}</span>`;
       }
@@ -401,6 +517,17 @@
     document.getElementById('pauseBtn').addEventListener('click', async () => {
       const out = await toggleWorkflow('paused');
       showToast(out.ok ? '总流程已暂停' : `暂停失败: ${out.error || 'unknown error'}`, !out.ok);
+    });
+    document.getElementById('closeModalBtn').addEventListener('click', closeIssueModal);
+    document.getElementById('modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') closeIssueModal(); });
+    document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
+    document.getElementById('agentFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
+    document.getElementById('statusFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
+    document.getElementById('sortSelect').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
+    document.getElementById('prevPageBtn').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderIssueList(); renderIssuePreview(); } });
+    document.getElementById('nextPageBtn').addEventListener('click', () => {
+      const totalPages = Math.max(1, Math.ceil(getFilteredIssues().length / pageSize));
+      if (currentPage < totalPages) { currentPage++; renderIssueList(); renderIssuePreview(); }
     });
     loadData();
   </script>

@@ -14,7 +14,7 @@ OUT.parent.mkdir(parents=True, exist_ok=True)
 def main():
     svc = AgentTeamService()
     try:
-        issues = svc.list_issues(project_key='agent-team-core')['items']
+        issues = svc.list_issues()['items']
         details = []
         for item in issues:
             detail = svc.get_issue(issue_id=item['id'])

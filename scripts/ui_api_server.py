@@ -6,7 +6,7 @@ import subprocess
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 ROOT = Path('/root/.openclaw/workspace-agent-team')
 sys.path.insert(0, str(ROOT))
@@ -55,6 +55,19 @@ class Handler(BaseHTTPRequestHandler):
                     runtime_binding_key=payload['runtime_binding_key'],
                     payload=payload['payload'],
                     reason=payload.get('reason', 'retry_from_ui'),
+                )
+            elif parsed.path == '/api/human/resolve':
+                out = svc.resolve_human_action(
+                    issue_id=payload['issue_id'],
+                    resolution=payload['resolution'],
+                    note=payload.get('note', ''),
+                )
+            elif parsed.path == '/api/human/enqueue':
+                out = svc.enqueue_human(
+                    issue_id=payload['issue_id'],
+                    human_type=payload['human_type'],
+                    prompt=payload['prompt'],
+                    required_input=payload['required_input'],
                 )
             else:
                 self._json(404, {'error': 'unknown api route'})

@@ -30,8 +30,10 @@
     .danger:hover { background: #dc2626; }
     .secondary { background: #475569; }
     .secondary:hover { background: #64748b; }
-    .issue-item { padding: 10px 12px; border: 1px solid #24314f; border-radius: 12px; margin-bottom: 10px; cursor: pointer; }
-    .issue-item:hover { background: #172036; }
+    .success { background: #15803d; }
+    .success:hover { background: #16a34a; }
+    .issue-item, .hq-item { padding: 10px 12px; border: 1px solid #24314f; border-radius: 12px; margin-bottom: 10px; cursor: pointer; }
+    .issue-item:hover, .hq-item:hover { background: #172036; }
     .issue-item.active { border-color: #60a5fa; background: #172036; }
     .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: #1e293b; border: 1px solid #334155; margin-right: 6px; }
     .kv { display: grid; grid-template-columns: 140px 1fr; gap: 8px; margin-top: 8px; }
@@ -44,7 +46,7 @@
 <body>
   <div class="wrap">
     <h1>Agent Team Board v1</h1>
-    <p class="muted">活数据 Board + Issue Detail + Attempt Timeline + 最小操作按钮</p>
+    <p class="muted">活数据 Board + Issue Detail + Attempt Timeline + Human Queue</p>
 
     <div class="toolbar">
       <button id="reloadBtn">重新加载数据</button>
@@ -90,6 +92,7 @@
 
   <script>
     let issuesData = [];
+    let boardData = null;
     let selectedIssueId = null;
 
     function renderTable(rows, cols) {
@@ -108,6 +111,12 @@
       return await res.json();
     }
 
+    async function resolveHuman(issueId, resolution, note='') {
+      const out = await apiPost('/api/human/resolve', { issue_id: issueId, resolution, note });
+      await loadData();
+      return out;
+    }
+
     function renderBoard(data) {
       const metrics = [
         ['项目数', data.project_view?.length || 0],
@@ -124,12 +133,40 @@
       document.getElementById('agentQueue').innerHTML = renderTable(data.agent_queue, [
         ['issue_no', 'Issue'], ['title', 'Title'], ['priority', 'Priority'], ['status', 'Status'], ['active_attempt_no', 'Attempt'],
       ]);
-      document.getElementById('humanQueue').innerHTML = renderTable(data.human_queue, [
-        ['issue_no', 'Issue'], ['title', 'Title'], ['status', 'Status'], ['required_human_input', 'Required Input'],
-      ]);
+      renderHumanQueue(data.human_queue || []);
       document.getElementById('employeeView').innerHTML = renderTable(data.employee_view, [
         ['employee_key', 'Employee'], ['role', 'Role'], ['status', 'Status'], ['session_key', 'Session Key'],
       ]);
+    }
+
+    function renderHumanQueue(items) {
+      const root = document.getElementById('humanQueue');
+      if (!items.length) {
+        root.innerHTML = '<div class="empty">当前为空</div>';
+        return;
+      }
+      root.innerHTML = items.map(item => `
+        <div class="hq-item">
+          <div><strong>#${item.issue_no}</strong> ${item.title}</div>
+          <div style="margin-top:6px;">
+            <span class="pill">${item.status}</span>
+          </div>
+          <div class="muted" style="margin-top:8px;">${item.blocker_summary || ''}</div>
+          <div class="actions">
+            <button class="success" data-action="approve" data-issue-id="${item.id}">Approve</button>
+            <button class="danger" data-action="reject" data-issue-id="${item.id}">Reject</button>
+            <button class="secondary" data-action="needs_info" data-issue-id="${item.id}">Needs Info</button>
+          </div>
+        </div>
+      `).join('');
+      root.querySelectorAll('button[data-action]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const issueId = btn.dataset.issueId;
+          const action = btn.dataset.action;
+          const out = await resolveHuman(issueId, action, `resolved_from_ui:${action}`);
+          alert(out.ok ? `Human queue 已处理：${action}` : `处理失败: ${out.error || 'unknown error'}`);
+        });
+      });
     }
 
     function renderIssueList() {
@@ -269,10 +306,10 @@
         ]);
         if (!boardRes.ok) throw new Error(`board HTTP ${boardRes.status}`);
         if (!issuesRes.ok) throw new Error(`issues HTTP ${issuesRes.status}`);
-        const board = await boardRes.json();
+        boardData = await boardRes.json();
         issuesData = await issuesRes.json();
         if (!selectedIssueId && issuesData.length) selectedIssueId = issuesData[0].issue.id;
-        renderBoard(board);
+        renderBoard(boardData);
         renderIssueList();
         renderIssueDetail();
         status.innerHTML = '<span class="ok">已加载真实数据</span>';

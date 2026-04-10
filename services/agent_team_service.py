@@ -453,6 +453,49 @@ class AgentTeamService:
             'total': len(rows),
         }
 
+    def get_agent_workload(self) -> dict[str, Any]:
+        rows = self.db.fetch_all(
+            '''SELECT i.id AS issue_id,
+                      i.issue_no,
+                      i.title,
+                      i.status,
+                      i.priority,
+                      ei.employee_key,
+                      ei.display_name,
+                      rt.template_key AS role,
+                      rb.agent_id,
+                      rb.session_key,
+                      rb.binding_key
+               FROM issues i
+               LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id
+               LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
+               LEFT JOIN runtime_bindings rb ON rb.employee_id = ei.id AND rb.is_primary = 1
+               ORDER BY rb.agent_id, i.issue_no'''
+        )
+        grouped: dict[str, Any] = {}
+        for row in rows:
+            agent_id = row['agent_id'] or 'unassigned'
+            grouped.setdefault(agent_id, {
+                'agent_id': agent_id,
+                'session_key': row['session_key'],
+                'binding_key': row['binding_key'],
+                'role': row['role'],
+                'employee_key': row['employee_key'],
+                'display_name': row['display_name'],
+                'issues': [],
+            })
+            grouped[agent_id]['issues'].append({
+                'issue_id': row['issue_id'],
+                'issue_no': row['issue_no'],
+                'title': row['title'],
+                'status': row['status'],
+                'priority': row['priority'],
+            })
+        return {
+            'items': list(grouped.values()),
+            'total': len(grouped),
+        }
+
     def get_board_snapshot(self) -> dict[str, Any]:
         agent_queue = self.db.fetch_all('SELECT * FROM v_agent_queue ORDER BY updated_at_ms DESC')
         human_queue = self.db.fetch_all('SELECT * FROM v_human_queue ORDER BY updated_at_ms DESC')
@@ -463,6 +506,7 @@ class AgentTeamService:
                       p.project_key,
                       rt.template_key AS role,
                       ei.status,
+                      rb.agent_id,
                       rb.session_key
                FROM employee_instances ei
                JOIN role_templates rt ON rt.id = ei.role_template_id
@@ -484,6 +528,7 @@ class AgentTeamService:
             'agent_queue': [dict(r) for r in agent_queue],
             'human_queue': [dict(r) for r in human_queue],
             'employee_view': [dict(r) for r in employees],
+            'agent_workload': self.get_agent_workload()['items'],
         }
 
     def _record_checkpoint(

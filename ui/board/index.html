@@ -7,7 +7,7 @@
   <style>
     :root { color-scheme: dark; }
     body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; margin: 0; background: #0b1020; color: #e8ecf3; }
-    .wrap { max-width: 1500px; margin: 0 auto; padding: 24px; }
+    .wrap { max-width: 1600px; margin: 0 auto; padding: 24px; }
     h1,h2,h3 { margin: 0 0 12px; }
     .muted { color: #94a3b8; }
     .desc { color: #cbd5e1; font-size: 14px; line-height: 1.6; }
@@ -33,7 +33,8 @@
     .secondary:hover { background: #64748b; }
     .success { background: #15803d; }
     .success:hover { background: #16a34a; }
-    .issue-item, .hq-item { padding: 10px 12px; border: 1px solid #24314f; border-radius: 12px; margin-bottom: 10px; cursor: pointer; }
+    .issue-item, .hq-item, .agent-block { padding: 10px 12px; border: 1px solid #24314f; border-radius: 12px; margin-bottom: 10px; }
+    .issue-item { cursor: pointer; }
     .issue-item:hover, .hq-item:hover { background: #172036; }
     .issue-item.active { border-color: #60a5fa; background: #172036; }
     .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: #1e293b; border: 1px solid #334155; margin-right: 6px; }
@@ -41,18 +42,17 @@
     .kv div:nth-child(odd) { color: #94a3b8; }
     code { color: #c4b5fd; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-    .toast {
-      position: fixed; right: 20px; bottom: 20px; background: #111827; border: 1px solid #374151;
-      color: white; padding: 12px 14px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.25); display: none; z-index: 9999;
-    }
+    .toast { position: fixed; right: 20px; bottom: 20px; background: #111827; border: 1px solid #374151; color: white; padding: 12px 14px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.25); display: none; z-index: 9999; }
     .toast.show { display: block; }
+    .agent-issues { margin-top: 8px; }
+    .agent-issues li { margin: 6px 0; }
     @media (max-width: 1200px) { .cols3 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Agent Team 控制台 v1</h1>
-    <p class="muted">活数据总览 + Issue 详情 + Attempt 时间线 + Human Queue 操作</p>
+    <p class="muted">活数据总览 + Agent Workload + Issue 详情 + Attempt 时间线 + Human Queue 操作</p>
 
     <div class="toolbar">
       <button id="reloadBtn">重新加载数据</button>
@@ -77,9 +77,15 @@
       </div>
       <div class="card">
         <h2>员工视图</h2>
-        <div class="desc" style="margin-bottom:10px;">这里的“员工”不是现实员工人数，而是当前数据库里的 <strong>employee_instances</strong>，包含不同项目里的角色实例和共享 CEO。</div>
+        <div class="desc" style="margin-bottom:10px;">这里显示的是数据库里的角色实例（employee_instances），不是现实员工人数。</div>
         <div id="employeeView"></div>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h2>Agent Workload（按 Agent 看 Issue）</h2>
+      <div class="desc" style="margin-bottom:10px;">这里直接回答“每个 issue 属于哪个 agent，以及每个 agent 下都有哪些 issue”。</div>
+      <div id="agentWorkload"></div>
     </div>
 
     <div class="grid cols3" style="margin-top:20px;">
@@ -142,9 +148,7 @@
         ['待人工处理', data.human_queue?.length || 0],
         ['角色实例数', data.employee_view?.length || 0],
       ];
-      document.getElementById('summary').innerHTML = metrics.map(([k, v]) =>
-        `<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`
-      ).join('');
+      document.getElementById('summary').innerHTML = metrics.map(([k, v]) => `<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
       document.getElementById('projectView').innerHTML = renderTable(data.project_view, [
         ['project_key', '项目'], ['status', '状态'], ['total_issues', '总 Issue'], ['closed_issues', '已关闭'], ['agent_queue_issues', 'Agent 队列'], ['human_queue_issues', '人工队列'],
       ]);
@@ -153,8 +157,27 @@
       ]);
       renderHumanQueue(data.human_queue || []);
       document.getElementById('employeeView').innerHTML = renderTable(data.employee_view, [
-        ['employee_key', '实例 Key'], ['display_name', '显示名'], ['role', '角色'], ['project_key', '项目'], ['session_key', 'Session'],
+        ['employee_key', '实例 Key'], ['display_name', '显示名'], ['role', '角色'], ['project_key', '项目'], ['agent_id', 'Agent'],
       ]);
+      renderAgentWorkload(data.agent_workload || []);
+    }
+
+    function renderAgentWorkload(items) {
+      const root = document.getElementById('agentWorkload');
+      if (!items.length) {
+        root.innerHTML = '<div class="empty">当前为空</div>';
+        return;
+      }
+      root.innerHTML = items.map(item => `
+        <div class="agent-block">
+          <div><strong>${item.agent_id}</strong> <span class="pill">${item.role || ''}</span></div>
+          <div class="muted" style="margin-top:6px;">${item.display_name || ''} · ${item.employee_key || ''}</div>
+          <div class="muted" style="margin-top:4px;"><code>${item.session_key || ''}</code></div>
+          <ul class="agent-issues">
+            ${item.issues.length ? item.issues.map(issue => `<li>#${issue.issue_no} ${issue.title} <span class="pill">${issue.status}</span></li>`).join('') : '<li class="muted">当前无 issue</li>'}
+          </ul>
+        </div>
+      `).join('');
     }
 
     function renderHumanQueue(items) {
@@ -166,9 +189,7 @@
       root.innerHTML = items.map(item => `
         <div class="hq-item">
           <div><strong>#${item.issue_no}</strong> ${item.title}</div>
-          <div style="margin-top:6px;">
-            <span class="pill">${item.status}</span>
-          </div>
+          <div style="margin-top:6px;"><span class="pill">${item.status}</span></div>
           <div class="muted" style="margin-top:8px;">${item.blocker_summary || ''}</div>
           <div class="muted" style="margin-top:4px;">需要：${item.required_human_input || ''}</div>
           <div class="actions">
@@ -251,6 +272,7 @@
       const issue = issueObj.issue;
       const attempts = issueObj.attempts || [];
       const latest = attempts.length ? attempts[attempts.length - 1] : null;
+      const agentMap = (boardData?.agent_workload || []).find(a => a.issues.some(i => i.issue_id === issue.id));
 
       root.innerHTML = `
         <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
@@ -260,6 +282,7 @@
         </div>
         <div class="kv">
           <div>Issue ID</div><div><code>${issue.id}</code></div>
+          <div>当前 Agent</div><div><code>${agentMap?.agent_id || 'unassigned'}</code></div>
           <div>Owner</div><div><code>${issue.owner_employee_id || ''}</code></div>
           <div>Assigned</div><div><code>${issue.assigned_employee_id || ''}</code></div>
           <div>Attempt No</div><div>${issue.active_attempt_no ?? ''}</div>

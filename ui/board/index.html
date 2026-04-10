@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Agent Team Board v1</title>
+  <title>Agent Team 控制台 v1</title>
   <style>
     :root { color-scheme: dark; }
     body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; margin: 0; background: #0b1020; color: #e8ecf3; }
     .wrap { max-width: 1500px; margin: 0 auto; padding: 24px; }
     h1,h2,h3 { margin: 0 0 12px; }
     .muted { color: #94a3b8; }
+    .desc { color: #cbd5e1; font-size: 14px; line-height: 1.6; }
     .grid { display: grid; gap: 16px; }
     .cards { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     .cols2 { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
@@ -40,13 +41,18 @@
     .kv div:nth-child(odd) { color: #94a3b8; }
     code { color: #c4b5fd; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .toast {
+      position: fixed; right: 20px; bottom: 20px; background: #111827; border: 1px solid #374151;
+      color: white; padding: 12px 14px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.25); display: none; z-index: 9999;
+    }
+    .toast.show { display: block; }
     @media (max-width: 1200px) { .cols3 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Agent Team Board v1</h1>
-    <p class="muted">活数据 Board + Issue Detail + Attempt Timeline + Human Queue</p>
+    <h1>Agent Team 控制台 v1</h1>
+    <p class="muted">活数据总览 + Issue 详情 + Attempt 时间线 + Human Queue 操作</p>
 
     <div class="toolbar">
       <button id="reloadBtn">重新加载数据</button>
@@ -57,43 +63,55 @@
 
     <div class="grid cols2" style="margin-top:20px;">
       <div class="card">
-        <h2>Project View</h2>
+        <h2>项目视图</h2>
         <div id="projectView"></div>
       </div>
       <div class="card">
-        <h2>Agent Queue</h2>
+        <h2>Agent 队列</h2>
         <div id="agentQueue"></div>
       </div>
       <div class="card">
-        <h2>Human Queue</h2>
+        <h2>Human Queue（待人工处理）</h2>
+        <div class="desc" style="margin-bottom:10px;">这里显示当前卡在人工输入/批准/动作决策的 issue。点击按钮后会真实调用后端接口。</div>
         <div id="humanQueue"></div>
       </div>
       <div class="card">
-        <h2>Employee View</h2>
+        <h2>员工视图</h2>
+        <div class="desc" style="margin-bottom:10px;">这里的“员工”不是现实员工人数，而是当前数据库里的 <strong>employee_instances</strong>，包含不同项目里的角色实例和共享 CEO。</div>
         <div id="employeeView"></div>
       </div>
     </div>
 
     <div class="grid cols3" style="margin-top:20px;">
       <div class="card">
-        <h2>Issue List</h2>
+        <h2>Issue 列表</h2>
         <div id="issueList"></div>
       </div>
       <div class="card">
-        <h2>Issue Detail</h2>
+        <h2>Issue 详情</h2>
         <div id="issueDetail"></div>
       </div>
       <div class="card">
-        <h2>Attempt Timeline</h2>
+        <h2>Attempt 时间线</h2>
         <div id="attemptTimeline"></div>
       </div>
     </div>
   </div>
 
+  <div id="toast" class="toast"></div>
+
   <script>
     let issuesData = [];
     let boardData = null;
     let selectedIssueId = null;
+
+    function showToast(msg, isError=false) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.style.borderColor = isError ? '#ef4444' : '#22c55e';
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2600);
+    }
 
     function renderTable(rows, cols) {
       if (!rows || !rows.length) return '<div class="empty">当前为空</div>';
@@ -120,22 +138,22 @@
     function renderBoard(data) {
       const metrics = [
         ['项目数', data.project_view?.length || 0],
-        ['Agent Queue', data.agent_queue?.length || 0],
-        ['Human Queue', data.human_queue?.length || 0],
-        ['员工数', data.employee_view?.length || 0],
+        ['Agent 队列', data.agent_queue?.length || 0],
+        ['待人工处理', data.human_queue?.length || 0],
+        ['角色实例数', data.employee_view?.length || 0],
       ];
       document.getElementById('summary').innerHTML = metrics.map(([k, v]) =>
         `<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`
       ).join('');
       document.getElementById('projectView').innerHTML = renderTable(data.project_view, [
-        ['project_key', 'Project'], ['status', 'Status'], ['total_issues', 'Total'], ['closed_issues', 'Closed'], ['agent_queue_issues', 'Agent Queue'], ['human_queue_issues', 'Human Queue'],
+        ['project_key', '项目'], ['status', '状态'], ['total_issues', '总 Issue'], ['closed_issues', '已关闭'], ['agent_queue_issues', 'Agent 队列'], ['human_queue_issues', '人工队列'],
       ]);
       document.getElementById('agentQueue').innerHTML = renderTable(data.agent_queue, [
-        ['issue_no', 'Issue'], ['title', 'Title'], ['priority', 'Priority'], ['status', 'Status'], ['active_attempt_no', 'Attempt'],
+        ['issue_no', 'Issue'], ['title', '标题'], ['priority', '优先级'], ['status', '状态'], ['active_attempt_no', 'Attempt'],
       ]);
       renderHumanQueue(data.human_queue || []);
       document.getElementById('employeeView').innerHTML = renderTable(data.employee_view, [
-        ['employee_key', 'Employee'], ['role', 'Role'], ['status', 'Status'], ['session_key', 'Session Key'],
+        ['employee_key', '实例 Key'], ['display_name', '显示名'], ['role', '角色'], ['project_key', '项目'], ['session_key', 'Session'],
       ]);
     }
 
@@ -152,10 +170,11 @@
             <span class="pill">${item.status}</span>
           </div>
           <div class="muted" style="margin-top:8px;">${item.blocker_summary || ''}</div>
+          <div class="muted" style="margin-top:4px;">需要：${item.required_human_input || ''}</div>
           <div class="actions">
-            <button class="success" data-action="approve" data-issue-id="${item.id}">Approve</button>
-            <button class="danger" data-action="reject" data-issue-id="${item.id}">Reject</button>
-            <button class="secondary" data-action="needs_info" data-issue-id="${item.id}">Needs Info</button>
+            <button class="success" data-action="approve" data-issue-id="${item.id}">批准</button>
+            <button class="danger" data-action="reject" data-issue-id="${item.id}">拒绝</button>
+            <button class="secondary" data-action="needs_info" data-issue-id="${item.id}">需要补充信息</button>
           </div>
         </div>
       `).join('');
@@ -164,7 +183,7 @@
           const issueId = btn.dataset.issueId;
           const action = btn.dataset.action;
           const out = await resolveHuman(issueId, action, `resolved_from_ui:${action}`);
-          alert(out.ok ? `Human queue 已处理：${action}` : `处理失败: ${out.error || 'unknown error'}`);
+          showToast(out.ok ? `人工队列已处理：${action}` : `处理失败: ${out.error || 'unknown error'}`, !out.ok);
         });
       });
     }
@@ -214,10 +233,10 @@
 
     async function doRetry(issueId, latestAttempt) {
       if (!latestAttempt?.runtime_binding_id) {
-        alert('当前 issue 没有 runtime_binding_id，无法直接 retry');
+        showToast('当前 issue 没有 runtime_binding_id，无法直接 retry', true);
         return;
       }
-      alert('当前 UI 版本暂不支持从 attempt 自动恢复 payload。后端接口已就绪，下一步可补可视化 retry payload 编辑器。');
+      showToast('Retry 入口已到位，下一步补 payload 编辑器后即可完整从 UI 重试。', false);
     }
 
     function renderIssueDetail() {
@@ -250,9 +269,9 @@
           <div>Acceptance</div><div>${issue.acceptance_criteria_md || ''}</div>
         </div>
         <div class="actions">
-          <button class="secondary" id="retryBtn">Retry</button>
-          <button class="danger" id="cancelBtn">Cancel Latest Attempt</button>
-          <button id="closeBtn">Close Issue</button>
+          <button class="secondary" id="retryBtn">重试</button>
+          <button class="danger" id="cancelBtn">取消最新 Attempt</button>
+          <button id="closeBtn">关闭 Issue</button>
         </div>
       `;
 
@@ -263,16 +282,16 @@
       closeBtn.onclick = async () => {
         if (!confirm(`确认关闭 issue #${issue.issue_no}？`)) return;
         const out = await doClose(issue.id);
-        alert(out.ok ? 'Issue 已关闭' : `关闭失败: ${out.error || 'unknown error'}`);
+        showToast(out.ok ? 'Issue 已关闭' : `关闭失败: ${out.error || 'unknown error'}`, !out.ok);
       };
       cancelBtn.onclick = async () => {
         if (!latest?.dispatch_ref) {
-          alert('当前没有可取消的 latest attempt dispatch_ref');
+          showToast('当前没有可取消的 latest attempt dispatch_ref', true);
           return;
         }
         if (!confirm(`确认取消 latest attempt #${latest.attempt_no}？`)) return;
         const out = await doCancel(latest.dispatch_ref);
-        alert(out.ok ? 'Latest attempt 已取消' : `取消失败: ${out.error || 'unknown error'}`);
+        showToast(out.ok ? 'Latest attempt 已取消' : `取消失败: ${out.error || 'unknown error'}`, !out.ok);
       };
 
       if (!attempts.length) {
@@ -283,15 +302,15 @@
       }
       const timeline = issueObj.timelines?.[latest.id] || [];
       document.getElementById('attemptTimeline').innerHTML = `
-        <div><strong>Latest Attempt #${latest.attempt_no}</strong></div>
+        <div><strong>最新 Attempt #${latest.attempt_no}</strong></div>
         <div class="kv">
           <div>Attempt ID</div><div><code>${latest.id}</code></div>
-          <div>Status</div><div>${latest.status}</div>
+          <div>状态</div><div>${latest.status}</div>
           <div>Dispatch Ref</div><div><code>${latest.dispatch_ref || ''}</code></div>
-          <div>Result</div><div>${latest.result_summary || latest.failure_summary || ''}</div>
+          <div>结果</div><div>${latest.result_summary || latest.failure_summary || ''}</div>
         </div>
         ${timeline.length ? renderTable(timeline, [
-          ['checkpoint_no', '#'], ['kind', 'Kind'], ['summary', 'Summary'], ['next_action', 'Next'], ['percent_complete', '%'],
+          ['checkpoint_no', '#'], ['kind', '类型'], ['summary', '摘要'], ['next_action', '下一步'], ['percent_complete', '进度%'],
         ]) : '<div class="empty">暂无 checkpoint timeline</div>'}
       `;
     }

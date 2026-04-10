@@ -457,9 +457,16 @@ class AgentTeamService:
         agent_queue = self.db.fetch_all('SELECT * FROM v_agent_queue ORDER BY updated_at_ms DESC')
         human_queue = self.db.fetch_all('SELECT * FROM v_human_queue ORDER BY updated_at_ms DESC')
         employees = self.db.fetch_all(
-            '''SELECT ei.employee_key, rt.template_key AS role, ei.status, rb.session_key
+            '''SELECT ei.employee_key,
+                      ei.display_name,
+                      ei.employment_scope,
+                      p.project_key,
+                      rt.template_key AS role,
+                      ei.status,
+                      rb.session_key
                FROM employee_instances ei
                JOIN role_templates rt ON rt.id = ei.role_template_id
+               LEFT JOIN projects p ON p.id = ei.project_id
                LEFT JOIN runtime_bindings rb ON rb.employee_id = ei.id AND rb.is_primary = 1
                ORDER BY ei.employee_key'''
         )

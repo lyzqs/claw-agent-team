@@ -17,6 +17,13 @@ EXPORT_BOARD = str(ROOT / 'scripts' / 'export_board_snapshot.py')
 EXPORT_ISSUES = str(ROOT / 'scripts' / 'export_issue_details.py')
 
 
+MUTATING_WHEN_PAUSED_BLOCKED = {
+    '/api/retry',
+    '/api/human/resolve',
+    '/api/human/enqueue',
+}
+
+
 def refresh_exports() -> None:
     subprocess.run(['python3', EXPORT_BOARD], check=True, capture_output=True, text=True)
     subprocess.run(['python3', EXPORT_ISSUES], check=True, capture_output=True, text=True)
@@ -57,6 +64,15 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'ok': True, 'result': out})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})
+            return
+
+        control = load_control()
+        if control.get('mode') == 'paused' and parsed.path in MUTATING_WHEN_PAUSED_BLOCKED:
+            self._json(423, {
+                'ok': False,
+                'error': 'workflow is paused',
+                'workflow_control': control,
+            })
             return
 
         svc = AgentTeamService()

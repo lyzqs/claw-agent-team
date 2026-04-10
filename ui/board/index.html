@@ -158,6 +158,10 @@
       return out;
     }
 
+    function isPaused() {
+      return workflowControl?.mode === 'paused';
+    }
+
     function renderBoard(data) {
       const metrics = [
         ['项目数', data.project_view?.length || 0],
@@ -207,6 +211,7 @@
         root.innerHTML = '<div class="empty">当前为空</div>';
         return;
       }
+      const paused = isPaused();
       root.innerHTML = items.map(item => `
         <div class="hq-item">
           <div><strong>#${item.issue_no}</strong> ${item.title}</div>
@@ -214,9 +219,9 @@
           <div class="muted" style="margin-top:8px;">${item.blocker_summary || ''}</div>
           <div class="muted" style="margin-top:4px;">需要：${item.required_human_input || ''}</div>
           <div class="actions">
-            <button class="success" data-action="approve" data-issue-id="${item.id}">批准</button>
-            <button class="danger" data-action="reject" data-issue-id="${item.id}">拒绝</button>
-            <button class="secondary" data-action="needs_info" data-issue-id="${item.id}">需要补充信息</button>
+            <button class="success" data-action="approve" data-issue-id="${item.id}" ${paused ? 'disabled' : ''}>批准</button>
+            <button class="danger" data-action="reject" data-issue-id="${item.id}" ${paused ? 'disabled' : ''}>拒绝</button>
+            <button class="secondary" data-action="needs_info" data-issue-id="${item.id}" ${paused ? 'disabled' : ''}>需要补充信息</button>
           </div>
         </div>
       `).join('');
@@ -322,6 +327,11 @@
       const retryBtn = document.getElementById('retryBtn');
       const cancelBtn = document.getElementById('cancelBtn');
       const closeBtn = document.getElementById('closeBtn');
+      const paused = isPaused();
+      retryBtn.disabled = paused;
+      cancelBtn.disabled = paused || !latest?.dispatch_ref;
+      closeBtn.disabled = false;
+
       retryBtn.onclick = async () => doRetry(issue.id, latest);
       closeBtn.onclick = async () => {
         if (!confirm(`确认关闭 issue #${issue.issue_no}？`)) return;

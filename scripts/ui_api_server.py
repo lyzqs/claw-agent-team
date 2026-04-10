@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 ROOT = Path('/root/.openclaw/workspace-agent-team')
 sys.path.insert(0, str(ROOT))
 from services.agent_team_service import AgentTeamService  # noqa: E402
+from services.workflow_control import load_control, set_mode  # noqa: E402
 
 EXPORT_BOARD = str(ROOT / 'scripts' / 'export_board_snapshot.py')
 EXPORT_ISSUES = str(ROOT / 'scripts' / 'export_issue_details.py')
@@ -30,6 +31,13 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        if parsed.path == '/api/workflow-control':
+            self._json(200, {'ok': True, 'result': load_control()})
+            return
+        self._json(404, {'error': 'not found'})
+
     def do_POST(self):
         parsed = urlparse(self.path)
         if not parsed.path.startswith('/api/'):
@@ -41,6 +49,14 @@ class Handler(BaseHTTPRequestHandler):
             payload = json.loads(body.decode('utf-8') or '{}')
         except Exception:
             self._json(400, {'error': 'invalid json'})
+            return
+
+        if parsed.path == '/api/workflow-control':
+            try:
+                out = set_mode(payload['mode'], updated_by='ui', note=payload.get('note', ''))
+                self._json(200, {'ok': True, 'result': out})
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
             return
 
         svc = AgentTeamService()

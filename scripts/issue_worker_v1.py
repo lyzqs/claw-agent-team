@@ -8,16 +8,19 @@ from pathlib import Path
 ROOT = Path('/root/.openclaw/workspace-agent-team')
 sys.path.insert(0, str(ROOT))
 from services.agent_team_service import AgentTeamService  # noqa: E402
+from services.workflow_control import load_control  # noqa: E402
 
 OUT = ROOT / 'state' / 'worker_report.json'
 OUT.parent.mkdir(parents=True, exist_ok=True)
 
 
 def main():
+    control = load_control()
     svc = AgentTeamService()
     try:
         board = svc.get_board_snapshot()
         report = {
+            'workflow_control': control,
             'agent_queue_count': len(board['agent_queue']),
             'human_queue_count': len(board['human_queue']),
             'agent_workload_count': len(board['agent_workload']),
@@ -27,7 +30,7 @@ def main():
             'agent_workload': board['agent_workload'],
             'notes': [
                 'v1 worker is read-only and reports unfinished work.',
-                'next step: promote this into automatic retry/escalation logic.',
+                'workflow_control.mode=paused should block future auto-progress logic.',
             ],
         }
     finally:

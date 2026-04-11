@@ -26,6 +26,7 @@ def main():
                 'issue': detail['issue'],
                 'attempts': attempts,
                 'timelines': timelines,
+                'activities': svc.get_issue_activity(issue_id=item['id'])['items'],
             })
     finally:
         svc.close()

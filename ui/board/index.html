@@ -247,10 +247,18 @@
       setTimeout(() => el.classList.remove('show'), 2600);
     }
 
+    function renderTable(rows, cols) {
+      if (!rows || !rows.length) return '<div class="empty">当前为空</div>';
+      const head = `<tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr>`;
+      const body = rows.map(r => `<tr>${cols.map(c => `<td>${r[c[0]] ?? ''}</td>`).join('')}</tr>`).join('');
+      return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+    }
+
     function isPaused() { return workflowControl?.mode === 'paused'; }
 
     async function apiPost(path, payload) {
-      const res = await fetch(path, {
+      const url = new URL(path, window.location.origin).toString();
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -259,7 +267,8 @@
     }
 
     async function apiGet(path) {
-      const res = await fetch(path);
+      const url = new URL(path, window.location.origin).toString();
+      const res = await fetch(url);
       return await res.json();
     }
 
@@ -373,7 +382,7 @@
           <div class="issue-desc">${(issue.description_md || '').slice(0, 90)}</div>
           <div class="issue-footer">
             <span>${issue.active_attempt_no ? `Attempt #${issue.active_attempt_no}` : '暂无 Attempt'}</span>
-            <span>${issue.project_id || ''}</span>
+            <button class="secondary issue-open-btn" data-issue-id="${issue.id}" type="button">查看详情</button>
           </div>
         </div>
       `;
@@ -406,6 +415,10 @@
       `).join('');
 
       document.querySelectorAll('.issue-card').forEach(el => el.addEventListener('click', () => openIssueModal(el.dataset.issueId)));
+      document.querySelectorAll('.issue-open-btn').forEach(el => el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        openIssueModal(el.dataset.issueId);
+      }));
     }
 
     function renderIssueList() {
@@ -427,6 +440,7 @@
                 <span class="pill">${issue.priority}</span>
                 <span class="pill">${item.current_agent_id}</span>
               </div>
+              <div class="actions"><button class="secondary issue-open-btn" data-issue-id="${issue.id}" type="button">查看详情</button></div>
             </div>`;
         }).join('');
         root.querySelectorAll('.issue-list-item').forEach(el => {
@@ -434,6 +448,12 @@
             selectedIssueId = el.dataset.issueId;
             renderIssueList();
             renderIssuePreview();
+          });
+        });
+        root.querySelectorAll('.issue-open-btn').forEach(el => {
+          el.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            openIssueModal(el.dataset.issueId);
           });
         });
       }
@@ -451,6 +471,8 @@
         return;
       }
       const issue = wrap.issue;
+      const attempts = Array.isArray(wrap.attempts) ? wrap.attempts : [];
+      const latest = attempts.length ? attempts[attempts.length - 1] : null;
       root.innerHTML = `
         <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
         <div style="margin-top:8px;"><span class="pill">${issue.status}</span><span class="pill">${issue.priority}</span><span class="pill">${wrap.current_agent_id}</span></div>
@@ -458,6 +480,7 @@
           <div>当前 Agent</div><div><code>${wrap.current_agent_id}</code></div>
           <div>当前角色</div><div>${wrap.current_agent_role || ''}</div>
           <div>Session</div><div><code>${wrap.current_agent_session || ''}</code></div>
+          <div>当前 Attempt</div><div>${latest ? `#${latest.attempt_no}` : '暂无'}</div>
           <div>Blocker</div><div>${issue.blocker_summary || ''}</div>
           <div>Required Input</div><div>${issue.required_human_input || ''}</div>
           <div>Description</div><div>${issue.description_md || ''}</div>
@@ -470,12 +493,13 @@
 
     function modalActions(issueWrap) {
       const issue = issueWrap.issue;
-      const latest = issueWrap.attempts?.length ? issueWrap.attempts[issueWrap.attempts.length - 1] : null;
+      const attempts = Array.isArray(issueWrap.attempts) ? issueWrap.attempts : [];
+      const latest = attempts.length ? attempts[attempts.length - 1] : null;
       const paused = isPaused();
       return `
         <div class="actions">
           <button class="secondary" ${paused ? 'disabled' : ''} onclick="window.retryIssue('${issue.id}')">重试</button>
-          <button class="danger" ${paused || !latest?.dispatch_ref ? 'disabled' : ''} onclick="window.cancelIssue('${latest?.dispatch_ref || ''}')">取消最新 Attempt</button>
+          <button class="danger" ${paused || !latest || !latest.dispatch_ref ? 'disabled' : ''} onclick="window.cancelIssue('${latest?.dispatch_ref || ''}')">取消最新 Attempt</button>
           <button onclick="window.closeIssue('${issue.id}')">关闭 Issue</button>
         </div>
       `;
@@ -485,8 +509,10 @@
       const wrap = getAllIssuesEnriched().find(x => x.issue.id === issueId);
       if (!wrap) return;
       const issue = wrap.issue;
-      const latest = wrap.attempts?.length ? wrap.attempts[wrap.attempts.length - 1] : null;
+      const attempts = Array.isArray(wrap.attempts) ? wrap.attempts : [];
+      const latest = attempts.length ? attempts[attempts.length - 1] : null;
       const timeline = latest ? (wrap.timelines?.[latest.id] || []) : [];
+      const activities = Array.isArray(wrap.activities) ? wrap.activities : [];
       document.getElementById('modalTitle').textContent = `#${issue.issue_no} ${issue.title}`;
       document.getElementById('modalSubtitle').textContent = `${wrap.current_agent_id} · ${issue.status}`;
       document.getElementById('modalBody').innerHTML = `
@@ -497,6 +523,7 @@
             <div>Session</div><div><code>${wrap.current_agent_session || ''}</code></div>
             <div>Owner</div><div><code>${issue.owner_employee_id || ''}</code></div>
             <div>Assigned</div><div><code>${issue.assigned_employee_id || ''}</code></div>
+            <div>当前 Attempt</div><div>${latest ? `#${latest.attempt_no}` : '暂无'}</div>
             <div>Blocker</div><div>${issue.blocker_summary || ''}</div>
             <div>Required Input</div><div>${issue.required_human_input || ''}</div>
             <div>Description</div><div>${issue.description_md || ''}</div>
@@ -508,7 +535,13 @@
           <h3>Attempt Timeline</h3>
           ${timeline.length ? renderTable(timeline, [
             ['checkpoint_no', '#'], ['kind', '类型'], ['summary', '摘要'], ['next_action', '下一步'], ['percent_complete', '进度%'],
-          ]) : '<div class="empty">暂无 timeline</div>'}
+          ]) : '<div class="empty">当前 issue 暂无 attempt / timeline</div>'}
+        </div>
+        <div class="modal-section">
+          <h3>Activity Log</h3>
+          ${activities.length ? renderTable(activities, [
+            ['created_at_ms', '时间(ms)'], ['actor_agent_id', 'Agent'], ['actor_role', '角色'], ['action_type', '动作'], ['summary', '摘要'],
+          ]) : '<div class="empty">当前 issue 暂无 activity 记录</div>'}
         </div>
       `;
       document.getElementById('modalBackdrop').classList.add('show');
@@ -539,9 +572,11 @@
 
     async function loadData() {
       try {
+        const boardUrl = new URL(`/board/data.json?t=${Date.now()}`, window.location.origin).toString();
+        const issuesUrl = new URL(`/board/issues.json?t=${Date.now()}`, window.location.origin).toString();
         const [boardRes, issuesRes, controlRes] = await Promise.all([
-          fetch(`./data.json?t=${Date.now()}`),
-          fetch(`./issues.json?t=${Date.now()}`),
+          fetch(boardUrl),
+          fetch(issuesUrl),
           apiGet('/api/workflow-control'),
         ]);
         if (!boardRes.ok) throw new Error(`board HTTP ${boardRes.status}`);

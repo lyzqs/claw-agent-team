@@ -7,6 +7,7 @@ from typing import Any
 
 from .db import AgentTeamDB, NotFoundError, ValidationError, now_ms
 from .routing_policy import route_issue
+from .activity import ensure_issue_activity_table, record_issue_activity, fetch_issue_activity
 
 # Reuse the prototype adapter until a dedicated production adapter module is split out.
 import sys
@@ -48,6 +49,8 @@ class AttemptRecord:
 class AgentTeamService:
     def __init__(self, db: AgentTeamDB | None = None):
         self.db = db or AgentTeamDB()
+        ensure_issue_activity_table(self.db.conn)
+        self.db.commit()
 
     def close(self) -> None:
         self.db.close()
@@ -112,6 +115,15 @@ class AgentTeamService:
                 ts,
             ),
         )
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=issue_id,
+            action_type='issue_created',
+            summary=f'Issue #{issue_no} created',
+            actor_employee_id=owner['id'],
+            details={'project_key': project_key, 'title': title, 'priority': priority},
+        )
         self.db.commit()
         return {
             'issue_id': issue_id,
@@ -126,6 +138,15 @@ class AgentTeamService:
         self.db.conn.execute(
             'UPDATE issues SET status = ?, assigned_employee_id = ?, updated_at_ms = ? WHERE id = ?',
             ('triaged', employee['id'], ts, issue_id),
+        )
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=issue_id,
+            action_type='triaged',
+            summary=f'Issue triaged to {employee["employee_key"]}',
+            actor_employee_id=employee['id'],
+            details={'assign_employee_key': employee['employee_key']},
         )
         self.db.commit()
         return {
@@ -165,6 +186,15 @@ class AgentTeamService:
         self.db.conn.execute(
             'UPDATE issues SET status = ?, assigned_employee_id = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
             ('review', employee['id'], note or None, ts, issue_id),
+        )
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=issue_id,
+            action_type='handoff',
+            summary=f'Handoff {from_role} -> {to_role}',
+            actor_employee_id=employee['id'],
+            details={'to_employee_key': employee['employee_key'], 'note': note, 'routing_reason': decision.reason},
         )
         self.db.commit()
         return {
@@ -232,6 +262,16 @@ class AgentTeamService:
             created_by_employee_id=binding['employee_id'],
             percent_complete=10,
         )
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=issue_id,
+            attempt_id=attempt_id,
+            action_type='dispatch_execution',
+            summary='Execution dispatched to runtime',
+            actor_employee_id=binding['employee_id'],
+            details={'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key'], 'session_key': binding['session_key']},
+        )
         self.db.commit()
         return {
             'issue_id': issue_id,
@@ -287,6 +327,16 @@ class AgentTeamService:
                     created_by_employee_id=row['assigned_employee_id'],
                     percent_complete=100,
                 )
+                record_issue_activity(
+                    self.db.conn,
+                    now_ms=ts,
+                    issue_id=row['issue_id'],
+                    attempt_id=row['attempt_id'],
+                    action_type='execution_succeeded',
+                    summary='Execution succeeded',
+                    actor_employee_id=row['assigned_employee_id'],
+                    details={'wait_result': wait_result, 'issue_status': next_issue_status},
+                )
                 self.db.commit()
                 result['status'] = 'succeeded'
                 result['issue_status'] = next_issue_status
@@ -323,6 +373,16 @@ class AgentTeamService:
             next_action='Retry or close issue',
             created_by_employee_id=attempt['assigned_employee_id'],
             percent_complete=None,
+        )
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=attempt['issue_id'],
+            attempt_id=attempt['id'],
+            action_type='execution_cancelled',
+            summary='Execution cancelled',
+            actor_employee_id=attempt['assigned_employee_id'],
+            details={'reason': reason, 'abort_payload': abort_payload},
         )
         self.db.commit()
         return {
@@ -376,6 +436,16 @@ class AgentTeamService:
             'UPDATE issues SET status = ?, blocker_summary = ?, required_human_input = ?, updated_at_ms = ? WHERE id = ?',
             (status_map[human_type], prompt, required_input, ts, issue_id),
         )
+        issue = self.db.get_one('SELECT assigned_employee_id FROM issues WHERE id = ?', (issue_id,))
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=issue_id,
+            action_type='human_enqueued',
+            summary=f'Issue entered human queue ({human_type})',
+            actor_employee_id=issue['assigned_employee_id'],
+            details={'human_type': human_type, 'prompt': prompt, 'required_input': required_input},
+        )
         self.db.commit()
         return {
             'issue_id': issue_id,
@@ -404,12 +474,28 @@ class AgentTeamService:
             'UPDATE issues SET status = ?, blocker_summary = ?, required_human_input = ?, updated_at_ms = ? WHERE id = ?',
             (new_status, blocker, required, ts, issue_id),
         )
+        issue = self.db.get_one('SELECT assigned_employee_id FROM issues WHERE id = ?', (issue_id,))
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=issue_id,
+            action_type='human_resolved',
+            summary=f'Human queue resolved: {resolution}',
+            actor_employee_id=issue['assigned_employee_id'],
+            details={'resolution': resolution, 'note': note, 'new_status': new_status},
+        )
         self.db.commit()
         return {
             'issue_id': issue_id,
             'status': new_status,
             'resolution': resolution,
             'updated_at_ms': ts,
+        }
+
+    def get_issue_activity(self, *, issue_id: str) -> dict[str, Any]:
+        return {
+            'items': fetch_issue_activity(self.db.conn, issue_id),
+            'total': len(fetch_issue_activity(self.db.conn, issue_id)),
         }
 
     def get_human_queue(self) -> dict[str, Any]:

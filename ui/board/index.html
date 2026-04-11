@@ -539,9 +539,14 @@
         </div>
         <div class="modal-section">
           <h3>Activity Log</h3>
-          ${activities.length ? renderTable(activities, [
-            ['created_at_ms', '时间(ms)'], ['actor_agent_id', 'Agent'], ['actor_role', '角色'], ['action_type', '动作'], ['summary', '摘要'],
-          ]) : '<div class="empty">当前 issue 暂无 activity 记录</div>'}
+          ${activities.length ? `<div class="activity-feed">${activities.map(item => `
+            <div class="agent-block">
+              <div><strong>${item.summary}</strong></div>
+              <div class="muted" style="margin-top:6px;">${item.actor_agent_id || 'unknown agent'} · ${item.actor_role || 'unknown role'} · ${new Date(item.created_at_ms).toLocaleString('zh-CN', { hour12: false })}</div>
+              <div style="margin-top:8px;"><span class="pill">${item.action_type}</span></div>
+              <pre style="white-space:pre-wrap; word-break:break-word; color:#475569; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px; margin-top:10px;">${JSON.stringify(item.details || {}, null, 2)}</pre>
+            </div>
+          `).join('')}</div>` : '<div class="empty">当前 issue 暂无 activity 记录</div>'}
         </div>
       `;
       document.getElementById('modalBackdrop').classList.add('show');

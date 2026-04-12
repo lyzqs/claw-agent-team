@@ -143,7 +143,7 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
            LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id
            LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
            LEFT JOIN runtime_bindings rb ON rb.employee_id = ei.id AND rb.is_primary = 1
-           WHERE i.status IN ('triaged', 'ready')
+           WHERE i.status IN ('triaged', 'ready', 'review')
            ORDER BY i.updated_at_ms ASC'''
     )
     return [dict(r) for r in rows]
@@ -171,6 +171,72 @@ def fetch_dispatching_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
            ORDER BY ia.updated_at_ms ASC'''
     )
     return [dict(r) for r in rows]
+
+
+def fetch_issue_context(svc: AgentTeamService, issue_id: str) -> dict[str, Any]:
+    row = svc.db.get_one(
+        '''SELECT i.id AS issue_id,
+                  i.issue_no,
+                  i.status,
+                  i.title,
+                  i.metadata_json,
+                  p.project_key,
+                  ei.employee_key AS assigned_employee_key,
+                  rt.template_key AS assigned_role
+           FROM issues i
+           JOIN projects p ON p.id = i.project_id
+           LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id
+           LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
+           WHERE i.id = ?''',
+        (issue_id,),
+    )
+    return dict(row)
+
+
+def pick_target_employee_key(svc: AgentTeamService, *, project_key: str, role: str) -> str | None:
+    if role == 'ceo':
+        row = svc.db.conn.execute(
+            '''SELECT ei.employee_key
+               FROM employee_instances ei
+               JOIN role_templates rt ON rt.id = ei.role_template_id
+               WHERE rt.template_key = 'ceo'
+               ORDER BY ei.employee_key ASC
+               LIMIT 1'''
+        ).fetchone()
+        return row[0] if row else None
+    row = svc.db.conn.execute(
+        '''SELECT ei.employee_key
+           FROM employee_instances ei
+           JOIN role_templates rt ON rt.id = ei.role_template_id
+           LEFT JOIN projects p ON p.id = ei.project_id
+           WHERE rt.template_key = ? AND p.project_key = ?
+           ORDER BY ei.employee_key ASC
+           LIMIT 1''',
+        (role, project_key),
+    ).fetchone()
+    return row[0] if row else None
+
+
+def decide_next_role(*, current_role: str | None, metadata: dict[str, Any]) -> str | None:
+    suggested = metadata.get('suggested_next_role')
+    if isinstance(suggested, str) and suggested.strip():
+        return suggested.strip()
+    issue_type = str(metadata.get('issue_type') or 'normal')
+    risk_level = str(metadata.get('risk_level') or 'normal')
+    requires_ops = bool(metadata.get('requires_ops')) or issue_type in {'production_change', 'release'}
+    if current_role == 'pm':
+        return 'dev'
+    if current_role == 'dev':
+        return 'qa'
+    if current_role == 'qa':
+        if requires_ops:
+            return 'ops'
+        return 'ceo' if risk_level in {'normal', 'high'} else 'ceo'
+    if current_role == 'ops':
+        return 'ceo'
+    if current_role == 'ceo':
+        return 'close'
+    return None
 
 
 def main() -> int:
@@ -265,6 +331,33 @@ def main() -> int:
                 if out.get('status') == 'succeeded':
                     changed = True
                     append_action({'at': report['ran_at'], **item})
+                    issue_ctx = fetch_issue_context(svc, attempt['issue_id'])
+                    metadata = parse_json(issue_ctx.get('metadata_json'))
+                    next_role = decide_next_role(current_role=attempt.get('role'), metadata=metadata)
+                    item['next_role_decision'] = next_role
+                    if next_role and next_role != 'close' and not auto_close:
+                        target_employee_key = pick_target_employee_key(svc, project_key=issue_ctx['project_key'], role=next_role)
+                        if target_employee_key:
+                            route_out = svc.handoff_issue(
+                                issue_id=attempt['issue_id'],
+                                to_employee_key=target_employee_key,
+                                note=f'auto route after {attempt.get("role") or "unknown"} success',
+                                issue_type=str(metadata.get('issue_type') or 'normal'),
+                                risk_level=str(metadata.get('risk_level') or 'normal'),
+                            )
+                            route_item = {
+                                'kind': 'route',
+                                'issue_id': attempt['issue_id'],
+                                'issue_no': attempt['issue_no'],
+                                'from_role': attempt.get('role'),
+                                'to_role': next_role,
+                                'target_employee_key': target_employee_key,
+                                'routing_reason': route_out.get('routing_reason'),
+                            }
+                            item['route'] = route_item
+                            append_action({'at': report['ran_at'], **route_item})
+                        else:
+                            item['route_error'] = f'missing employee for role={next_role} project={issue_ctx["project_key"]}'
                 elif out.get('observe_timeout'):
                     item['observe_timeout'] = out['observe_timeout']
                 report['observed'].append(item)

@@ -53,6 +53,42 @@ def parse_json(raw: str | None) -> dict[str, Any]:
         return {}
 
 
+
+def normalize_handoff_payload(payload: dict[str, Any], *, marker: str, fallback_next_role: str | None = None) -> dict[str, Any]:
+    out = dict(payload) if isinstance(payload, dict) else {}
+    out['marker'] = str(out.get('marker') or marker)
+    out['status'] = str(out.get('status') or 'done')
+    out['suggested_next_role'] = str(out.get('suggested_next_role') or fallback_next_role or 'close')
+    out['reason'] = str(out.get('reason') or 'role task complete')
+    out['risk_level'] = str(out.get('risk_level') or 'normal')
+    out['needs_human'] = bool(out.get('needs_human', False))
+    out['summary'] = str(out.get('summary') or out['reason'])
+    artifacts = out.get('artifacts')
+    out['artifacts'] = artifacts if isinstance(artifacts, list) else []
+    findings = out.get('blocking_findings')
+    out['blocking_findings'] = findings if isinstance(findings, list) else []
+    return out
+
+
+def latest_success_handoff(svc: AgentTeamService, issue_id: str, exclude_attempt_id: str | None = None) -> dict[str, Any]:
+    rows = svc.db.fetch_all(
+        '''SELECT id, output_snapshot_json
+           FROM issue_attempts
+           WHERE issue_id = ? AND status = 'succeeded'
+           ORDER BY attempt_no DESC''',
+        (issue_id,),
+    )
+    for row in rows:
+        if exclude_attempt_id and row['id'] == exclude_attempt_id:
+            continue
+        payload = parse_json(row['output_snapshot_json'])
+        wait_result = payload.get('wait_result') if isinstance(payload.get('wait_result'), dict) else {}
+        handoff = wait_result.get('payload') if isinstance(wait_result.get('payload'), dict) else {}
+        if handoff:
+            return handoff
+    return {}
+
+
 def append_action(payload: dict[str, Any]) -> None:
     with ACTIONS_PATH.open('a', encoding='utf-8') as f:
         f.write(json.dumps(payload, ensure_ascii=False) + '\n')
@@ -121,9 +157,20 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         )
 
     issue_session_key = f"agent:agent-team-{role}:auto:issue:{issue['issue_id']}:run:{marker}"
+    prior_handoff = metadata.get('prior_handoff') if isinstance(metadata.get('prior_handoff'), dict) else {}
+    prior_summary = ''
+    if prior_handoff:
+        prior_summary = (
+            "Previous role handoff:\n"
+            f"- summary: {prior_handoff.get('summary') or prior_handoff.get('reason') or ''}\n"
+            f"- suggested_next_role: {prior_handoff.get('suggested_next_role') or ''}\n"
+            f"- blocking_findings: {', '.join(prior_handoff.get('blocking_findings') or [])}\n"
+            f"- artifacts: {', '.join(prior_handoff.get('artifacts') or [])}\n\n"
+        )
     prompt = (
         f"You are acting as the {role_label} role in Agent Team.\n"
         f"Issue #{issue['issue_no']} ({issue['issue_id']}), current role={role_label}, status={issue['status']}.\n\n"
+        f"{prior_summary}"
         f"Task:\n{base_instruction}\n\n"
         "Rules:\n"
         "1. Do only the minimum work needed for this issue.\n"
@@ -131,7 +178,7 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         "3. Prefer direct action over exploration.\n"
         "4. If the acceptance criteria are already satisfied, do not keep exploring; just finish.\n"
         "5. Your final answer must be one single JSON object and nothing else.\n\n"
-        f"Required final JSON schema: {{\"marker\":\"{marker}\",\"status\":\"done|blocked|needs_human\",\"suggested_next_role\":\"pm|dev|qa|ops|ceo|close\",\"reason\":\"short reason\",\"risk_level\":\"normal|high\",\"needs_human\":true|false}}\n"
+        f"Required final JSON schema: {{\"marker\":\"{marker}\",\"status\":\"done|blocked|needs_human\",\"summary\":\"short summary\",\"artifacts\":[],\"blocking_findings\":[],\"suggested_next_role\":\"pm|dev|qa|ops|ceo|close\",\"reason\":\"short reason\",\"risk_level\":\"normal|high\",\"needs_human\":true|false}}\n"
         "Return no markdown, no code fences, no commentary, no extra text."
     )
     return {
@@ -300,10 +347,14 @@ def main() -> int:
                 })
                 continue
             last_attempt_rows = svc.db.fetch_all(
-                'SELECT input_snapshot_json FROM issue_attempts WHERE issue_id = ? ORDER BY attempt_no DESC LIMIT 1',
+                'SELECT id, input_snapshot_json FROM issue_attempts WHERE issue_id = ? ORDER BY attempt_no DESC LIMIT 1',
                 (issue['issue_id'],),
             )
+            last_attempt_id = last_attempt_rows[0]['id'] if last_attempt_rows else None
             last_payload = parse_json(last_attempt_rows[0]['input_snapshot_json']) if last_attempt_rows else {}
+            metadata = parse_json(issue.get('metadata_json'))
+            metadata['prior_handoff'] = latest_success_handoff(svc, issue['issue_id'], exclude_attempt_id=last_attempt_id)
+            issue['metadata_json'] = json.dumps(metadata, ensure_ascii=False)
             payload = build_worker_payload(issue, last_payload)
             out = svc.dispatch_execution(
                 issue_id=issue['issue_id'],
@@ -401,7 +452,9 @@ def main() -> int:
                     append_action({'at': report['ran_at'], **item})
                     issue_ctx = fetch_issue_context(svc, attempt['issue_id'])
                     metadata = parse_json(issue_ctx.get('metadata_json'))
-                    wait_payload = ((out.get('wait_result') or {}).get('payload') or {}) if isinstance(out.get('wait_result'), dict) else {}
+                    raw_wait_payload = ((out.get('wait_result') or {}).get('payload') or {}) if isinstance(out.get('wait_result'), dict) else {}
+                    wait_payload = normalize_handoff_payload(raw_wait_payload, marker=expected_marker or expected_text or '', fallback_next_role=attempt.get('role'))
+                    metadata['prior_handoff'] = wait_payload
                     if isinstance(wait_payload.get('suggested_next_role'), str) and wait_payload.get('suggested_next_role').strip():
                         metadata['suggested_next_role'] = wait_payload.get('suggested_next_role').strip()
                     if isinstance(wait_payload.get('risk_level'), str) and wait_payload.get('risk_level').strip():

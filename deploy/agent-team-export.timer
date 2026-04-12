@@ -1,0 +1,10 @@
+[Unit]
+Description=Agent Team export refresh timer
+
+[Timer]
+OnBootSec=20s
+OnUnitActiveSec=20s
+Unit=agent-team-export.service
+
+[Install]
+WantedBy=timers.target

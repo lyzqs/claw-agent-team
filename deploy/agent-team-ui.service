@@ -1,0 +1,14 @@
+[Unit]
+Description=Agent Team UI API Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.openclaw/workspace-agent-team
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/ui_api_server.py
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

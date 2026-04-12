@@ -1,0 +1,11 @@
+[Unit]
+Description=Agent Team export refresh
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/.openclaw/workspace-agent-team
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/export_board_snapshot.py
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/export_issue_details.py
+ExecStart=/usr/bin/bash -lc 'cp -f /root/.openclaw/workspace-agent-team/ui/board/index.html /var/www/agent-team-ui/index.html && cp -f /root/.openclaw/workspace-agent-team/ui/board/data.json /var/www/agent-team-ui/data.json && cp -f /root/.openclaw/workspace-agent-team/ui/board/issues.json /var/www/agent-team-ui/issues.json && chown -R www-data:www-data /var/www/agent-team-ui'
+User=root

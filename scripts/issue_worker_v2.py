@@ -106,6 +106,7 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             f"Acceptance Criteria: {acceptance}\n"
             f"Current Blocker: {blocker}\n"
             f"Required Human Input: {required_input}\n"
+            "Use the canonical implementation repo at /root/.openclaw/workspace-agent-team (shortcut: ./repo in the role workspace) for real code, scripts, docs, and validation.\n"
             "Do the minimal correct work for this role using available tools if needed."
         )
 

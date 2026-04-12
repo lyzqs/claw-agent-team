@@ -222,8 +222,9 @@ class AgentTeamService:
         prompt = payload.get('prompt')
         if not isinstance(prompt, str) or not prompt.strip():
             raise ValidationError('payload.prompt is required for real dispatch')
+        effective_session_key = payload.get('session_key') if isinstance(payload.get('session_key'), str) and payload.get('session_key').strip() else binding['session_key']
 
-        adapter = OpenClawExecutionAdapter(binding['session_key'])
+        adapter = OpenClawExecutionAdapter(effective_session_key)
         dispatch = adapter.dispatch(prompt=prompt, dispatch_id=dispatch_ref)
 
         ts = now_ms()
@@ -270,7 +271,7 @@ class AgentTeamService:
             action_type='dispatch_execution',
             summary='Execution dispatched to runtime',
             actor_employee_id=binding['employee_id'],
-            details={'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key'], 'session_key': binding['session_key']},
+            details={'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key'], 'session_key': effective_session_key},
         )
         self.db.commit()
         return {
@@ -279,20 +280,22 @@ class AgentTeamService:
             'attempt_no': attempt_no,
             'dispatch_ref': real_dispatch_ref,
             'runtime_binding_key': binding['binding_key'],
-            'session_key': binding['session_key'],
+            'session_key': effective_session_key,
             'status': 'dispatching',
             'accepted': dispatch.get('accepted', True),
         }
 
-    def observe_execution(self, *, dispatch_ref: str, expected_text: str | None = None, timeout_seconds: int = 1, close_issue_on_success: bool = False) -> dict[str, Any]:
+    def observe_execution(self, *, dispatch_ref: str, expected_text: str | None = None, expected_marker: str | None = None, timeout_seconds: int = 1, close_issue_on_success: bool = False) -> dict[str, Any]:
         row = self.db.get_one(
             '''SELECT ia.id AS attempt_id, ia.issue_id, ia.attempt_no, ia.status, ia.dispatch_ref,
-                      ia.assigned_employee_id, rb.binding_key, rb.session_key
+                      ia.assigned_employee_id, ia.input_snapshot_json, rb.binding_key, rb.session_key
                FROM issue_attempts ia
                LEFT JOIN runtime_bindings rb ON rb.id = ia.runtime_binding_id
                WHERE ia.dispatch_ref = ?''',
             (dispatch_ref,),
         )
+        input_snapshot = json.loads(row['input_snapshot_json']) if row['input_snapshot_json'] else {}
+        effective_session_key = input_snapshot.get('session_key') if isinstance(input_snapshot.get('session_key'), str) and input_snapshot.get('session_key').strip() else row['session_key']
         result = {
             'attempt_id': row['attempt_id'],
             'issue_id': row['issue_id'],
@@ -300,16 +303,19 @@ class AgentTeamService:
             'dispatch_ref': row['dispatch_ref'],
             'status': row['status'],
             'runtime_binding_key': row['binding_key'],
-            'session_key': row['session_key'],
+            'session_key': effective_session_key,
         }
-        if expected_text:
-            adapter = OpenClawExecutionAdapter(row['session_key'])
+        if expected_text or expected_marker:
+            adapter = OpenClawExecutionAdapter(effective_session_key)
             try:
-                wait_result = adapter.wait_for_exact_text(expected_text=expected_text, timeout_seconds=timeout_seconds)
+                if expected_marker:
+                    wait_result = adapter.wait_for_json_marker(marker=expected_marker, timeout_seconds=timeout_seconds)
+                else:
+                    wait_result = adapter.wait_for_exact_text(expected_text=expected_text, timeout_seconds=timeout_seconds)
                 ts = now_ms()
                 self.db.conn.execute(
                     'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, updated_at_ms = ? WHERE id = ?',
-                    ('succeeded', ts, 'Observed exact completion text', json.dumps(wait_result, ensure_ascii=False), ts, row['attempt_id']),
+                    ('succeeded', ts, 'Observed structured completion' if expected_marker else 'Observed exact completion text', json.dumps(wait_result, ensure_ascii=False), ts, row['attempt_id']),
                 )
                 next_issue_status = 'closed' if close_issue_on_success else 'review'
                 closed_at = ts if close_issue_on_success else None
@@ -393,6 +399,53 @@ class AgentTeamService:
             'updated_at_ms': ts,
         }
 
+
+    def reconcile_stale_attempt(self, *, dispatch_ref: str, reason: str = 'stale_dispatch_reconciled') -> dict[str, Any]:
+        attempt = self.db.get_one(
+            '''SELECT ia.id, ia.issue_id, ia.assigned_employee_id
+               FROM issue_attempts ia
+               WHERE ia.dispatch_ref = ?''',
+            (dispatch_ref,),
+        )
+        ts = now_ms()
+        payload = {'reconciled': True, 'dispatch_ref': dispatch_ref, 'reason': reason}
+        self.db.conn.execute(
+            'UPDATE issue_attempts SET status = ?, failure_code = ?, failure_summary = ?, ended_at_ms = ?, output_snapshot_json = ?, updated_at_ms = ? WHERE id = ?',
+            ('cancelled', 'stale_reconciled', reason, ts, json.dumps(payload, ensure_ascii=False), ts, attempt['id']),
+        )
+        self.db.conn.execute(
+            'UPDATE issues SET status = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
+            ('ready', reason, ts, attempt['issue_id']),
+        )
+        self._record_checkpoint(
+            issue_id=attempt['issue_id'],
+            attempt_id=attempt['id'],
+            kind='system',
+            summary='Stale dispatch reconciled',
+            details_md=json.dumps(payload, ensure_ascii=False),
+            next_action='Retry dispatch',
+            created_by_employee_id=attempt['assigned_employee_id'],
+            percent_complete=None,
+        )
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=attempt['issue_id'],
+            attempt_id=attempt['id'],
+            action_type='execution_cancelled',
+            summary='Stale dispatch reconciled back to ready',
+            actor_employee_id=attempt['assigned_employee_id'],
+            details=payload,
+        )
+        self.db.commit()
+        return {
+            'dispatch_ref': dispatch_ref,
+            'status': 'cancelled',
+            'reason': reason,
+            'reconciled': True,
+            'updated_at_ms': ts,
+        }
+
     def retry_execution(self, *, issue_id: str, runtime_binding_key: str, payload: dict[str, Any], reason: str) -> dict[str, Any]:
         ts = now_ms()
         self.db.conn.execute(
@@ -458,23 +511,28 @@ class AgentTeamService:
         ts = now_ms()
         if resolution not in {'approve', 'reject', 'needs_info'}:
             raise ValidationError(f'unsupported resolution: {resolution}')
+        issue_row = self.db.get_one('SELECT assigned_employee_id, metadata_json FROM issues WHERE id = ?', (issue_id,))
+        metadata = json.loads(issue_row['metadata_json']) if issue_row['metadata_json'] else {}
         if resolution == 'approve':
             new_status = 'ready'
             blocker = None
             required = None
+            metadata['human_resolution_strategy'] = 'return_ready_auto'
         elif resolution == 'reject':
             new_status = 'failed'
             blocker = note or 'Rejected by human'
             required = None
+            metadata['human_resolution_strategy'] = 'rejected'
         else:
             new_status = 'waiting_human_info'
             blocker = note or 'Human requested more information'
             required = note or 'Provide additional information'
+            metadata['human_resolution_strategy'] = 'needs_info'
         self.db.conn.execute(
-            'UPDATE issues SET status = ?, blocker_summary = ?, required_human_input = ?, updated_at_ms = ? WHERE id = ?',
-            (new_status, blocker, required, ts, issue_id),
+            'UPDATE issues SET status = ?, blocker_summary = ?, required_human_input = ?, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
+            (new_status, blocker, required, json.dumps(metadata, ensure_ascii=False), ts, issue_id),
         )
-        issue = self.db.get_one('SELECT assigned_employee_id FROM issues WHERE id = ?', (issue_id,))
+        issue = {'assigned_employee_id': issue_row['assigned_employee_id']}
         record_issue_activity(
             self.db.conn,
             now_ms=ts,

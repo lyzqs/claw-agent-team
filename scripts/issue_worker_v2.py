@@ -5,6 +5,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 import traceback
 import uuid
 from pathlib import Path
@@ -26,6 +27,7 @@ EXPORT_ISSUES = ROOT / 'scripts' / 'export_issue_details.py'
 MAX_DISPATCH_PER_RUN = 3
 MAX_OBSERVE_PER_RUN = 6
 OBSERVE_TIMEOUT_SECONDS = 2
+STALE_ATTEMPT_SECONDS = 300
 
 ROLE_LABELS = {
     'pm': 'PM',
@@ -62,9 +64,6 @@ def refresh_exports() -> None:
 
 
 def extract_expected_text(payload: dict[str, Any]) -> str | None:
-    marker = payload.get('marker')
-    if isinstance(marker, str) and marker.strip():
-        return marker.strip()
     expected = payload.get('expected_text')
     if isinstance(expected, str) and expected.strip():
         return expected.strip()
@@ -76,6 +75,13 @@ def extract_expected_text(payload: dict[str, Any]) -> str | None:
     return None
 
 
+def extract_expected_marker(payload: dict[str, Any]) -> str | None:
+    marker = payload.get('marker')
+    if isinstance(marker, str) and marker.strip():
+        return marker.strip()
+    return None
+
+
 def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, Any]) -> dict[str, Any]:
     metadata = parse_json(issue.get('metadata_json'))
     role = issue.get('role') or 'agent'
@@ -83,12 +89,16 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     marker = f"AUTO_DONE_{issue['issue_no']}_{uuid.uuid4().hex[:8]}"
 
     base_instruction = None
+    current_worker_instruction = metadata.get('worker_instruction')
+    current_dispatch_instruction = metadata.get('dispatch_instruction')
+    last_attempt_role = last_attempt_payload.get('attempt_role') if isinstance(last_attempt_payload.get('attempt_role'), str) else None
+    reuse_last_instruction = last_attempt_role == role
     for candidate in (
-        metadata.get('dispatch_instruction'),
-        metadata.get('worker_instruction'),
+        current_dispatch_instruction,
+        current_worker_instruction,
         metadata.get('prompt'),
-        last_attempt_payload.get('worker_instruction'),
-        last_attempt_payload.get('prompt'),
+        last_attempt_payload.get('worker_instruction') if (not current_worker_instruction and reuse_last_instruction) else None,
+        last_attempt_payload.get('prompt') if (not current_dispatch_instruction and reuse_last_instruction) else None,
     ):
         if isinstance(candidate, str) and candidate.strip():
             base_instruction = candidate.strip()
@@ -110,16 +120,27 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             "Do the minimal correct work for this role using available tools if needed."
         )
 
+    issue_session_key = f"agent:agent-team-{role}:auto:issue:{issue['issue_id']}:run:{marker}"
     prompt = (
         f"You are acting as the {role_label} role in Agent Team.\n"
-        f"Issue #{issue['issue_no']} ({issue['issue_id']}), status={issue['status']}.\n\n"
-        f"{base_instruction}\n\n"
-        f"When you are done, reply with exactly {marker} and nothing else."
+        f"Issue #{issue['issue_no']} ({issue['issue_id']}), current role={role_label}, status={issue['status']}.\n\n"
+        f"Task:\n{base_instruction}\n\n"
+        "Rules:\n"
+        "1. Do only the minimum work needed for this issue.\n"
+        "2. Do not inspect unrelated issues, board exports, or large project-wide context unless absolutely required.\n"
+        "3. Prefer direct action over exploration.\n"
+        "4. If the acceptance criteria are already satisfied, do not keep exploring; just finish.\n"
+        "5. Your final answer must be one single JSON object and nothing else.\n\n"
+        f"Required final JSON schema: {{\"marker\":\"{marker}\",\"status\":\"done|blocked|needs_human\",\"suggested_next_role\":\"pm|dev|qa|ops|ceo|close\",\"reason\":\"short reason\",\"risk_level\":\"normal|high\",\"needs_human\":true|false}}\n"
+        "Return no markdown, no code fences, no commentary, no extra text."
     )
     return {
         'prompt': prompt,
         'marker': marker,
+        'expected_text': marker,
+        'session_key': issue_session_key,
         'worker_instruction': base_instruction,
+        'attempt_role': role,
         'generated_by': 'issue_worker_v2',
     }
 
@@ -144,6 +165,7 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
            LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
            LEFT JOIN runtime_bindings rb ON rb.employee_id = ei.id AND rb.is_primary = 1
            WHERE i.status IN ('triaged', 'ready', 'review')
+             AND NOT EXISTS (SELECT 1 FROM issue_attempts ia WHERE ia.issue_id = i.id AND ia.status IN ('dispatching','running'))
            ORDER BY i.updated_at_ms ASC'''
     )
     return [dict(r) for r in rows]
@@ -157,6 +179,8 @@ def fetch_dispatching_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
                   ia.status AS attempt_status,
                   ia.dispatch_ref,
                   ia.input_snapshot_json,
+                  ia.created_at_ms,
+                  ia.updated_at_ms,
                   i.issue_no,
                   i.title,
                   i.status AS issue_status,
@@ -168,6 +192,11 @@ def fetch_dispatching_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
            LEFT JOIN employee_instances ei ON ei.id = ia.assigned_employee_id
            LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
            WHERE ia.status IN ('dispatching', 'running')
+             AND ia.attempt_no = (
+               SELECT MAX(ia2.attempt_no)
+               FROM issue_attempts ia2
+               WHERE ia2.issue_id = ia.issue_id AND ia2.status IN ('dispatching', 'running')
+             )
            ORDER BY ia.updated_at_ms ASC'''
     )
     return [dict(r) for r in rows]
@@ -248,6 +277,7 @@ def main() -> int:
         'dispatched': [],
         'observed': [],
         'skipped': [],
+        'cancelled': [],
         'errors': [],
     }
 
@@ -296,16 +326,51 @@ def main() -> int:
 
         observe_items = fetch_dispatching_candidates(svc)
         for attempt in observe_items[:MAX_OBSERVE_PER_RUN]:
+            age_seconds = max(0, int(time.time() - ((attempt.get('updated_at_ms') or attempt.get('created_at_ms') or 0) / 1000)))
+            if age_seconds >= STALE_ATTEMPT_SECONDS:
+                try:
+                    cancel_out = svc.cancel_execution(
+                        dispatch_ref=attempt['dispatch_ref'],
+                        reason=f'auto_cancel_stale_attempt_after_{age_seconds}s',
+                    )
+                except Exception as e:
+                    if 'aborted: False' in str(e) or 'runIds' in str(e):
+                        cancel_out = svc.reconcile_stale_attempt(
+                            dispatch_ref=attempt['dispatch_ref'],
+                            reason=f'auto_reconcile_stale_attempt_after_{age_seconds}s',
+                        )
+                    else:
+                        report['errors'].append({
+                            'message': f'stale cancel failed for {attempt["dispatch_ref"]}: {e}',
+                        })
+                        continue
+                changed = True
+                cancel_item = {
+                    'kind': 'cancel_stale',
+                    'issue_id': attempt['issue_id'],
+                    'issue_no': attempt['issue_no'],
+                    'attempt_id': attempt['attempt_id'],
+                    'dispatch_ref': attempt['dispatch_ref'],
+                    'attempt_status_before': attempt['attempt_status'],
+                    'age_seconds': age_seconds,
+                    'result_status': cancel_out.get('status'),
+                    'reconciled': cancel_out.get('reconciled', False),
+                }
+                report['cancelled'].append(cancel_item)
+                append_action({'at': report['ran_at'], **cancel_item})
+                continue
+
             payload = parse_json(attempt.get('input_snapshot_json'))
+            expected_marker = extract_expected_marker(payload)
             expected_text = extract_expected_text(payload)
-            if not expected_text:
+            if not expected_marker and not expected_text:
                 report['skipped'].append({
                     'kind': 'observe',
                     'issue_id': attempt['issue_id'],
                     'issue_no': attempt['issue_no'],
                     'attempt_id': attempt['attempt_id'],
                     'dispatch_ref': attempt['dispatch_ref'],
-                    'reason': 'missing_expected_text_marker',
+                    'reason': 'missing_expected_completion_signature',
                 })
                 continue
             auto_close = attempt.get('role') == 'ceo'
@@ -313,6 +378,7 @@ def main() -> int:
                 out = svc.observe_execution(
                     dispatch_ref=attempt['dispatch_ref'],
                     expected_text=expected_text,
+                    expected_marker=expected_marker,
                     timeout_seconds=OBSERVE_TIMEOUT_SECONDS,
                     close_issue_on_success=auto_close,
                 )
@@ -324,6 +390,8 @@ def main() -> int:
                     'dispatch_ref': attempt['dispatch_ref'],
                     'attempt_status_before': attempt['attempt_status'],
                     'expected_text': expected_text,
+                    'expected_marker': expected_marker,
+                    'age_seconds': age_seconds,
                     'result_status': out.get('status'),
                     'issue_status': out.get('issue_status', attempt.get('issue_status')),
                     'auto_close': auto_close,
@@ -333,6 +401,12 @@ def main() -> int:
                     append_action({'at': report['ran_at'], **item})
                     issue_ctx = fetch_issue_context(svc, attempt['issue_id'])
                     metadata = parse_json(issue_ctx.get('metadata_json'))
+                    wait_payload = ((out.get('wait_result') or {}).get('payload') or {}) if isinstance(out.get('wait_result'), dict) else {}
+                    if isinstance(wait_payload.get('suggested_next_role'), str) and wait_payload.get('suggested_next_role').strip():
+                        metadata['suggested_next_role'] = wait_payload.get('suggested_next_role').strip()
+                    if isinstance(wait_payload.get('risk_level'), str) and wait_payload.get('risk_level').strip():
+                        metadata['risk_level'] = wait_payload.get('risk_level').strip()
+                    item['agent_suggestion'] = wait_payload
                     next_role = decide_next_role(current_role=attempt.get('role'), metadata=metadata)
                     item['next_role_decision'] = next_role
                     if next_role and next_role != 'close' and not auto_close:
@@ -370,6 +444,8 @@ def main() -> int:
                     'dispatch_ref': attempt['dispatch_ref'],
                     'attempt_status_before': attempt['attempt_status'],
                     'expected_text': expected_text,
+                    'expected_marker': expected_marker,
+                    'age_seconds': age_seconds,
                     'result_status': 'observe_error',
                     'auto_close': auto_close,
                     'error': str(e),

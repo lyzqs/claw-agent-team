@@ -19,6 +19,7 @@ from services.workflow_control import load_control  # noqa: E402
 
 STATE_DIR = ROOT / 'state'
 STATE_DIR.mkdir(parents=True, exist_ok=True)
+SESSION_REGISTRY_PATH = STATE_DIR / 'session_registry.json'
 REPORT_PATH = STATE_DIR / 'worker_report.json'
 ACTIONS_PATH = STATE_DIR / 'worker_actions.jsonl'
 EXPORT_BOARD = ROOT / 'scripts' / 'export_board_snapshot.py'
@@ -146,11 +147,15 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     marker = f"AUTO_DONE_{issue['issue_no']}_{uuid.uuid4().hex[:8]}"
 
     base_instruction = None
+    role_worker_instruction = metadata.get(f'worker_instruction_{role}')
+    role_dispatch_instruction = metadata.get(f'dispatch_instruction_{role}')
     current_worker_instruction = metadata.get('worker_instruction')
     current_dispatch_instruction = metadata.get('dispatch_instruction')
     last_attempt_role = last_attempt_payload.get('attempt_role') if isinstance(last_attempt_payload.get('attempt_role'), str) else None
     reuse_last_instruction = last_attempt_role == role
     for candidate in (
+        role_dispatch_instruction,
+        role_worker_instruction,
         current_dispatch_instruction,
         current_worker_instruction,
         metadata.get('prompt'),

@@ -29,6 +29,34 @@ def refresh_exports() -> None:
     subprocess.run(['python3', EXPORT_ISSUES], check=True, capture_output=True, text=True)
 
 
+def pick_employee_key(svc: AgentTeamService, *, project_key: str, role: str) -> str:
+    if role == 'ceo':
+        row = svc.db.conn.execute(
+            '''SELECT ei.employee_key
+               FROM employee_instances ei
+               JOIN role_templates rt ON rt.id = ei.role_template_id
+               WHERE rt.template_key = 'ceo'
+               ORDER BY ei.employee_key ASC
+               LIMIT 1'''
+        ).fetchone()
+        if row:
+            return str(row[0])
+        raise RuntimeError('missing CEO employee')
+    row = svc.db.conn.execute(
+        '''SELECT ei.employee_key
+           FROM employee_instances ei
+           JOIN role_templates rt ON rt.id = ei.role_template_id
+           LEFT JOIN projects p ON p.id = ei.project_id
+           WHERE rt.template_key = ? AND p.project_key = ?
+           ORDER BY ei.employee_key ASC
+           LIMIT 1''',
+        (role, project_key),
+    ).fetchone()
+    if row:
+        return str(row[0])
+    raise RuntimeError(f'missing employee for role={role} project={project_key}')
+
+
 class Handler(BaseHTTPRequestHandler):
     def _json(self, code: int, payload: dict):
         data = json.dumps(payload, ensure_ascii=False).encode('utf-8')
@@ -42,6 +70,16 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == '/api/workflow-control':
             self._json(200, {'ok': True, 'result': load_control()})
+            return
+        if parsed.path == '/api/human-queue':
+            svc = AgentTeamService()
+            try:
+                out = svc.get_human_queue()
+                self._json(200, {'ok': True, 'result': out})
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+            finally:
+                svc.close()
             return
         self._json(404, {'error': 'not found'})
 
@@ -77,7 +115,38 @@ class Handler(BaseHTTPRequestHandler):
 
         svc = AgentTeamService()
         try:
-            if parsed.path == '/api/close':
+            if parsed.path == '/api/create-issue':
+                project_key = payload.get('project_key', 'agent-team-core')
+                route_mode = payload.get('route_mode', 'pm')
+                route_role = 'ceo' if route_mode == 'ceo' else payload.get('assign_role', 'pm')
+                owner_employee_key = payload.get('owner_employee_key', 'shared.ceo')
+                created = svc.create_issue(
+                    project_key=project_key,
+                    owner_employee_key=owner_employee_key,
+                    title=payload['title'],
+                    description_md=payload.get('description', ''),
+                    acceptance_criteria_md=payload.get('acceptance', ''),
+                    priority=payload.get('priority', 'p2'),
+                    metadata={
+                        'source': 'ui_create_issue',
+                        'entry_mode': route_mode,
+                        'requested_assign_role': route_role,
+                        'dispatch_instruction': payload.get('dispatch_instruction', ''),
+                        'created_via': 'agent_team_ui',
+                    },
+                )
+                assign_employee_key = pick_employee_key(svc, project_key=project_key, role=route_role)
+                triaged = svc.triage_issue(issue_id=created['issue_id'], assign_employee_key=assign_employee_key)
+                out = {
+                    'issue_id': created['issue_id'],
+                    'issue_no': created['issue_no'],
+                    'project_key': project_key,
+                    'assigned_employee_key': assign_employee_key,
+                    'route_role': route_role,
+                    'created': created,
+                    'triaged': triaged,
+                }
+            elif parsed.path == '/api/close':
                 out = svc.close_issue(issue_id=payload['issue_id'], resolution=payload.get('resolution', 'completed'))
             elif parsed.path == '/api/cancel':
                 out = svc.cancel_execution(dispatch_ref=payload['dispatch_ref'], reason=payload.get('reason', 'cancelled_from_ui'))

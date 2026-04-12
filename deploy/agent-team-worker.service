@@ -1,0 +1,9 @@
+[Unit]
+Description=Agent Team issue consumer worker
+After=network.target agent-team-ui.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/.openclaw/workspace-agent-team
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/issue_worker_v2.py
+User=root

@@ -1,0 +1,10 @@
+[Unit]
+Description=Agent Team issue consumer timer
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+Unit=agent-team-worker.service
+
+[Install]
+WantedBy=timers.target

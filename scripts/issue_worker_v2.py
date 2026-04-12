@@ -89,6 +89,27 @@ def latest_success_handoff(svc: AgentTeamService, issue_id: str, exclude_attempt
     return {}
 
 
+
+def load_session_registry() -> dict[str, Any]:
+    if not SESSION_REGISTRY_PATH.exists():
+        return {}
+    return json.loads(SESSION_REGISTRY_PATH.read_text(encoding='utf-8'))
+
+
+def canonical_session_key(*, project_key: str, role: str) -> str:
+    registry = load_session_registry()
+    project_scope = 'shared' if role == 'ceo' else project_key
+    agent_id = f'agent-team-{role}'
+    reg_key = f'{agent_id}|{project_scope}'
+    entry = registry.get(reg_key) or {}
+    current = entry.get('current_session_key')
+    if isinstance(current, str) and current.strip():
+        return current.strip()
+    if role == 'ceo':
+        return 'agent:agent-team-ceo:shared'
+    return f'agent:agent-team-{role}:project:{project_key}'
+
+
 def append_action(payload: dict[str, Any]) -> None:
     with ACTIONS_PATH.open('a', encoding='utf-8') as f:
         f.write(json.dumps(payload, ensure_ascii=False) + '\n')
@@ -118,7 +139,7 @@ def extract_expected_marker(payload: dict[str, Any]) -> str | None:
     return None
 
 
-def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, Any]) -> dict[str, Any]:
+def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, Any], *, session_key: str) -> dict[str, Any]:
     metadata = parse_json(issue.get('metadata_json'))
     role = issue.get('role') or 'agent'
     role_label = ROLE_LABELS.get(role, role.upper())
@@ -156,7 +177,7 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             "Do the minimal correct work for this role using available tools if needed."
         )
 
-    issue_session_key = f"agent:agent-team-{role}:auto:issue:{issue['issue_id']}:run:{marker}"
+    issue_session_key = session_key
     prior_handoff = metadata.get('prior_handoff') if isinstance(metadata.get('prior_handoff'), dict) else {}
     prior_summary = ''
     if prior_handoff:
@@ -206,11 +227,13 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
                   ei.employee_key,
                   rt.template_key AS role,
                   rb.binding_key,
-                  rb.session_key
+                  rb.session_key,
+                  p.project_key
            FROM issues i
            LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id
            LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
            LEFT JOIN runtime_bindings rb ON rb.employee_id = ei.id AND rb.is_primary = 1
+           LEFT JOIN projects p ON p.id = ei.project_id
            WHERE i.status IN ('triaged', 'ready', 'review')
              AND NOT EXISTS (SELECT 1 FROM issue_attempts ia WHERE ia.issue_id = i.id AND ia.status IN ('dispatching','running'))
            ORDER BY i.updated_at_ms ASC'''
@@ -355,7 +378,8 @@ def main() -> int:
             metadata = parse_json(issue.get('metadata_json'))
             metadata['prior_handoff'] = latest_success_handoff(svc, issue['issue_id'], exclude_attempt_id=last_attempt_id)
             issue['metadata_json'] = json.dumps(metadata, ensure_ascii=False)
-            payload = build_worker_payload(issue, last_payload)
+            session_key = canonical_session_key(project_key=issue.get('project_key') or 'shared', role=issue.get('role') or 'dev')
+            payload = build_worker_payload(issue, last_payload, session_key=session_key)
             out = svc.dispatch_execution(
                 issue_id=issue['issue_id'],
                 runtime_binding_key=issue['binding_key'],

@@ -1,0 +1,74 @@
+{
+  "agent-team-pm|agent-team-core": {
+    "logical_key": "agent:agent-team-pm:project:agent-team-core",
+    "current_session_key": "agent:agent-team-pm:project:agent-team-core",
+    "role": "pm",
+    "project_key": "agent-team-core",
+    "generation": 1,
+    "status": "active"
+  },
+  "agent-team-dev|agent-team-core": {
+    "logical_key": "agent:agent-team-dev:project:agent-team-core",
+    "current_session_key": "agent:agent-team-dev:project:agent-team-core",
+    "role": "dev",
+    "project_key": "agent-team-core",
+    "generation": 1,
+    "status": "active"
+  },
+  "agent-team-qa|agent-team-core": {
+    "logical_key": "agent:agent-team-qa:project:agent-team-core",
+    "current_session_key": "agent:agent-team-qa:project:agent-team-core",
+    "role": "qa",
+    "project_key": "agent-team-core",
+    "generation": 1,
+    "status": "active"
+  },
+  "agent-team-ops|agent-team-core": {
+    "logical_key": "agent:agent-team-ops:project:agent-team-core",
+    "current_session_key": "agent:agent-team-ops:project:agent-team-core",
+    "role": "ops",
+    "project_key": "agent-team-core",
+    "generation": 1,
+    "status": "active"
+  },
+  "agent-team-pm|agent-team-labs": {
+    "logical_key": "agent:agent-team-pm:project:agent-team-labs",
+    "current_session_key": "agent:agent-team-pm:project:agent-team-labs",
+    "role": "pm",
+    "project_key": "agent-team-labs",
+    "generation": 1,
+    "status": "active"
+  },
+  "agent-team-dev|agent-team-labs": {
+    "logical_key": "agent:agent-team-dev:project:agent-team-labs",
+    "current_session_key": "agent:agent-team-dev:project:agent-team-labs",
+    "role": "dev",
+    "project_key": "agent-team-labs",
+    "generation": 1,
+    "status": "active"
+  },
+  "agent-team-qa|agent-team-labs": {
+    "logical_key": "agent:agent-team-qa:project:agent-team-labs",
+    "current_session_key": "agent:agent-team-qa:project:agent-team-labs",
+    "role": "qa",
+    "project_key": "agent-team-labs",
+    "generation": 1,
+    "status": "active"
+  },
+  "agent-team-ops|agent-team-labs": {
+    "logical_key": "agent:agent-team-ops:project:agent-team-labs",
+    "current_session_key": "agent:agent-team-ops:project:agent-team-labs",
+    "role": "ops",
+    "project_key": "agent-team-labs",
+    "generation": 1,
+    "status": "active"
+  },
+  "agent-team-ceo|shared": {
+    "logical_key": "agent:agent-team-ceo:shared",
+    "current_session_key": "agent:agent-team-ceo:shared",
+    "role": "ceo",
+    "project_key": "shared",
+    "generation": 1,
+    "status": "active"
+  }
+}

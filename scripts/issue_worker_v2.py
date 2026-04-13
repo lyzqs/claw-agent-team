@@ -199,14 +199,14 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         blocker = issue.get('blocker_summary') or 'None.'
         required_input = issue.get('required_human_input') or 'None.'
         base_instruction = (
-            f"Process this issue as the {role_label} role.\n"
-            f"Title: {issue['title']}\n"
-            f"Description: {description}\n"
-            f"Acceptance Criteria: {acceptance}\n"
-            f"Current Blocker: {blocker}\n"
-            f"Required Human Input: {required_input}\n"
-            "Use the canonical implementation repo at /root/.openclaw/workspace-agent-team (shortcut: ./repo in the role workspace) for real code, scripts, docs, and validation.\n"
-            "Do the minimal correct work for this role using available tools if needed."
+            f"请以 {role_label} 角色处理这个 issue。\n"
+            f"标题：{issue['title']}\n"
+            f"描述：{description}\n"
+            f"验收标准：{acceptance}\n"
+            f"当前阻塞：{blocker}\n"
+            f"当前缺失的人类输入：{required_input}\n"
+            "真实代码、脚本、文档、验证请使用规范实现仓库 /root/.openclaw/workspace-agent-team（角色工作区里可用 ./repo 快捷入口）。\n"
+            "只做当前角色最小必要且正确的工作，不要越过本角色职责边界。"
         )
 
     issue_session_key = session_key
@@ -233,20 +233,29 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             f"- previous handoff summary: {(retry_context.get('wait_payload') or {}).get('summary') or ''}\n"
             "- continue from prior work where possible; do not treat this as a brand new issue\n\n"
         )
+    role_boundary_rules = {
+        'ceo': '你是治理与分派角色，默认不要亲自调研、实现、测试、部署。优先做判断、分派、升级、关闭。',
+        'pm': '你负责需求澄清、任务拆分、路由与组织，不负责主体实现。',
+        'dev': '你负责实现与最小技术验证，不负责治理拍板和业务定调。',
+        'qa': '你负责验收、验证、找风险，不负责主体实现。',
+        'ops': '你负责部署、环境、运行态与发布保障，不负责需求定义与业务验收。',
+    }
     prompt = (
-        f"You are acting as the {role_label} role in Agent Team.\n"
-        f"Issue #{issue['issue_no']} ({issue['issue_id']}), current role={role_label}, status={issue['status']}.\n\n"
+        f"你现在以 Agent Team 的 {role_label} 角色工作。\n"
+        f"Issue #{issue['issue_no']} ({issue['issue_id']})，当前角色={role_label}，当前状态={issue['status']}。\n\n"
         f"{prior_summary}"
         f"{retry_summary}"
-        f"Task:\n{base_instruction}\n\n"
-        "Rules:\n"
-        "1. Do only the minimum work needed for this issue.\n"
-        "2. Do not inspect unrelated issues, board exports, or large project-wide context unless absolutely required.\n"
-        "3. Prefer direct action over exploration.\n"
-        "4. If the acceptance criteria are already satisfied, do not keep exploring; just finish.\n"
-        "5. Your final answer must be one single JSON object and nothing else.\n\n"
-        f"Required final JSON schema: {{\"marker\":\"{marker}\",\"status\":\"done|blocked|needs_human\",\"summary\":\"short summary\",\"artifacts\":[],\"blocking_findings\":[],\"suggested_next_role\":\"pm|dev|qa|ops|ceo|close\",\"reason\":\"short reason\",\"risk_level\":\"normal|high\",\"needs_human\":true|false,\"create_issue_proposal\":null|{{\"title\":\"new issue title\",\"description_md\":\"why this should be a separate issue\",\"acceptance_criteria_md\":\"done when...\",\"priority\":\"p1|p2|p3\",\"route_role\":\"pm|dev|qa|ops|ceo\",\"relation_type\":\"parent_of|blocked_by|related_to\",\"metadata\":{{}}}}}}\n"
-        "Return no markdown, no code fences, no commentary, no extra text."
+        f"角色边界：{role_boundary_rules.get(role, '请只做当前角色边界内的工作。')}\n"
+        "交流与输出默认使用中文，除非 issue 明确要求英文产物。\n\n"
+        f"任务：\n{base_instruction}\n\n"
+        "规则：\n"
+        "1. 只做当前 issue 与当前角色最小必要的工作。\n"
+        "2. 不要查看无关 issue、无关看板导出或大范围项目上下文，除非确有必要。\n"
+        "3. 优先直接行动，不要做无边界探索。\n"
+        "4. 如果验收标准已经满足，不要继续扩展工作，直接结束。\n"
+        "5. 最终答复必须是单个 JSON 对象，不能带 markdown、代码块或额外说明。\n\n"
+        f"最终 JSON schema：{{\"marker\":\"{marker}\",\"status\":\"done|blocked|needs_human\",\"summary\":\"简短总结\",\"artifacts\":[],\"blocking_findings\":[],\"suggested_next_role\":\"pm|dev|qa|ops|ceo|close\",\"reason\":\"简短原因\",\"risk_level\":\"normal|high\",\"needs_human\":true|false,\"create_issue_proposal\":null|{{\"title\":\"新 issue 标题\",\"description_md\":\"为什么这应该是独立 issue\",\"acceptance_criteria_md\":\"完成标准\",\"priority\":\"p1|p2|p3\",\"route_role\":\"pm|dev|qa|ops|ceo\",\"relation_type\":\"parent_of|blocked_by|related_to\",\"metadata\":{{}}}}}}\n"
+        "不要输出额外文本。"
     )
     return {
         'prompt': prompt,

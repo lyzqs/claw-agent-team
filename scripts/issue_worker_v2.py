@@ -546,14 +546,14 @@ def main() -> int:
                     'reason': 'missing_expected_completion_signature',
                 })
                 continue
-            auto_close = attempt.get('role') == 'ceo'
+            should_auto_close = False
             try:
                 out = svc.observe_execution(
                     dispatch_ref=attempt['dispatch_ref'],
                     expected_text=expected_text,
                     expected_marker=expected_marker,
                     timeout_seconds=OBSERVE_TIMEOUT_SECONDS,
-                    close_issue_on_success=auto_close,
+                    close_issue_on_success=should_auto_close,
                 )
                 item = {
                     'kind': 'observe',
@@ -567,7 +567,7 @@ def main() -> int:
                     'age_seconds': age_seconds,
                     'result_status': out.get('status'),
                     'issue_status': out.get('issue_status', attempt.get('issue_status')),
-                    'auto_close': auto_close,
+                    'auto_close': should_auto_close,
                 }
                 if out.get('status') == 'succeeded':
                     changed = True
@@ -599,7 +599,7 @@ def main() -> int:
                             item['create_issue_error'] = str(e)
                     next_role = decide_next_role(current_role=attempt.get('role'), metadata=metadata)
                     item['next_role_decision'] = next_role
-                    if next_role == 'close' and not auto_close:
+                    if next_role == 'close':
                         closed = svc.close_issue(issue_id=attempt['issue_id'], resolution='completed')
                         close_item = {
                             'kind': 'close',
@@ -612,7 +612,7 @@ def main() -> int:
                         item['close'] = close_item
                         item['issue_status'] = 'closed'
                         append_action({'at': report['ran_at'], **close_item})
-                    elif next_role and next_role != 'close' and not auto_close:
+                    elif next_role and next_role != 'close':
                         target_employee_key = pick_target_employee_key(svc, project_key=issue_ctx['project_key'], role=next_role)
                         if target_employee_key:
                             route_out = svc.handoff_issue(
@@ -650,7 +650,7 @@ def main() -> int:
                     'expected_marker': expected_marker,
                     'age_seconds': age_seconds,
                     'result_status': 'observe_error',
-                    'auto_close': auto_close,
+                    'auto_close': should_auto_close,
                     'error': str(e),
                 })
     except Exception as e:

@@ -68,6 +68,8 @@ def normalize_handoff_payload(payload: dict[str, Any], *, marker: str, fallback_
     out['artifacts'] = artifacts if isinstance(artifacts, list) else []
     findings = out.get('blocking_findings')
     out['blocking_findings'] = findings if isinstance(findings, list) else []
+    proposal = out.get('create_issue_proposal')
+    out['create_issue_proposal'] = proposal if isinstance(proposal, dict) else None
     return out
 
 
@@ -321,6 +323,39 @@ def pick_target_employee_key(svc: AgentTeamService, *, project_key: str, role: s
     return row[0] if row else None
 
 
+
+def create_issue_from_proposal(svc: AgentTeamService, *, proposal: dict[str, Any], fallback_project_key: str, fallback_owner_employee_key: str, current_issue_id: str, current_attempt_no: int | None, created_by_role: str | None) -> dict[str, Any]:
+    project_key = proposal.get('project_key') or fallback_project_key
+    owner_employee_key = proposal.get('owner_employee_key') or fallback_owner_employee_key
+    route_role = proposal.get('route_role') or 'pm'
+    source_type = proposal.get('source_type') or 'system'
+    metadata = dict(proposal.get('metadata') or {}) if isinstance(proposal.get('metadata'), dict) else {}
+    metadata.update({
+        'logical_source_type': 'agent',
+        'created_from_issue_id': current_issue_id,
+        'created_from_attempt_no': current_attempt_no,
+        'created_from_role': created_by_role,
+    })
+    created = svc.create_issue(
+        project_key=project_key,
+        owner_employee_key=owner_employee_key,
+        title=proposal['title'],
+        description_md=proposal.get('description_md', ''),
+        acceptance_criteria_md=proposal.get('acceptance_criteria_md', ''),
+        priority=proposal.get('priority', 'p2'),
+        source_type=source_type if source_type in {'user', 'system', 'detector', 'watchdog', 'human'} else 'system',
+        metadata=metadata,
+    )
+    assign_employee_key = pick_target_employee_key(svc, project_key=project_key, role=route_role)
+    triaged = svc.triage_issue(issue_id=created['issue_id'], assign_employee_key=assign_employee_key)
+    return {
+        'created': created,
+        'triaged': triaged,
+        'assign_employee_key': assign_employee_key,
+        'route_role': route_role,
+    }
+
+
 def decide_next_role(*, current_role: str | None, metadata: dict[str, Any]) -> str | None:
     suggested = metadata.get('suggested_next_role')
     if isinstance(suggested, str) and suggested.strip():
@@ -489,6 +524,21 @@ def main() -> int:
                     if isinstance(wait_payload.get('risk_level'), str) and wait_payload.get('risk_level').strip():
                         metadata['risk_level'] = wait_payload.get('risk_level').strip()
                     item['agent_suggestion'] = wait_payload
+                    if wait_payload.get('create_issue_proposal'):
+                        try:
+                            created_issue = create_issue_from_proposal(
+                                svc,
+                                proposal=wait_payload['create_issue_proposal'],
+                                fallback_project_key=issue_ctx['project_key'],
+                                fallback_owner_employee_key=issue_ctx.get('assigned_employee_key') or 'shared.ceo',
+                                current_issue_id=attempt['issue_id'],
+                                current_attempt_no=attempt.get('attempt_no'),
+                                created_by_role=attempt.get('role'),
+                            )
+                            item['created_issue'] = created_issue
+                            append_action({'at': report['ran_at'], 'kind': 'create_issue', 'source_issue_id': attempt['issue_id'], 'source_issue_no': attempt['issue_no'], 'created_issue_no': created_issue['created']['issue_no'], 'route_role': created_issue['route_role']})
+                        except Exception as e:
+                            item['create_issue_error'] = str(e)
                     next_role = decide_next_role(current_role=attempt.get('role'), metadata=metadata)
                     item['next_role_decision'] = next_role
                     if next_role == 'close' and not auto_close:

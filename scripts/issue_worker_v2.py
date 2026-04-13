@@ -93,6 +93,31 @@ def latest_success_handoff(svc: AgentTeamService, issue_id: str, exclude_attempt
 
 
 
+def latest_attempt_context(svc: AgentTeamService, issue_id: str) -> dict[str, Any]:
+    row = svc.db.get_one(
+        '''SELECT attempt_no, status, failure_summary, result_summary, input_snapshot_json, output_snapshot_json
+           FROM issue_attempts
+           WHERE issue_id = ?
+           ORDER BY attempt_no DESC
+           LIMIT 1''',
+        (issue_id,),
+    )
+    input_snapshot = parse_json(row['input_snapshot_json'])
+    output_snapshot = parse_json(row['output_snapshot_json'])
+    wait_result = output_snapshot.get('wait_result') if isinstance(output_snapshot.get('wait_result'), dict) else {}
+    wait_payload = wait_result.get('payload') if isinstance(wait_result.get('payload'), dict) else {}
+    return {
+        'attempt_no': row['attempt_no'],
+        'status': row['status'],
+        'failure_summary': row['failure_summary'],
+        'result_summary': row['result_summary'],
+        'attempt_role': input_snapshot.get('attempt_role'),
+        'worker_instruction': input_snapshot.get('worker_instruction'),
+        'wait_payload': wait_payload,
+    }
+
+
+
 def load_session_registry() -> dict[str, Any]:
     if not SESSION_REGISTRY_PATH.exists():
         return {}
@@ -417,6 +442,8 @@ def main() -> int:
             last_payload = parse_json(last_attempt_rows[0]['input_snapshot_json']) if last_attempt_rows else {}
             metadata = parse_json(issue.get('metadata_json'))
             metadata['prior_handoff'] = latest_success_handoff(svc, issue['issue_id'], exclude_attempt_id=last_attempt_id)
+            if last_attempt_id:
+                metadata['retry_context'] = latest_attempt_context(svc, issue['issue_id'])
             issue['metadata_json'] = json.dumps(metadata, ensure_ascii=False)
             session_key = canonical_session_key(project_key=issue.get('project_key') or 'shared', role=issue.get('role') or 'dev')
             payload = build_worker_payload(issue, last_payload, session_key=session_key)

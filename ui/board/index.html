@@ -905,6 +905,20 @@
       document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
     }
 
+
+    function renderRelations(relations) {
+      const outgoing = Array.isArray(relations?.outgoing) ? relations.outgoing : [];
+      const incoming = Array.isArray(relations?.incoming) ? relations.incoming : [];
+      if (!outgoing.length && !incoming.length) return '<div class="empty">暂无派生关系</div>';
+      const renderItems = (items, label) => items.length ? `
+        <div class="json-lite-item">
+          <div class="json-lite-key">${label}</div>
+          <div class="detail-stack">${items.map(r => `<div class="detail-item"><div class="detail-head"><span>#${r.related_issue_no} ${r.related_issue_title}</span><span>${r.relation_type}</span></div><div class="detail-sub">状态：${r.related_issue_status}</div></div>`).join('')}</div>
+        </div>
+      ` : '';
+      return `<div class="json-lite">${renderItems(outgoing, '派生出去')} ${renderItems(incoming, '派生来源')}</div>`;
+    }
+
     function renderIssuePreview() {
       const wrap = getAllIssuesEnriched().find(x => x.issue.id === selectedIssueId) || filteredIssues[0];
       const root = document.getElementById('issuePreview');
@@ -927,6 +941,7 @@
           <div>Required Input</div><div>${issue.required_human_input || ''}</div>
           <div>Description</div><div>${issue.description_md || ''}</div>
         </div>
+        <div style="margin-top:12px;"><div class="k">派生关系</div>${renderRelations(wrap.relations)}</div>
         <div class="actions">
           <button onclick="openIssueModal('${issue.id}')">打开弹窗详情</button>
         </div>
@@ -973,6 +988,10 @@
           </div>
         </div>
         ${modalActions(wrap)}
+        <div class="modal-section">
+          <h3>派生关系</h3>
+          ${renderRelations(wrap.relations)}
+        </div>
         <div class="modal-section">
           <h3>Attempt Timeline</h3>
           ${timeline.length ? renderTable(timeline, [

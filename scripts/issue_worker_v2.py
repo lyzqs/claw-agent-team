@@ -27,7 +27,7 @@ EXPORT_ISSUES = ROOT / 'scripts' / 'export_issue_details.py'
 
 MAX_DISPATCH_PER_RUN = 3
 MAX_OBSERVE_PER_RUN = 6
-OBSERVE_TIMEOUT_SECONDS = 2
+OBSERVE_TIMEOUT_SECONDS = 8
 STALE_ATTEMPT_SECONDS = 300
 
 ROLE_LABELS = {
@@ -41,7 +41,7 @@ ROLE_LABELS = {
 
 def now_iso() -> str:
     import datetime as _dt
-    return _dt.datetime.utcnow().isoformat() + 'Z'
+    return _dt.datetime.now(_dt.UTC).isoformat().replace('+00:00', 'Z')
 
 
 def parse_json(raw: str | None) -> dict[str, Any]:
@@ -220,10 +220,24 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             f"- blocking_findings: {', '.join(prior_handoff.get('blocking_findings') or [])}\n"
             f"- artifacts: {', '.join(prior_handoff.get('artifacts') or [])}\n\n"
         )
+    retry_context = metadata.get('retry_context') if isinstance(metadata.get('retry_context'), dict) else {}
+    retry_summary = ''
+    if retry_context and retry_context.get('attempt_role') == role:
+        retry_summary = (
+            "Retry context for the same issue and same role:\n"
+            f"- this is still issue #{issue['issue_no']}, not a new issue\n"
+            f"- previous attempt_no: {retry_context.get('attempt_no') or ''}\n"
+            f"- previous status: {retry_context.get('status') or ''}\n"
+            f"- previous result_summary: {retry_context.get('result_summary') or ''}\n"
+            f"- previous failure_summary: {retry_context.get('failure_summary') or ''}\n"
+            f"- previous handoff summary: {(retry_context.get('wait_payload') or {}).get('summary') or ''}\n"
+            "- continue from prior work where possible; do not treat this as a brand new issue\n\n"
+        )
     prompt = (
         f"You are acting as the {role_label} role in Agent Team.\n"
         f"Issue #{issue['issue_no']} ({issue['issue_id']}), current role={role_label}, status={issue['status']}.\n\n"
         f"{prior_summary}"
+        f"{retry_summary}"
         f"Task:\n{base_instruction}\n\n"
         "Rules:\n"
         "1. Do only the minimum work needed for this issue.\n"
@@ -231,7 +245,7 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         "3. Prefer direct action over exploration.\n"
         "4. If the acceptance criteria are already satisfied, do not keep exploring; just finish.\n"
         "5. Your final answer must be one single JSON object and nothing else.\n\n"
-        f"Required final JSON schema: {{\"marker\":\"{marker}\",\"status\":\"done|blocked|needs_human\",\"summary\":\"short summary\",\"artifacts\":[],\"blocking_findings\":[],\"suggested_next_role\":\"pm|dev|qa|ops|ceo|close\",\"reason\":\"short reason\",\"risk_level\":\"normal|high\",\"needs_human\":true|false}}\n"
+        f"Required final JSON schema: {{\"marker\":\"{marker}\",\"status\":\"done|blocked|needs_human\",\"summary\":\"short summary\",\"artifacts\":[],\"blocking_findings\":[],\"suggested_next_role\":\"pm|dev|qa|ops|ceo|close\",\"reason\":\"short reason\",\"risk_level\":\"normal|high\",\"needs_human\":true|false,\"create_issue_proposal\":null|{{\"title\":\"new issue title\",\"description_md\":\"why this should be a separate issue\",\"acceptance_criteria_md\":\"done when...\",\"priority\":\"p1|p2|p3\",\"route_role\":\"pm|dev|qa|ops|ceo\",\"relation_type\":\"parent_of|blocked_by|related_to\",\"metadata\":{{}}}}}}\n"
         "Return no markdown, no code fences, no commentary, no extra text."
     )
     return {
@@ -353,6 +367,7 @@ def create_issue_from_proposal(svc: AgentTeamService, *, proposal: dict[str, Any
     project_key = proposal.get('project_key') or fallback_project_key
     owner_employee_key = proposal.get('owner_employee_key') or fallback_owner_employee_key
     route_role = proposal.get('route_role') or 'pm'
+    relation_type = proposal.get('relation_type') or 'related_to'
     source_type = proposal.get('source_type') or 'system'
     metadata = dict(proposal.get('metadata') or {}) if isinstance(proposal.get('metadata'), dict) else {}
     metadata.update({
@@ -373,11 +388,18 @@ def create_issue_from_proposal(svc: AgentTeamService, *, proposal: dict[str, Any
     )
     assign_employee_key = pick_target_employee_key(svc, project_key=project_key, role=route_role)
     triaged = svc.triage_issue(issue_id=created['issue_id'], assign_employee_key=assign_employee_key)
+    creator_row = svc.db.conn.execute('SELECT assigned_employee_id FROM issues WHERE id = ?', (current_issue_id,)).fetchone()
+    svc.db.conn.execute(
+        'INSERT INTO issue_relations (id, from_issue_id, to_issue_id, relation_type, created_by_employee_id, created_at_ms) VALUES (?, ?, ?, ?, ?, ?)',
+        (f"rel_{uuid.uuid4().hex[:12]}", current_issue_id, created['issue_id'], relation_type, creator_row[0] if creator_row else None, int(time.time() * 1000)),
+    )
+    svc.db.commit()
     return {
         'created': created,
         'triaged': triaged,
         'assign_employee_key': assign_employee_key,
         'route_role': route_role,
+        'relation_type': relation_type,
     }
 
 

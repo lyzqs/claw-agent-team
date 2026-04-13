@@ -22,11 +22,31 @@ def main():
             timelines = {}
             for attempt in attempts:
                 timelines[attempt['id']] = svc.get_attempt_timeline(attempt_id=attempt['id'])['items']
+            outgoing = svc.db.fetch_all(
+                '''SELECT ir.id, ir.relation_type, ir.created_at_ms, i.id AS related_issue_id, i.issue_no AS related_issue_no, i.title AS related_issue_title, i.status AS related_issue_status
+                   FROM issue_relations ir
+                   JOIN issues i ON i.id = ir.to_issue_id
+                   WHERE ir.from_issue_id = ?
+                   ORDER BY ir.created_at_ms DESC''',
+                (item['id'],),
+            )
+            incoming = svc.db.fetch_all(
+                '''SELECT ir.id, ir.relation_type, ir.created_at_ms, i.id AS related_issue_id, i.issue_no AS related_issue_no, i.title AS related_issue_title, i.status AS related_issue_status
+                   FROM issue_relations ir
+                   JOIN issues i ON i.id = ir.from_issue_id
+                   WHERE ir.to_issue_id = ?
+                   ORDER BY ir.created_at_ms DESC''',
+                (item['id'],),
+            )
             details.append({
                 'issue': detail['issue'],
                 'attempts': attempts,
                 'timelines': timelines,
                 'activities': svc.get_issue_activity(issue_id=item['id'])['items'],
+                'relations': {
+                    'outgoing': [dict(r) for r in outgoing],
+                    'incoming': [dict(r) for r in incoming],
+                },
             })
     finally:
         svc.close()

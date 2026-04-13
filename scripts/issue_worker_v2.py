@@ -491,7 +491,20 @@ def main() -> int:
                     item['agent_suggestion'] = wait_payload
                     next_role = decide_next_role(current_role=attempt.get('role'), metadata=metadata)
                     item['next_role_decision'] = next_role
-                    if next_role and next_role != 'close' and not auto_close:
+                    if next_role == 'close' and not auto_close:
+                        closed = svc.close_issue(issue_id=attempt['issue_id'], resolution='completed')
+                        close_item = {
+                            'kind': 'close',
+                            'issue_id': attempt['issue_id'],
+                            'issue_no': attempt['issue_no'],
+                            'from_role': attempt.get('role'),
+                            'resolution': closed.get('resolution'),
+                            'summary': 'auto closed after success',
+                        }
+                        item['close'] = close_item
+                        item['issue_status'] = 'closed'
+                        append_action({'at': report['ran_at'], **close_item})
+                    elif next_role and next_role != 'close' and not auto_close:
                         target_employee_key = pick_target_employee_key(svc, project_key=issue_ctx['project_key'], role=next_role)
                         if target_employee_key:
                             route_out = svc.handoff_issue(

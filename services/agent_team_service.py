@@ -88,8 +88,11 @@ class AgentTeamService:
         description_md: str = '',
         acceptance_criteria_md: str = '',
         priority: str = 'p2',
+        source_type: str = 'system',
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        if source_type not in {'user', 'system', 'detector', 'watchdog', 'human'}:
+            raise ValidationError(f'unsupported source_type: {source_type}')
         project = self.db.get_one('SELECT id FROM projects WHERE project_key = ?', (project_key,))
         owner = self.db.get_one('SELECT id FROM employee_instances WHERE employee_key = ?', (owner_employee_key,))
         ts = now_ms()
@@ -100,13 +103,14 @@ class AgentTeamService:
                 id, project_id, issue_no, title, description_md, source_type, priority,
                 status, owner_employee_id, acceptance_criteria_md, metadata_json,
                 created_at_ms, updated_at_ms
-            ) VALUES (?, ?, ?, ?, ?, 'system', ?, 'open', ?, ?, ?, ?, ?)''',
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?)''',
             (
                 issue_id,
                 project['id'],
                 issue_no,
                 title,
                 description_md,
+                source_type,
                 priority,
                 owner['id'],
                 acceptance_criteria_md,
@@ -122,13 +126,14 @@ class AgentTeamService:
             action_type='issue_created',
             summary=f'Issue #{issue_no} created',
             actor_employee_id=owner['id'],
-            details={'project_key': project_key, 'title': title, 'priority': priority},
+            details={'project_key': project_key, 'title': title, 'priority': priority, 'source_type': source_type},
         )
         self.db.commit()
         return {
             'issue_id': issue_id,
             'issue_no': issue_no,
             'status': 'open',
+            'source_type': source_type,
             'created_at_ms': ts,
         }
 
@@ -457,9 +462,19 @@ class AgentTeamService:
 
     def close_issue(self, *, issue_id: str, resolution: str = 'completed') -> dict[str, Any]:
         ts = now_ms()
+        issue = self.db.get_one('SELECT assigned_employee_id FROM issues WHERE id = ?', (issue_id,))
         self.db.conn.execute(
             'UPDATE issues SET status = ?, closed_at_ms = ?, blocker_summary = NULL, updated_at_ms = ? WHERE id = ?',
             ('closed', ts, ts, issue_id),
+        )
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=issue_id,
+            action_type='issue_closed',
+            summary='Issue closed',
+            actor_employee_id=issue['assigned_employee_id'],
+            details={'resolution': resolution},
         )
         self.db.commit()
         return {

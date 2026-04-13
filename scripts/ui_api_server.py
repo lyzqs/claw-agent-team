@@ -127,6 +127,7 @@ class Handler(BaseHTTPRequestHandler):
                     description_md=payload.get('description', ''),
                     acceptance_criteria_md=payload.get('acceptance', ''),
                     priority=payload.get('priority', 'p2'),
+                    source_type=payload.get('source_type', 'user'),
                     metadata={
                         'source': 'ui_create_issue',
                         'entry_mode': route_mode,

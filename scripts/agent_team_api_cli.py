@@ -41,6 +41,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument('--description', default='')
     s.add_argument('--acceptance', default='')
     s.add_argument('--priority', default='p2')
+    s.add_argument('--source-type', choices=['user', 'system', 'detector', 'watchdog', 'human'], default='system')
 
     s = sub.add_parser('triage-issue')
     s.add_argument('issue_id')
@@ -108,6 +109,7 @@ def main() -> int:
                     description_md=args.description,
                     acceptance_criteria_md=args.acceptance,
                     priority=args.priority,
+                    source_type=args.source_type,
                 )
             )
         elif args.cmd == 'triage-issue':

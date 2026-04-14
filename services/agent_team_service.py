@@ -283,7 +283,7 @@ class AgentTeamService:
 
         flow_id = str(payload.get('flow_id') or uid('flow'))
         callback_token = str(payload.get('callback_token') or uid('cbtok'))
-        timeout_deadline_ms = int(payload.get('timeout_deadline_ms') or (now_ms() + 15 * 60 * 1000))
+        timeout_deadline_ms = int(payload.get('timeout_deadline_ms') or (now_ms() + 30 * 60 * 1000))
         ts = now_ms()
         attempt_id = uid('attempt')
         attempt_no = self._next_attempt_no(issue_id)

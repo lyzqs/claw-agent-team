@@ -24,11 +24,13 @@ REPORT_PATH = STATE_DIR / 'worker_report.json'
 ACTIONS_PATH = STATE_DIR / 'worker_actions.jsonl'
 EXPORT_BOARD = ROOT / 'scripts' / 'export_board_snapshot.py'
 EXPORT_ISSUES = ROOT / 'scripts' / 'export_issue_details.py'
+DISPATCH_OBSERVER = ROOT / 'scripts' / 'dispatch_observer_v1.py'
 
 MAX_DISPATCH_PER_RUN = 3
 MAX_OBSERVE_PER_RUN = 6
 OBSERVE_TIMEOUT_SECONDS = 8
-STALE_ATTEMPT_SECONDS = 300
+STALE_ATTEMPT_SECONDS = 30 * 60
+DISPATCH_TIMEOUT_MS = 30 * 60 * 1000
 
 ROLE_LABELS = {
     'pm': 'PM',
@@ -146,6 +148,24 @@ def append_action(payload: dict[str, Any]) -> None:
 def refresh_exports() -> None:
     subprocess.run(['python3', str(EXPORT_BOARD)], check=True, capture_output=True, text=True)
     subprocess.run(['python3', str(EXPORT_ISSUES)], check=True, capture_output=True, text=True)
+
+
+def drain_dispatch_lifecycle_events() -> dict[str, Any]:
+    res = subprocess.run(
+        ['python3', str(DISPATCH_OBSERVER)],
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    if res.returncode != 0:
+        raise RuntimeError(res.stderr.strip() or res.stdout.strip() or 'dispatch observer failed')
+    path = (res.stdout or '').strip().splitlines()[-1].strip()
+    if not path:
+        raise RuntimeError('dispatch observer returned no report path')
+    report_path = Path(path)
+    if not report_path.exists():
+        raise RuntimeError(f'dispatch observer report missing: {report_path}')
+    return json.loads(report_path.read_text(encoding='utf-8'))
 
 
 def extract_expected_text(payload: dict[str, Any]) -> str | None:
@@ -283,7 +303,7 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         'generated_by': 'issue_worker_v2',
         'flow_id': flow_id,
         'callback_token': callback_token,
-        'timeout_deadline_ms': int(time.time() * 1000) + 15 * 60 * 1000,
+        'timeout_deadline_ms': int(time.time() * 1000) + DISPATCH_TIMEOUT_MS,
     }
 
 
@@ -488,6 +508,21 @@ def main() -> int:
     svc = AgentTeamService()
     changed = False
     try:
+        try:
+            lifecycle_report = drain_dispatch_lifecycle_events()
+            report['observer'] = {
+                'ok': lifecycle_report.get('ok', False),
+                'observed_count': len(lifecycle_report.get('observed') or []),
+                'applied_count': len(lifecycle_report.get('applied') or []),
+                'timed_out': bool(lifecycle_report.get('timedOut')),
+            }
+            if lifecycle_report.get('applied'):
+                changed = True
+                for applied in lifecycle_report.get('applied') or []:
+                    append_action({'at': report['ran_at'], 'kind': 'observer_apply', **applied})
+        except Exception as e:
+            report['errors'].append({'message': f'dispatch observer drain failed: {e}'})
+
         ready_items = fetch_ready_candidates(svc)
         for issue in ready_items[:MAX_DISPATCH_PER_RUN]:
             reusable_artifact = extract_reusable_artifact_for_issue(issue)
@@ -554,39 +589,6 @@ def main() -> int:
         observe_items = fetch_dispatching_candidates(svc)
         for attempt in observe_items[:MAX_OBSERVE_PER_RUN]:
             age_seconds = max(0, int(time.time() - ((attempt.get('updated_at_ms') or attempt.get('created_at_ms') or 0) / 1000)))
-            if age_seconds >= STALE_ATTEMPT_SECONDS:
-                try:
-                    cancel_out = svc.cancel_execution(
-                        dispatch_ref=attempt['dispatch_ref'],
-                        reason=f'auto_cancel_stale_attempt_after_{age_seconds}s',
-                    )
-                except Exception as e:
-                    if 'aborted: False' in str(e) or 'runIds' in str(e):
-                        cancel_out = svc.reconcile_stale_attempt(
-                            dispatch_ref=attempt['dispatch_ref'],
-                            reason=f'auto_reconcile_stale_attempt_after_{age_seconds}s',
-                        )
-                    else:
-                        report['errors'].append({
-                            'message': f'stale cancel failed for {attempt["dispatch_ref"]}: {e}',
-                        })
-                        continue
-                changed = True
-                cancel_item = {
-                    'kind': 'cancel_stale',
-                    'issue_id': attempt['issue_id'],
-                    'issue_no': attempt['issue_no'],
-                    'attempt_id': attempt['attempt_id'],
-                    'dispatch_ref': attempt['dispatch_ref'],
-                    'attempt_status_before': attempt['attempt_status'],
-                    'age_seconds': age_seconds,
-                    'result_status': cancel_out.get('status'),
-                    'reconciled': cancel_out.get('reconciled', False),
-                }
-                report['cancelled'].append(cancel_item)
-                append_action({'at': report['ran_at'], **cancel_item})
-                continue
-
             payload = parse_json(attempt.get('input_snapshot_json'))
             expected_marker = extract_expected_marker(payload)
             expected_text = extract_expected_text(payload)
@@ -691,6 +693,39 @@ def main() -> int:
                             item['route_error'] = f'missing employee for role={next_role} project={issue_ctx["project_key"]}'
                 elif out.get('observe_timeout'):
                     item['observe_timeout'] = out['observe_timeout']
+                    if age_seconds >= STALE_ATTEMPT_SECONDS:
+                        try:
+                            cancel_out = svc.cancel_execution(
+                                dispatch_ref=attempt['dispatch_ref'],
+                                reason=f'auto_cancel_stale_attempt_after_{age_seconds}s',
+                            )
+                        except Exception as e:
+                            if 'aborted: False' in str(e) or 'runIds' in str(e):
+                                cancel_out = svc.reconcile_stale_attempt(
+                                    dispatch_ref=attempt['dispatch_ref'],
+                                    reason=f'auto_reconcile_stale_attempt_after_{age_seconds}s',
+                                )
+                            else:
+                                report['errors'].append({
+                                    'message': f'stale cancel failed for {attempt["dispatch_ref"]}: {e}',
+                                })
+                                report['observed'].append(item)
+                                continue
+                        changed = True
+                        cancel_item = {
+                            'kind': 'cancel_stale',
+                            'issue_id': attempt['issue_id'],
+                            'issue_no': attempt['issue_no'],
+                            'attempt_id': attempt['attempt_id'],
+                            'dispatch_ref': attempt['dispatch_ref'],
+                            'attempt_status_before': attempt['attempt_status'],
+                            'age_seconds': age_seconds,
+                            'result_status': cancel_out.get('status'),
+                            'reconciled': cancel_out.get('reconciled', False),
+                        }
+                        item['stale_cancel'] = cancel_item
+                        report['cancelled'].append(cancel_item)
+                        append_action({'at': report['ran_at'], **cancel_item})
                 report['observed'].append(item)
             except Exception as e:
                 report['observed'].append({

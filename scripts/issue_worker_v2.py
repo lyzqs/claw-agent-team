@@ -458,6 +458,20 @@ def decide_next_role(*, current_role: str | None, metadata: dict[str, Any]) -> s
     return None
 
 
+def extract_reusable_artifact_for_issue(issue: dict[str, Any]) -> dict[str, Any] | None:
+    metadata = parse_json(issue.get('metadata_json'))
+    artifacts = metadata.get('artifacts') if isinstance(metadata.get('artifacts'), dict) else {}
+    docs = artifacts.get('feishu_docs') if isinstance(artifacts.get('feishu_docs'), list) else []
+    acceptance = str(issue.get('acceptance_criteria_md') or '')
+    if any(token in acceptance for token in ['飞书文档', '产出飞书文档', '文档']):
+        for item in docs:
+            if not isinstance(item, dict):
+                continue
+            if item.get('doc_url') or item.get('doc_token'):
+                return item
+    return None
+
+
 def main() -> int:
     control = load_control()
     report: dict[str, Any] = {
@@ -481,6 +495,27 @@ def main() -> int:
     try:
         ready_items = fetch_ready_candidates(svc)
         for issue in ready_items[:MAX_DISPATCH_PER_RUN]:
+            reusable_artifact = extract_reusable_artifact_for_issue(issue)
+            if reusable_artifact:
+                gate_out = svc.apply_artifact_gate(
+                    issue_id=issue['issue_id'],
+                    artifact_payload=reusable_artifact,
+                    current_role=issue.get('role'),
+                    summary=str(reusable_artifact.get('summary') or 'Existing artifact already satisfies acceptance'),
+                )
+                changed = True
+                item = {
+                    'kind': 'artifact_gate',
+                    'issue_id': issue['issue_id'],
+                    'issue_no': issue['issue_no'],
+                    'status_before': issue['status'],
+                    'role': issue.get('role'),
+                    'issue_status_after': gate_out.get('status'),
+                    'artifact': reusable_artifact,
+                }
+                report['skipped'].append(item)
+                append_action({'at': report['ran_at'], **item})
+                continue
             if not issue.get('binding_key'):
                 report['skipped'].append({
                     'kind': 'dispatch',

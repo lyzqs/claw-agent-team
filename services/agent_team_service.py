@@ -786,6 +786,53 @@ class AgentTeamService:
         self.db.commit()
         return self.dispatch_execution(issue_id=issue_id, runtime_binding_key=runtime_binding_key, payload=payload)
 
+    def apply_artifact_gate(
+        self,
+        *,
+        issue_id: str,
+        artifact_payload: dict[str, Any],
+        current_role: str | None,
+        summary: str | None = None,
+        suggested_next_role: str | None = None,
+    ) -> dict[str, Any]:
+        ts = now_ms()
+        issue = self.db.get_one('SELECT assigned_employee_id, metadata_json FROM issues WHERE id = ?', (issue_id,))
+        metadata = merge_json_object(issue['metadata_json'], {})
+        handoff_payload = {
+            'marker': '',
+            'status': 'done',
+            'summary': summary or str(artifact_payload.get('summary') or 'Existing artifact already satisfies acceptance'),
+            'artifacts': [artifact_payload],
+            'blocking_findings': [],
+            'suggested_next_role': suggested_next_role or default_next_role_for(current_role),
+            'reason': 'existing artifact satisfies acceptance; dispatch skipped',
+            'risk_level': str(metadata.get('risk_level') or 'normal'),
+            'needs_human': False,
+            'create_issue_proposal': None,
+        }
+        metadata['prior_handoff'] = handoff_payload
+        metadata['suggested_next_role'] = handoff_payload['suggested_next_role']
+        self.db.conn.execute(
+            'UPDATE issues SET status = ?, blocker_summary = NULL, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
+            ('review', json.dumps(metadata, ensure_ascii=False), ts, issue_id),
+        )
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=issue_id,
+            action_type='artifact_gate',
+            summary='Dispatch skipped because existing artifact satisfies acceptance',
+            actor_employee_id=issue['assigned_employee_id'],
+            details={'artifact_payload': artifact_payload, 'handoff_payload': handoff_payload},
+        )
+        self.db.commit()
+        return {
+            'issue_id': issue_id,
+            'status': 'review',
+            'handoff_payload': handoff_payload,
+            'updated_at_ms': ts,
+        }
+
     def close_issue(self, *, issue_id: str, resolution: str = 'completed') -> dict[str, Any]:
         ts = now_ms()
         issue = self.db.get_one('SELECT assigned_employee_id FROM issues WHERE id = ?', (issue_id,))

@@ -787,6 +787,106 @@ class AgentTeamService:
         self.db.commit()
         return self.dispatch_execution(issue_id=issue_id, runtime_binding_key=runtime_binding_key, payload=payload)
 
+    def observe_dispatch_lifecycle_event(
+        self,
+        *,
+        dispatch_ref: str,
+        state: str,
+        stop_reason: str | None = None,
+        error_message: str | None = None,
+        payload: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        attempt = self.db.get_one(
+            '''SELECT ia.id, ia.issue_id, ia.assigned_employee_id, ia.status, ia.output_snapshot_json
+               FROM issue_attempts ia
+               WHERE ia.dispatch_ref = ?''',
+            (dispatch_ref,),
+        )
+        if str(attempt['status']) not in {'dispatching', 'running'}:
+            return {
+                'dispatch_ref': dispatch_ref,
+                'ignored': True,
+                'reason': f'attempt already in terminal-ish status: {attempt["status"]}',
+            }
+        ts = now_ms()
+        system_payload = {
+            'source': 'system_chat_event',
+            'state': state,
+            'stop_reason': stop_reason,
+            'error_message': error_message,
+            'payload': payload or {},
+        }
+        if state == 'final':
+            self.db.conn.execute(
+                'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
+                ('succeeded', ts, 'System observer saw final chat event', json.dumps(system_payload, ensure_ascii=False), 'system_chat_final', ts, attempt['id']),
+            )
+            self.db.conn.execute(
+                'UPDATE issues SET status = ?, updated_at_ms = ? WHERE id = ?',
+                ('review', ts, attempt['issue_id']),
+            )
+            action_type = 'execution_succeeded'
+            summary = 'Execution succeeded via system chat event'
+            checkpoint_summary = 'System observer saw final chat event'
+        elif state == 'error':
+            fail_summary = error_message or 'system_chat_error'
+            self.db.conn.execute(
+                'UPDATE issue_attempts SET status = ?, failure_code = ?, failure_summary = ?, ended_at_ms = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
+                ('failed', 'system_chat_error', fail_summary, ts, json.dumps(system_payload, ensure_ascii=False), 'system_chat_error', ts, attempt['id']),
+            )
+            self.db.conn.execute(
+                'UPDATE issues SET status = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
+                ('review', fail_summary, ts, attempt['issue_id']),
+            )
+            action_type = 'execution_failed'
+            summary = 'Execution failed via system chat event'
+            checkpoint_summary = 'System observer saw error chat event'
+        elif state == 'aborted':
+            fail_summary = stop_reason or 'system_chat_aborted'
+            self.db.conn.execute(
+                'UPDATE issue_attempts SET status = ?, failure_code = ?, failure_summary = ?, ended_at_ms = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
+                ('cancelled', 'system_chat_aborted', fail_summary, ts, json.dumps(system_payload, ensure_ascii=False), 'system_chat_aborted', ts, attempt['id']),
+            )
+            self.db.conn.execute(
+                'UPDATE issues SET status = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
+                ('ready', fail_summary, ts, attempt['issue_id']),
+            )
+            action_type = 'execution_cancelled'
+            summary = 'Execution aborted via system chat event'
+            checkpoint_summary = 'System observer saw aborted chat event'
+        else:
+            raise ValidationError(f'unsupported lifecycle state: {state}')
+
+        self._record_checkpoint(
+            issue_id=attempt['issue_id'],
+            attempt_id=attempt['id'],
+            kind='system',
+            summary=checkpoint_summary,
+            details_md=json.dumps(system_payload, ensure_ascii=False),
+            next_action='Review lifecycle event impact',
+            created_by_employee_id=attempt['assigned_employee_id'],
+            percent_complete=None,
+        )
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=attempt['issue_id'],
+            attempt_id=attempt['id'],
+            action_type=action_type,
+            summary=summary,
+            actor_employee_id=attempt['assigned_employee_id'],
+            details=system_payload,
+        )
+        self.db.commit()
+        return {
+            'dispatch_ref': dispatch_ref,
+            'state': state,
+            'updated_at_ms': ts,
+            'issue_id': attempt['issue_id'],
+            'attempt_id': attempt['id'],
+            'ignored': False,
+        }
+
     def apply_artifact_gate(
         self,
         *,

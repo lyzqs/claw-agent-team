@@ -58,6 +58,18 @@ def append_unique_artifact(existing: list[Any], artifact: Any) -> list[Any]:
     return items
 
 
+def can_use_artifact_fallback(*, acceptance_criteria_md: str | None, artifact_payload: dict[str, Any] | None) -> bool:
+    text = str(acceptance_criteria_md or '')
+    payload = artifact_payload if isinstance(artifact_payload, dict) else {}
+    artifact_type = str(payload.get('artifact_type') or '')
+    has_doc = artifact_type == 'feishu_doc' or bool(payload.get('doc_url')) or bool(payload.get('doc_token'))
+    if not has_doc:
+        return False
+    if any(token in text for token in ['飞书文档', '产出飞书文档', '文档']):
+        return True
+    return False
+
+
 @dataclass
 class IssueRecord:
     issue_id: str
@@ -494,8 +506,10 @@ class AgentTeamService:
             '''SELECT ia.id AS attempt_id, ia.issue_id, ia.attempt_no, ia.status, ia.dispatch_ref,
                       ia.assigned_employee_id, ia.input_snapshot_json, ia.callback_status,
                       ia.callback_payload_json, ia.artifact_status, ia.artifact_snapshot_json,
-                      ia.completion_mode, rb.binding_key, rb.session_key
+                      ia.completion_mode, rb.binding_key, rb.session_key,
+                      i.acceptance_criteria_md
                FROM issue_attempts ia
+               JOIN issues i ON i.id = ia.issue_id
                LEFT JOIN runtime_bindings rb ON rb.id = ia.runtime_binding_id
                WHERE ia.dispatch_ref = ?''',
             (dispatch_ref,),
@@ -566,6 +580,59 @@ class AgentTeamService:
             self.db.commit()
             result['status'] = 'succeeded'
             result['issue_status'] = next_issue_status
+            result['wait_result'] = output_snapshot
+            return result
+
+        artifact_callback = callback_payload.get('artifact_callback') if isinstance(callback_payload.get('artifact_callback'), dict) else None
+        if artifact_callback and can_use_artifact_fallback(acceptance_criteria_md=row['acceptance_criteria_md'], artifact_payload=artifact_callback):
+            normalized_payload = {
+                'marker': str(input_snapshot.get('marker') or ''),
+                'status': 'done',
+                'summary': str(artifact_callback.get('summary') or 'Artifact satisfies acceptance criteria'),
+                'artifacts': [artifact_callback],
+                'blocking_findings': [],
+                'suggested_next_role': default_next_role_for(input_snapshot.get('attempt_role')),
+                'reason': 'artifact fallback success',
+                'risk_level': 'normal',
+                'needs_human': False,
+                'create_issue_proposal': None,
+            }
+            ts = now_ms()
+            output_snapshot = {
+                'source': 'artifact_fallback',
+                'payload': normalized_payload,
+            }
+            self.db.conn.execute(
+                'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
+                ('succeeded', ts, normalized_payload['summary'], json.dumps(output_snapshot, ensure_ascii=False), 'artifact_fallback', ts, row['attempt_id']),
+            )
+            self.db.conn.execute(
+                'UPDATE issues SET status = ?, updated_at_ms = ? WHERE id = ?',
+                ('review', ts, row['issue_id']),
+            )
+            self._record_checkpoint(
+                issue_id=row['issue_id'],
+                attempt_id=row['attempt_id'],
+                kind='progress',
+                summary='Execution completed via artifact fallback',
+                details_md=json.dumps(output_snapshot, ensure_ascii=False),
+                next_action='Hand off to next role / review',
+                created_by_employee_id=row['assigned_employee_id'],
+                percent_complete=100,
+            )
+            record_issue_activity(
+                self.db.conn,
+                now_ms=ts,
+                issue_id=row['issue_id'],
+                attempt_id=row['attempt_id'],
+                action_type='execution_succeeded',
+                summary='Execution succeeded via artifact fallback',
+                actor_employee_id=row['assigned_employee_id'],
+                details={'artifact_payload': artifact_callback, 'issue_status': 'review'},
+            )
+            self.db.commit()
+            result['status'] = 'succeeded'
+            result['issue_status'] = 'review'
             result['wait_result'] = output_snapshot
             return result
 

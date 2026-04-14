@@ -57,6 +57,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument('--runtime-binding-key', required=True)
     s.add_argument('--payload-json', required=True)
 
+    s = sub.add_parser('record-attempt-callback')
+    s.add_argument('--attempt-id', required=True)
+    s.add_argument('--callback-token', required=True)
+    s.add_argument('--phase', choices=['artifact_created', 'terminal_handoff'], required=True)
+    s.add_argument('--payload-json', required=True)
+    s.add_argument('--idempotency-key', default=None)
+
     s = sub.add_parser('cancel-execution')
     s.add_argument('--dispatch-ref', required=True)
     s.add_argument('--reason', default='cancelled_by_cli')
@@ -122,6 +129,16 @@ def main() -> int:
                     issue_id=args.issue_id,
                     runtime_binding_key=args.runtime_binding_key,
                     payload=json.loads(args.payload_json),
+                )
+            )
+        elif args.cmd == 'record-attempt-callback':
+            print_json(
+                svc.record_attempt_callback(
+                    attempt_id=args.attempt_id,
+                    callback_token=args.callback_token,
+                    phase=args.phase,
+                    payload=json.loads(args.payload_json),
+                    idempotency_key=args.idempotency_key,
                 )
             )
         elif args.cmd == 'cancel-execution':

@@ -149,6 +149,14 @@ class Handler(BaseHTTPRequestHandler):
                 }
             elif parsed.path == '/api/close':
                 out = svc.close_issue(issue_id=payload['issue_id'], resolution=payload.get('resolution', 'completed'))
+            elif parsed.path == '/api/attempt-callback':
+                out = svc.record_attempt_callback(
+                    attempt_id=payload['attempt_id'],
+                    callback_token=payload['callback_token'],
+                    phase=payload['phase'],
+                    payload=payload.get('payload') or {},
+                    idempotency_key=payload.get('idempotency_key'),
+                )
             elif parsed.path == '/api/cancel':
                 out = svc.cancel_execution(dispatch_ref=payload['dispatch_ref'], reason=payload.get('reason', 'cancelled_from_ui'))
             elif parsed.path == '/api/retry':

@@ -7,7 +7,7 @@ from typing import Any
 
 from .db import AgentTeamDB, NotFoundError, ValidationError, now_ms
 from .routing_policy import route_issue
-from .activity import ensure_issue_activity_table, record_issue_activity, fetch_issue_activity
+from .activity import ensure_issue_activity_table, ensure_issue_attempt_callback_table, record_issue_activity, fetch_issue_activity, record_attempt_callback_event
 
 # Reuse the prototype adapter until a dedicated production adapter module is split out.
 import sys
@@ -22,6 +22,40 @@ from execution_adapter import OpenClawExecutionAdapter, TimeoutObserved  # type:
 
 def uid(prefix: str) -> str:
     return f'{prefix}_{uuid.uuid4().hex[:12]}'
+
+
+def merge_json_object(raw: str | None, patch: dict[str, Any] | None) -> dict[str, Any]:
+    base: dict[str, Any] = {}
+    if raw:
+        try:
+            value = json.loads(raw)
+            if isinstance(value, dict):
+                base = value
+        except Exception:
+            base = {}
+    if patch:
+        base.update(patch)
+    return base
+
+
+def default_next_role_for(role: str | None) -> str:
+    mapping = {
+        'pm': 'dev',
+        'dev': 'qa',
+        'qa': 'ceo',
+        'ops': 'ceo',
+        'ceo': 'close',
+    }
+    return mapping.get(str(role or '').strip(), 'close')
+
+
+def append_unique_artifact(existing: list[Any], artifact: Any) -> list[Any]:
+    items = list(existing)
+    marker = json.dumps(artifact, ensure_ascii=False, sort_keys=True)
+    seen = {json.dumps(item, ensure_ascii=False, sort_keys=True) for item in items}
+    if marker not in seen:
+        items.append(artifact)
+    return items
 
 
 @dataclass
@@ -50,6 +84,7 @@ class AgentTeamService:
     def __init__(self, db: AgentTeamDB | None = None):
         self.db = db or AgentTeamDB()
         ensure_issue_activity_table(self.db.conn)
+        ensure_issue_attempt_callback_table(self.db.conn)
         self.db.commit()
 
     def close(self) -> None:
@@ -229,19 +264,42 @@ class AgentTeamService:
             raise ValidationError('payload.prompt is required for real dispatch')
         effective_session_key = payload.get('session_key') if isinstance(payload.get('session_key'), str) and payload.get('session_key').strip() else binding['session_key']
 
-        adapter = OpenClawExecutionAdapter(effective_session_key)
-        dispatch = adapter.dispatch(prompt=prompt, dispatch_id=dispatch_ref)
-
+        flow_id = str(payload.get('flow_id') or uid('flow'))
+        callback_token = str(payload.get('callback_token') or uid('cbtok'))
+        timeout_deadline_ms = int(payload.get('timeout_deadline_ms') or (now_ms() + 15 * 60 * 1000))
         ts = now_ms()
         attempt_id = uid('attempt')
         attempt_no = self._next_attempt_no(issue_id)
+
+        callback_protocol = (
+            "\n\nCallback protocol:\n"
+            f"- this attempt_id is {attempt_id}\n"
+            f"- this callback_token is {callback_token}\n"
+            "- if you create an external artifact such as a Feishu doc, immediately record an artifact callback before your final answer\n"
+            f"- artifact callback command: python3 /root/.openclaw/workspace-agent-team/scripts/agent_team_api_cli.py record-attempt-callback --attempt-id {attempt_id} --callback-token {callback_token} --phase artifact_created --payload-json '<JSON payload>'\n"
+            f"- terminal callback command: python3 /root/.openclaw/workspace-agent-team/scripts/agent_team_api_cli.py record-attempt-callback --attempt-id {attempt_id} --callback-token {callback_token} --phase terminal_handoff --payload-json '<the same final JSON object>'\n"
+            "- terminal callback should be recorded before you send the final JSON into the conversation transcript\n"
+        )
+        payload = dict(payload)
+        payload['flow_id'] = flow_id
+        payload['callback_token'] = callback_token
+        payload['timeout_deadline_ms'] = timeout_deadline_ms
+        payload['attempt_id'] = attempt_id
+        payload['attempt_no'] = attempt_no
+        payload['prompt'] = f"{prompt.rstrip()}{callback_protocol}"
+
+        adapter = OpenClawExecutionAdapter(effective_session_key)
+        dispatch = adapter.dispatch(prompt=payload['prompt'], dispatch_id=dispatch_ref)
+
         real_dispatch_ref = dispatch['dispatch_ref']
 
         self.db.conn.execute(
             '''INSERT INTO issue_attempts (
                 id, issue_id, attempt_no, assigned_employee_id, runtime_binding_id,
-                dispatch_kind, status, dispatch_ref, input_snapshot_json, created_at_ms, updated_at_ms
-            ) VALUES (?, ?, ?, ?, ?, 'run', 'dispatching', ?, ?, ?, ?)''',
+                dispatch_kind, status, dispatch_ref, input_snapshot_json, metadata_json,
+                flow_id, callback_token, callback_status, artifact_status, timeout_deadline_ms,
+                created_at_ms, updated_at_ms
+            ) VALUES (?, ?, ?, ?, ?, 'run', 'dispatching', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             (
                 attempt_id,
                 issue_id,
@@ -250,6 +308,12 @@ class AgentTeamService:
                 binding['id'],
                 real_dispatch_ref,
                 json.dumps(payload, ensure_ascii=False),
+                json.dumps({'dispatch_lifecycle': 'accepted'}, ensure_ascii=False),
+                flow_id,
+                callback_token,
+                'pending',
+                'none',
+                timeout_deadline_ms,
                 ts,
                 ts,
             ),
@@ -263,8 +327,8 @@ class AgentTeamService:
             attempt_id=attempt_id,
             kind='handoff',
             summary='Execution dispatched',
-            details_md=json.dumps({'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key']}, ensure_ascii=False),
-            next_action='Observe execution',
+            details_md=json.dumps({'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key'], 'flow_id': flow_id, 'callback_token': callback_token}, ensure_ascii=False),
+            next_action='Wait for callback or observe completion',
             created_by_employee_id=binding['employee_id'],
             percent_complete=10,
         )
@@ -276,7 +340,7 @@ class AgentTeamService:
             action_type='dispatch_execution',
             summary='Execution dispatched to runtime',
             actor_employee_id=binding['employee_id'],
-            details={'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key'], 'session_key': effective_session_key},
+            details={'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key'], 'session_key': effective_session_key, 'flow_id': flow_id, 'callback_token': callback_token},
         )
         self.db.commit()
         return {
@@ -288,12 +352,149 @@ class AgentTeamService:
             'session_key': effective_session_key,
             'status': 'dispatching',
             'accepted': dispatch.get('accepted', True),
+            'flow_id': flow_id,
+            'callback_token': callback_token,
+            'timeout_deadline_ms': timeout_deadline_ms,
+        }
+
+    def record_attempt_callback(
+        self,
+        *,
+        attempt_id: str,
+        callback_token: str,
+        phase: str,
+        payload: dict[str, Any],
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        if phase not in {'artifact_created', 'terminal_handoff'}:
+            raise ValidationError(f'unsupported callback phase: {phase}')
+        attempt = self.db.get_one(
+            '''SELECT id, issue_id, attempt_no, assigned_employee_id, flow_id, callback_token, callback_status,
+                      artifact_status, artifact_snapshot_json, callback_payload_json, metadata_json
+               FROM issue_attempts
+               WHERE id = ?''',
+            (attempt_id,),
+        )
+        if str(attempt['callback_token'] or '') != str(callback_token):
+            raise ValidationError('callback token mismatch')
+
+        ts = now_ms()
+        effective_idempotency_key = idempotency_key or f'attempt:{attempt_id}:{phase}:{json.dumps(payload, ensure_ascii=False, sort_keys=True)}'
+        inserted, event = record_attempt_callback_event(
+            self.db.conn,
+            attempt_id=attempt_id,
+            flow_id=attempt['flow_id'],
+            callback_token=callback_token,
+            phase=phase,
+            idempotency_key=effective_idempotency_key,
+            payload=payload,
+            accepted=True,
+            accepted_reason='accepted',
+            created_at_ms=ts,
+        )
+
+        if not inserted:
+            return {
+                'attempt_id': attempt_id,
+                'issue_id': attempt['issue_id'],
+                'phase': phase,
+                'duplicate': True,
+                'event': event,
+            }
+
+        metadata = merge_json_object(attempt['metadata_json'], {})
+        callback_payload = merge_json_object(attempt['callback_payload_json'], {})
+        artifact_snapshot = merge_json_object(attempt['artifact_snapshot_json'], {})
+        issue_row = self.db.get_one('SELECT metadata_json FROM issues WHERE id = ?', (attempt['issue_id'],))
+        issue_metadata = merge_json_object(issue_row['metadata_json'], {})
+
+        callback_status = str(attempt['callback_status'] or 'pending')
+        artifact_status = str(attempt['artifact_status'] or 'none')
+
+        if phase == 'artifact_created':
+            callback_status = 'artifact_only' if callback_status in {'pending', '', 'artifact_only'} else callback_status
+            artifact_status = 'reported'
+            artifact_snapshot = payload if isinstance(payload, dict) else {}
+            callback_payload['artifact_callback'] = payload
+            callback_payload['artifact_callback_at_ms'] = ts
+            artifacts = issue_metadata.get('artifacts') if isinstance(issue_metadata.get('artifacts'), dict) else {}
+            docs = artifacts.get('feishu_docs') if isinstance(artifacts.get('feishu_docs'), list) else []
+            artifact_type = str(payload.get('artifact_type') or '')
+            if artifact_type == 'feishu_doc' or payload.get('doc_url') or payload.get('doc_token'):
+                docs = append_unique_artifact(docs, {
+                    'artifact_type': artifact_type or 'feishu_doc',
+                    'doc_url': payload.get('doc_url'),
+                    'doc_token': payload.get('doc_token'),
+                    'summary': payload.get('summary'),
+                    'from_attempt_id': attempt_id,
+                    'from_attempt_no': attempt['attempt_no'],
+                    'created_at_ms': ts,
+                    'status': 'created',
+                })
+                artifacts['feishu_docs'] = docs
+                issue_metadata['artifacts'] = artifacts
+        else:
+            callback_status = 'terminal_confirmed'
+            callback_payload['terminal_callback'] = payload
+
+        self.db.conn.execute(
+            '''UPDATE issue_attempts
+               SET callback_status = ?, callback_received_at_ms = ?, callback_payload_json = ?,
+                   artifact_status = ?, artifact_snapshot_json = ?, metadata_json = ?, updated_at_ms = ?
+               WHERE id = ?''',
+            (
+                callback_status,
+                ts,
+                json.dumps(callback_payload, ensure_ascii=False),
+                artifact_status,
+                json.dumps(artifact_snapshot, ensure_ascii=False),
+                json.dumps(metadata, ensure_ascii=False),
+                ts,
+                attempt_id,
+            ),
+        )
+        self.db.conn.execute(
+            'UPDATE issues SET metadata_json = ?, updated_at_ms = ? WHERE id = ?',
+            (json.dumps(issue_metadata, ensure_ascii=False), ts, attempt['issue_id']),
+        )
+
+        self._record_checkpoint(
+            issue_id=attempt['issue_id'],
+            attempt_id=attempt_id,
+            kind='progress',
+            summary=f'Callback received: {phase}',
+            details_md=json.dumps(payload, ensure_ascii=False),
+            next_action='Await further callbacks or reconcile completion',
+            created_by_employee_id=attempt['assigned_employee_id'],
+            percent_complete=60 if phase == 'artifact_created' else 90,
+        )
+        record_issue_activity(
+            self.db.conn,
+            now_ms=ts,
+            issue_id=attempt['issue_id'],
+            attempt_id=attempt_id,
+            action_type='attempt_callback',
+            summary=f'Attempt callback accepted: {phase}',
+            actor_employee_id=attempt['assigned_employee_id'],
+            details={'phase': phase, 'payload': payload, 'idempotency_key': effective_idempotency_key},
+        )
+        self.db.commit()
+        return {
+            'attempt_id': attempt_id,
+            'issue_id': attempt['issue_id'],
+            'phase': phase,
+            'duplicate': False,
+            'callback_status': callback_status,
+            'artifact_status': artifact_status,
+            'event': event,
         }
 
     def observe_execution(self, *, dispatch_ref: str, expected_text: str | None = None, expected_marker: str | None = None, timeout_seconds: int = 1, close_issue_on_success: bool = False) -> dict[str, Any]:
         row = self.db.get_one(
             '''SELECT ia.id AS attempt_id, ia.issue_id, ia.attempt_no, ia.status, ia.dispatch_ref,
-                      ia.assigned_employee_id, ia.input_snapshot_json, rb.binding_key, rb.session_key
+                      ia.assigned_employee_id, ia.input_snapshot_json, ia.callback_status,
+                      ia.callback_payload_json, ia.artifact_status, ia.artifact_snapshot_json,
+                      ia.completion_mode, rb.binding_key, rb.session_key
                FROM issue_attempts ia
                LEFT JOIN runtime_bindings rb ON rb.id = ia.runtime_binding_id
                WHERE ia.dispatch_ref = ?''',
@@ -301,6 +502,7 @@ class AgentTeamService:
         )
         input_snapshot = json.loads(row['input_snapshot_json']) if row['input_snapshot_json'] else {}
         effective_session_key = input_snapshot.get('session_key') if isinstance(input_snapshot.get('session_key'), str) and input_snapshot.get('session_key').strip() else row['session_key']
+        callback_payload = merge_json_object(row['callback_payload_json'], {})
         result = {
             'attempt_id': row['attempt_id'],
             'issue_id': row['issue_id'],
@@ -309,7 +511,64 @@ class AgentTeamService:
             'status': row['status'],
             'runtime_binding_key': row['binding_key'],
             'session_key': effective_session_key,
+            'callback_status': row['callback_status'],
+            'artifact_status': row['artifact_status'],
         }
+
+        terminal_callback = callback_payload.get('terminal_callback') if isinstance(callback_payload.get('terminal_callback'), dict) else None
+        if terminal_callback:
+            normalized_payload = dict(terminal_callback)
+            suggested_next_role = str(normalized_payload.get('suggested_next_role') or default_next_role_for(input_snapshot.get('attempt_role')))
+            normalized_payload['suggested_next_role'] = suggested_next_role
+            normalized_payload.setdefault('artifacts', [])
+            normalized_payload.setdefault('blocking_findings', [])
+            normalized_payload.setdefault('status', 'done')
+            normalized_payload.setdefault('risk_level', 'normal')
+            normalized_payload.setdefault('needs_human', False)
+            normalized_payload.setdefault('create_issue_proposal', None)
+            normalized_payload.setdefault('summary', normalized_payload.get('reason') or 'Observed terminal callback')
+            ts = now_ms()
+            summary = str(normalized_payload.get('summary') or normalized_payload.get('reason') or 'Observed terminal callback')
+            output_snapshot = {
+                'source': 'callback_terminal',
+                'payload': normalized_payload,
+            }
+            self.db.conn.execute(
+                'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
+                ('succeeded', ts, summary, json.dumps(output_snapshot, ensure_ascii=False), 'callback_terminal', ts, row['attempt_id']),
+            )
+            next_issue_status = 'closed' if close_issue_on_success else 'review'
+            closed_at = ts if close_issue_on_success else None
+            self.db.conn.execute(
+                'UPDATE issues SET status = ?, closed_at_ms = ?, updated_at_ms = ? WHERE id = ?',
+                (next_issue_status, closed_at, ts, row['issue_id']),
+            )
+            self._record_checkpoint(
+                issue_id=row['issue_id'],
+                attempt_id=row['attempt_id'],
+                kind='progress',
+                summary='Execution completed via callback',
+                details_md=json.dumps(output_snapshot, ensure_ascii=False),
+                next_action='Close issue' if close_issue_on_success else 'Hand off to next role / review',
+                created_by_employee_id=row['assigned_employee_id'],
+                percent_complete=100,
+            )
+            record_issue_activity(
+                self.db.conn,
+                now_ms=ts,
+                issue_id=row['issue_id'],
+                attempt_id=row['attempt_id'],
+                action_type='execution_succeeded',
+                summary='Execution succeeded via callback',
+                actor_employee_id=row['assigned_employee_id'],
+                details={'callback_payload': normalized_payload, 'issue_status': next_issue_status},
+            )
+            self.db.commit()
+            result['status'] = 'succeeded'
+            result['issue_status'] = next_issue_status
+            result['wait_result'] = output_snapshot
+            return result
+
         if expected_text or expected_marker:
             adapter = OpenClawExecutionAdapter(effective_session_key)
             try:
@@ -319,8 +578,8 @@ class AgentTeamService:
                     wait_result = adapter.wait_for_exact_text(expected_text=expected_text, timeout_seconds=timeout_seconds)
                 ts = now_ms()
                 self.db.conn.execute(
-                    'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, updated_at_ms = ? WHERE id = ?',
-                    ('succeeded', ts, 'Observed structured completion' if expected_marker else 'Observed exact completion text', json.dumps(wait_result, ensure_ascii=False), ts, row['attempt_id']),
+                    'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
+                    ('succeeded', ts, 'Observed structured completion' if expected_marker else 'Observed exact completion text', json.dumps(wait_result, ensure_ascii=False), 'transcript_marker', ts, row['attempt_id']),
                 )
                 next_issue_status = 'closed' if close_issue_on_success else 'review'
                 closed_at = ts if close_issue_on_success else None
@@ -597,9 +856,20 @@ class AgentTeamService:
     def get_issue(self, *, issue_id: str) -> dict[str, Any]:
         issue = self.db.get_one('SELECT * FROM issues WHERE id = ?', (issue_id,))
         attempts = self.db.fetch_all('SELECT * FROM issue_attempts WHERE issue_id = ? ORDER BY attempt_no', (issue_id,))
+        callbacks_by_attempt: dict[str, list[dict[str, Any]]] = {}
+        for attempt in attempts:
+            rows = self.db.fetch_all(
+                '''SELECT id, flow_id, callback_token, phase, idempotency_key, payload_json, accepted, accepted_reason, created_at_ms
+                   FROM issue_attempt_callbacks
+                   WHERE attempt_id = ?
+                   ORDER BY created_at_ms''',
+                (attempt['id'],),
+            )
+            callbacks_by_attempt[str(attempt['id'])] = [dict(r) for r in rows]
         return {
             'issue': dict(issue),
             'attempts': [dict(r) for r in attempts],
+            'callbacks_by_attempt': callbacks_by_attempt,
         }
 
     def get_attempt_timeline(self, *, attempt_id: str) -> dict[str, Any]:

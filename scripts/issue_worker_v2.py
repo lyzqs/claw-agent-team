@@ -172,6 +172,8 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     role = issue.get('role') or 'agent'
     role_label = ROLE_LABELS.get(role, role.upper())
     marker = f"AUTO_DONE_{issue['issue_no']}_{uuid.uuid4().hex[:8]}"
+    flow_id = f"flow_{uuid.uuid4().hex[:12]}"
+    callback_token = f"cbtok_{uuid.uuid4().hex[:12]}"
 
     base_instruction = None
     role_worker_instruction = metadata.get(f'worker_instruction_{role}')
@@ -233,6 +235,23 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             f"- previous handoff summary: {(retry_context.get('wait_payload') or {}).get('summary') or ''}\n"
             "- continue from prior work where possible; do not treat this as a brand new issue\n\n"
         )
+    existing_artifacts = metadata.get('artifacts') if isinstance(metadata.get('artifacts'), dict) else {}
+    existing_feishu_docs = existing_artifacts.get('feishu_docs') if isinstance(existing_artifacts.get('feishu_docs'), list) else []
+    artifact_summary = ''
+    if existing_feishu_docs:
+        lines = []
+        for item in existing_feishu_docs[:5]:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                f"- feishu_doc: url={item.get('doc_url') or ''} token={item.get('doc_token') or ''} status={item.get('status') or ''} from_attempt_no={item.get('from_attempt_no') or item.get('created_by_attempt_no') or ''}"
+            )
+        if lines:
+            artifact_summary = (
+                "Existing issue-level artifacts already recorded:\n"
+                + "\n".join(lines)
+                + "\n- If these artifacts already satisfy acceptance, do NOT recreate them. Reuse them and finish with structured callback/final JSON.\n\n"
+            )
     role_boundary_rules = {
         'ceo': '你是治理与分派角色，默认不要亲自调研、实现、测试、部署。优先做判断、分派、升级、关闭。',
         'pm': '你负责需求澄清、任务拆分、路由与组织，不负责主体实现。',
@@ -245,6 +264,7 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         f"Issue #{issue['issue_no']} ({issue['issue_id']})，当前角色={role_label}，当前状态={issue['status']}。\n\n"
         f"{prior_summary}"
         f"{retry_summary}"
+        f"{artifact_summary}"
         f"角色边界：{role_boundary_rules.get(role, '请只做当前角色边界内的工作。')}\n"
         "交流与输出默认使用中文，除非 issue 明确要求英文产物。\n\n"
         f"任务：\n{base_instruction}\n\n"
@@ -253,7 +273,8 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         "2. 不要查看无关 issue、无关看板导出或大范围项目上下文，除非确有必要。\n"
         "3. 优先直接行动，不要做无边界探索。\n"
         "4. 如果验收标准已经满足，不要继续扩展工作，直接结束。\n"
-        "5. 最终答复必须是单个 JSON 对象，不能带 markdown、代码块或额外说明。\n\n"
+        "5. 最终答复必须是单个 JSON 对象，不能带 markdown、代码块或额外说明。\n"
+        "6. 如果你在过程中成功创建了外部产物，比如飞书文档，请在最终 JSON 的 artifacts 中显式返回该产物信息。\n\n"
         f"最终 JSON schema：{{\"marker\":\"{marker}\",\"status\":\"done|blocked|needs_human\",\"summary\":\"简短总结\",\"artifacts\":[],\"blocking_findings\":[],\"suggested_next_role\":\"pm|dev|qa|ops|ceo|close\",\"reason\":\"简短原因\",\"risk_level\":\"normal|high\",\"needs_human\":true|false,\"create_issue_proposal\":null|{{\"title\":\"新 issue 标题\",\"description_md\":\"为什么这应该是独立 issue\",\"acceptance_criteria_md\":\"完成标准\",\"priority\":\"p1|p2|p3\",\"route_role\":\"pm|dev|qa|ops|ceo\",\"relation_type\":\"parent_of|blocked_by|related_to\",\"metadata\":{{}}}}}}\n"
         "不要输出额外文本。"
     )
@@ -265,6 +286,9 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         'worker_instruction': base_instruction,
         'attempt_role': role,
         'generated_by': 'issue_worker_v2',
+        'flow_id': flow_id,
+        'callback_token': callback_token,
+        'timeout_deadline_ms': int(time.time() * 1000) + 15 * 60 * 1000,
     }
 
 

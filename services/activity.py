@@ -28,6 +28,25 @@ def ensure_issue_activity_table(conn: sqlite3.Connection) -> None:
     conn.execute('CREATE INDEX IF NOT EXISTS idx_issue_activities_issue_created ON issue_activities(issue_id, created_at_ms)')
 
 
+def ensure_issue_attempt_callback_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        '''CREATE TABLE IF NOT EXISTS issue_attempt_callbacks (
+            id TEXT PRIMARY KEY,
+            attempt_id TEXT NOT NULL,
+            flow_id TEXT,
+            callback_token TEXT NOT NULL,
+            phase TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            payload_json TEXT,
+            accepted INTEGER NOT NULL DEFAULT 1,
+            accepted_reason TEXT,
+            created_at_ms INTEGER NOT NULL
+        )'''
+    )
+    conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_issue_attempt_callbacks_idempotency ON issue_attempt_callbacks(idempotency_key)')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_issue_attempt_callbacks_attempt_created ON issue_attempt_callbacks(attempt_id, created_at_ms)')
+
+
 def actor_meta(conn: sqlite3.Connection, employee_id: str | None) -> tuple[str | None, str | None]:
     if not employee_id:
         return None, None
@@ -74,6 +93,72 @@ def record_issue_activity(
             now_ms,
         ),
     )
+
+
+def record_attempt_callback_event(
+    conn: sqlite3.Connection,
+    *,
+    attempt_id: str,
+    flow_id: str | None,
+    callback_token: str,
+    phase: str,
+    idempotency_key: str,
+    payload: dict[str, Any] | None,
+    accepted: bool,
+    accepted_reason: str | None,
+    created_at_ms: int,
+) -> tuple[bool, dict[str, Any]]:
+    ensure_issue_attempt_callback_table(conn)
+    existing = conn.execute(
+        '''SELECT id, attempt_id, flow_id, callback_token, phase, idempotency_key, payload_json, accepted, accepted_reason, created_at_ms
+           FROM issue_attempt_callbacks
+           WHERE idempotency_key = ?''',
+        (idempotency_key,),
+    ).fetchone()
+    if existing:
+        return False, {
+            'id': existing['id'],
+            'attempt_id': existing['attempt_id'],
+            'flow_id': existing['flow_id'],
+            'callback_token': existing['callback_token'],
+            'phase': existing['phase'],
+            'idempotency_key': existing['idempotency_key'],
+            'payload_json': existing['payload_json'],
+            'accepted': bool(existing['accepted']),
+            'accepted_reason': existing['accepted_reason'],
+            'created_at_ms': existing['created_at_ms'],
+        }
+    callback_id = uid('cb')
+    conn.execute(
+        '''INSERT INTO issue_attempt_callbacks (
+            id, attempt_id, flow_id, callback_token, phase, idempotency_key,
+            payload_json, accepted, accepted_reason, created_at_ms
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        (
+            callback_id,
+            attempt_id,
+            flow_id,
+            callback_token,
+            phase,
+            idempotency_key,
+            json.dumps(payload or {}, ensure_ascii=False),
+            1 if accepted else 0,
+            accepted_reason,
+            created_at_ms,
+        ),
+    )
+    return True, {
+        'id': callback_id,
+        'attempt_id': attempt_id,
+        'flow_id': flow_id,
+        'callback_token': callback_token,
+        'phase': phase,
+        'idempotency_key': idempotency_key,
+        'payload_json': json.dumps(payload or {}, ensure_ascii=False),
+        'accepted': accepted,
+        'accepted_reason': accepted_reason,
+        'created_at_ms': created_at_ms,
+    }
 
 
 def fetch_issue_activity(conn: sqlite3.Connection, issue_id: str) -> list[dict[str, Any]]:

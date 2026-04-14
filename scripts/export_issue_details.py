@@ -19,6 +19,7 @@ def main():
         for item in issues:
             detail = svc.get_issue(issue_id=item['id'])
             attempts = detail['attempts']
+            callbacks_by_attempt = detail.get('callbacks_by_attempt') or {}
             timelines = {}
             for attempt in attempts:
                 timelines[attempt['id']] = svc.get_attempt_timeline(attempt_id=attempt['id'])['items']
@@ -41,6 +42,7 @@ def main():
             details.append({
                 'issue': detail['issue'],
                 'attempts': attempts,
+                'callbacks_by_attempt': callbacks_by_attempt,
                 'timelines': timelines,
                 'activities': svc.get_issue_activity(issue_id=item['id'])['items'],
                 'relations': {

@@ -17,7 +17,12 @@ PROTO_ROOT = Path('/root/.openclaw/workspace/agent-team-prototype')
 if str(PROTO_ROOT) not in sys.path:
     sys.path.insert(0, str(PROTO_ROOT))
 
-from execution_adapter import OpenClawExecutionAdapter, TimeoutObserved  # type: ignore  # noqa: E402
+from execution_adapter import (  # type: ignore  # noqa: E402
+    OpenClawExecutionAdapter,
+    RunAbortedObserved,
+    RunErrorObserved,
+    TimeoutObserved,
+)
 
 
 def uid(prefix: str) -> str:
@@ -505,7 +510,7 @@ class AgentTeamService:
             '''SELECT ia.id AS attempt_id, ia.issue_id, ia.attempt_no, ia.status, ia.dispatch_ref,
                       ia.assigned_employee_id, ia.input_snapshot_json, ia.callback_status,
                       ia.callback_payload_json, ia.artifact_status, ia.artifact_snapshot_json,
-                      ia.completion_mode, rb.binding_key, rb.session_key,
+                      ia.completion_mode, ia.created_at_ms, rb.binding_key, rb.session_key,
                       i.acceptance_criteria_md
                FROM issue_attempts ia
                JOIN issues i ON i.id = ia.issue_id
@@ -639,9 +644,17 @@ class AgentTeamService:
             adapter = OpenClawExecutionAdapter(effective_session_key)
             try:
                 if expected_marker:
-                    wait_result = adapter.wait_for_json_marker(marker=expected_marker, timeout_seconds=timeout_seconds)
+                    wait_result = adapter.wait_for_json_marker(
+                        marker=expected_marker,
+                        timeout_seconds=timeout_seconds,
+                        min_timestamp_ms=row['created_at_ms'],
+                    )
                 else:
-                    wait_result = adapter.wait_for_exact_text(expected_text=expected_text, timeout_seconds=timeout_seconds)
+                    wait_result = adapter.wait_for_exact_text(
+                        expected_text=expected_text,
+                        timeout_seconds=timeout_seconds,
+                        min_timestamp_ms=row['created_at_ms'],
+                    )
                 ts = now_ms()
                 self.db.conn.execute(
                     'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
@@ -677,6 +690,25 @@ class AgentTeamService:
                 result['status'] = 'succeeded'
                 result['issue_status'] = next_issue_status
                 result['wait_result'] = wait_result
+            except RunAbortedObserved as e:
+                lifecycle = self.observe_dispatch_lifecycle_event(
+                    dispatch_ref=dispatch_ref,
+                    state='aborted',
+                    stop_reason=e.stop_reason or 'aborted',
+                    error_message=e.error_message,
+                    payload={'observed_via': 'sessions.get', 'timestamp': e.timestamp},
+                )
+                result['status'] = 'cancelled'
+                result['lifecycle_result'] = lifecycle
+            except RunErrorObserved as e:
+                lifecycle = self.observe_dispatch_lifecycle_event(
+                    dispatch_ref=dispatch_ref,
+                    state='error',
+                    error_message=e.error_message or 'run errored',
+                    payload={'observed_via': 'sessions.get', 'timestamp': e.timestamp},
+                )
+                result['status'] = 'failed'
+                result['lifecycle_result'] = lifecycle
             except TimeoutObserved as e:
                 result['observe_timeout'] = str(e)
         return result

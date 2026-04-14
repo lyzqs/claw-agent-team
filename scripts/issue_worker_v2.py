@@ -211,47 +211,38 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             "只做当前角色最小必要且正确的工作，不要越过本角色职责边界。"
         )
 
-    issue_session_key = session_key
     prior_handoff = metadata.get('prior_handoff') if isinstance(metadata.get('prior_handoff'), dict) else {}
     prior_summary = ''
     if prior_handoff:
         prior_summary = (
-            "Previous role handoff:\n"
+            "上一角色交接：\n"
             f"- summary: {prior_handoff.get('summary') or prior_handoff.get('reason') or ''}\n"
-            f"- suggested_next_role: {prior_handoff.get('suggested_next_role') or ''}\n"
-            f"- blocking_findings: {', '.join(prior_handoff.get('blocking_findings') or [])}\n"
-            f"- artifacts: {', '.join(prior_handoff.get('artifacts') or [])}\n\n"
+            f"- suggested_next_role: {prior_handoff.get('suggested_next_role') or ''}\n\n"
         )
+
     retry_context = metadata.get('retry_context') if isinstance(metadata.get('retry_context'), dict) else {}
     retry_summary = ''
     if retry_context and retry_context.get('attempt_role') == role:
         retry_summary = (
-            "Retry context for the same issue and same role:\n"
-            f"- this is still issue #{issue['issue_no']}, not a new issue\n"
+            "重试上下文：\n"
             f"- previous attempt_no: {retry_context.get('attempt_no') or ''}\n"
             f"- previous status: {retry_context.get('status') or ''}\n"
-            f"- previous result_summary: {retry_context.get('result_summary') or ''}\n"
             f"- previous failure_summary: {retry_context.get('failure_summary') or ''}\n"
-            f"- previous handoff summary: {(retry_context.get('wait_payload') or {}).get('summary') or ''}\n"
-            "- continue from prior work where possible; do not treat this as a brand new issue\n\n"
+            "- 尽量延续已有工作，不要把它当成全新 issue\n\n"
         )
+
     existing_artifacts = metadata.get('artifacts') if isinstance(metadata.get('artifacts'), dict) else {}
     existing_feishu_docs = existing_artifacts.get('feishu_docs') if isinstance(existing_artifacts.get('feishu_docs'), list) else []
     artifact_summary = ''
     if existing_feishu_docs:
         lines = []
-        for item in existing_feishu_docs[:5]:
+        for item in existing_feishu_docs[:3]:
             if not isinstance(item, dict):
                 continue
-            lines.append(
-                f"- feishu_doc: url={item.get('doc_url') or ''} token={item.get('doc_token') or ''} status={item.get('status') or ''} from_attempt_no={item.get('from_attempt_no') or item.get('created_by_attempt_no') or ''}"
-            )
+            lines.append(f"- 文档: {item.get('doc_url') or item.get('doc_token') or ''}")
         if lines:
-            artifact_summary = (
-                "Existing issue-level artifacts already recorded:\n"
-                + "\n".join(lines)
-                + "\n- If these artifacts already satisfy acceptance, do NOT recreate them. Reuse them and finish with structured callback/final JSON.\n\n"
-            )
+            artifact_summary = "已记录的产物：\n" + "\n".join(lines) + "\n- 如已满足验收，请复用，不要重复创建。\n\n"
+
     role_boundary_rules = {
         'ceo': '你是治理与分派角色，默认不要亲自调研、实现、测试、部署。优先做判断、分派、升级、关闭。',
         'pm': '你负责需求澄清、任务拆分、路由与组织，不负责主体实现。',
@@ -259,30 +250,34 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         'qa': '你负责验收、验证、找风险，不负责主体实现。',
         'ops': '你负责部署、环境、运行态与发布保障，不负责需求定义与业务验收。',
     }
+
     prompt = (
-        f"你现在以 Agent Team 的 {role_label} 角色工作。\n"
-        f"Issue #{issue['issue_no']} ({issue['issue_id']})，当前角色={role_label}，当前状态={issue['status']}。\n\n"
+        f"你现在以 Agent Team 的 {role_label} 角色工作。Issue #{issue['issue_no']}。\n\n"
         f"{prior_summary}"
         f"{retry_summary}"
         f"{artifact_summary}"
-        f"角色边界：{role_boundary_rules.get(role, '请只做当前角色边界内的工作。')}\n"
-        "交流与输出默认使用中文，除非 issue 明确要求英文产物。\n\n"
+        f"角色边界：{role_boundary_rules.get(role, '请只做当前角色边界内的工作。')}\n\n"
         f"任务：\n{base_instruction}\n\n"
-        "规则：\n"
-        "1. 只做当前 issue 与当前角色最小必要的工作。\n"
-        "2. 不要查看无关 issue、无关看板导出或大范围项目上下文，除非确有必要。\n"
-        "3. 优先直接行动，不要做无边界探索。\n"
-        "4. 如果验收标准已经满足，不要继续扩展工作，直接结束。\n"
-        "5. 最终答复必须是单个 JSON 对象，不能带 markdown、代码块或额外说明。\n"
-        "6. 如果你在过程中成功创建了外部产物，比如飞书文档，请在最终 JSON 的 artifacts 中显式返回该产物信息。\n\n"
-        f"最终 JSON schema：{{\"marker\":\"{marker}\",\"status\":\"done|blocked|needs_human\",\"summary\":\"简短总结\",\"artifacts\":[],\"blocking_findings\":[],\"suggested_next_role\":\"pm|dev|qa|ops|ceo|close\",\"reason\":\"简短原因\",\"risk_level\":\"normal|high\",\"needs_human\":true|false,\"create_issue_proposal\":null|{{\"title\":\"新 issue 标题\",\"description_md\":\"为什么这应该是独立 issue\",\"acceptance_criteria_md\":\"完成标准\",\"priority\":\"p1|p2|p3\",\"route_role\":\"pm|dev|qa|ops|ceo\",\"relation_type\":\"parent_of|blocked_by|related_to\",\"metadata\":{{}}}}}}\n"
-        "不要输出额外文本。"
+        "要求：\n"
+        "1. 只做当前角色最小必要的工作。\n"
+        "2. 不要做无关探索。\n"
+        "3. 如果验收已满足，直接收尾。\n"
+        "4. 如果创建了飞书文档等外部产物，请先记录 artifact callback。\n"
+        "5. 最终回复必须是单个 JSON 对象，不要带 markdown、代码块或额外说明。\n\n"
+        "最终 JSON 只需要包含这些字段：\n"
+        f"marker={marker}\n"
+        "status, summary, artifacts, blocking_findings, suggested_next_role, reason, risk_level, needs_human, create_issue_proposal\n\n"
+        "Callback：\n"
+        f"artifact 文档：python3 /root/.openclaw/workspace-agent-team/scripts/attempt_callback_helper.py artifact-doc --attempt-id <attempt_id> --callback-token {callback_token} --doc-url <url> [--doc-token <token>] [--summary <summary>]\n"
+        f"terminal 完成：python3 /root/.openclaw/workspace-agent-team/scripts/attempt_callback_helper.py terminal --attempt-id <attempt_id> --callback-token {callback_token} --status done --summary '<总结>' --next <pm|dev|qa|ops|ceo|close> --reason '<原因>'\n"
+        "先记 callback，再发送最终 JSON。"
     )
+
     return {
         'prompt': prompt,
         'marker': marker,
         'expected_text': marker,
-        'session_key': issue_session_key,
+        'session_key': session_key,
         'worker_instruction': base_instruction,
         'attempt_role': role,
         'generated_by': 'issue_worker_v2',

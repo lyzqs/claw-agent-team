@@ -4,11 +4,14 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 ROOT = Path('/root/.openclaw/workspace-agent-team')
 CLI = ROOT / 'scripts' / 'agent_team_api_cli.py'
+
+
+ROLE_CHOICES = ['pm', 'dev', 'qa', 'ops', 'ceo', 'close']
+STATUS_CHOICES = ['done', 'blocked', 'needs_human']
 
 
 def run_cli(args: list[str]) -> dict:
@@ -21,31 +24,99 @@ def run_cli(args: list[str]) -> dict:
         raise SystemExit(f'invalid JSON from agent_team_api_cli: {e}\n{res.stdout}') from e
 
 
-def parse_json_arg(raw: str) -> dict:
+def parse_json_object(raw: str | None, *, default: dict | None = None) -> dict:
+    if raw is None or raw == '':
+        return default or {}
     value = json.loads(raw)
     if not isinstance(value, dict):
-        raise SystemExit('payload json must be an object')
+        raise SystemExit('json payload must be an object')
     return value
 
 
+def parse_json_list(raw: str | None) -> list:
+    if raw is None or raw == '':
+        return []
+    value = json.loads(raw)
+    if not isinstance(value, list):
+        raise SystemExit('json payload must be a list')
+    return value
+
+
+def add_common(subparser: argparse.ArgumentParser) -> None:
+    subparser.add_argument('--attempt-id', required=True)
+    subparser.add_argument('--callback-token', required=True)
+    subparser.add_argument('--idempotency-key', default=None)
+
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description='Agent Team callback helper for agent-dispatched runs')
-    p.add_argument('--attempt-id', required=True)
-    p.add_argument('--callback-token', required=True)
-    p.add_argument('--phase', choices=['artifact_created', 'terminal_handoff'], required=True)
-    p.add_argument('--payload-json', required=True, help='full JSON object payload')
-    p.add_argument('--idempotency-key', default=None)
+    p = argparse.ArgumentParser(description='Agent Team callback helper for dispatched runs')
+    sub = p.add_subparsers(dest='mode', required=True)
+
+    raw = sub.add_parser('raw', help='send a raw callback payload')
+    add_common(raw)
+    raw.add_argument('--phase', choices=['artifact_created', 'terminal_handoff'], required=True)
+    raw.add_argument('--payload-json', required=True, help='full JSON object payload')
+
+    artifact_doc = sub.add_parser('artifact-doc', help='record a Feishu doc artifact callback')
+    add_common(artifact_doc)
+    artifact_doc.add_argument('--doc-url', required=True)
+    artifact_doc.add_argument('--doc-token', default='')
+    artifact_doc.add_argument('--summary', default='已创建飞书文档')
+
+    terminal = sub.add_parser('terminal', help='record a terminal handoff callback')
+    add_common(terminal)
+    terminal.add_argument('--marker', default='')
+    terminal.add_argument('--status', choices=STATUS_CHOICES, required=True)
+    terminal.add_argument('--summary', required=True)
+    terminal.add_argument('--next', dest='suggested_next_role', choices=ROLE_CHOICES, required=True)
+    terminal.add_argument('--reason', required=True)
+    terminal.add_argument('--risk-level', default='normal')
+    terminal.add_argument('--needs-human', action='store_true')
+    terminal.add_argument('--artifacts-json', default='')
+    terminal.add_argument('--blocking-findings-json', default='')
+    terminal.add_argument('--create-issue-proposal-json', default='')
+
     return p
+
+
+def build_payload(args: argparse.Namespace) -> tuple[str, dict]:
+    if args.mode == 'raw':
+        return args.phase, parse_json_object(args.payload_json)
+
+    if args.mode == 'artifact-doc':
+        return 'artifact_created', {
+            'artifact_type': 'feishu_doc',
+            'doc_url': args.doc_url,
+            'doc_token': args.doc_token or None,
+            'summary': args.summary,
+        }
+
+    if args.mode == 'terminal':
+        proposal = parse_json_object(args.create_issue_proposal_json, default=None) if args.create_issue_proposal_json else None
+        return 'terminal_handoff', {
+            'marker': args.marker,
+            'status': args.status,
+            'summary': args.summary,
+            'artifacts': parse_json_list(args.artifacts_json),
+            'blocking_findings': parse_json_list(args.blocking_findings_json),
+            'suggested_next_role': args.suggested_next_role,
+            'reason': args.reason,
+            'risk_level': args.risk_level,
+            'needs_human': bool(args.needs_human),
+            'create_issue_proposal': proposal,
+        }
+
+    raise SystemExit(f'unsupported mode: {args.mode}')
 
 
 def main() -> int:
     args = build_parser().parse_args()
-    payload = parse_json_arg(args.payload_json)
+    phase, payload = build_payload(args)
     out = run_cli([
         'record-attempt-callback',
         '--attempt-id', args.attempt_id,
         '--callback-token', args.callback_token,
-        '--phase', args.phase,
+        '--phase', phase,
         '--payload-json', json.dumps(payload, ensure_ascii=False),
         *(['--idempotency-key', args.idempotency_key] if args.idempotency_key else []),
     ])

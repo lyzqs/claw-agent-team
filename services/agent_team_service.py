@@ -287,9 +287,10 @@ class AgentTeamService:
             "\n\nCallback protocol:\n"
             f"- this attempt_id is {attempt_id}\n"
             f"- this callback_token is {callback_token}\n"
+            "- use the callback helper instead of manually composing the long CLI form\n"
             "- if you create an external artifact such as a Feishu doc, immediately record an artifact callback before your final answer\n"
-            f"- artifact callback command: python3 /root/.openclaw/workspace-agent-team/scripts/agent_team_api_cli.py record-attempt-callback --attempt-id {attempt_id} --callback-token {callback_token} --phase artifact_created --payload-json '<JSON payload>'\n"
-            f"- terminal callback command: python3 /root/.openclaw/workspace-agent-team/scripts/agent_team_api_cli.py record-attempt-callback --attempt-id {attempt_id} --callback-token {callback_token} --phase terminal_handoff --payload-json '<the same final JSON object>'\n"
+            f"- artifact callback helper: python3 /root/.openclaw/workspace-agent-team/scripts/attempt_callback_helper.py --attempt-id {attempt_id} --callback-token {callback_token} --phase artifact_created --payload-json '<JSON payload>'\n"
+            f"- terminal callback helper: python3 /root/.openclaw/workspace-agent-team/scripts/attempt_callback_helper.py --attempt-id {attempt_id} --callback-token {callback_token} --phase terminal_handoff --payload-json '<the same final JSON object>'\n"
             "- terminal callback should be recorded before you send the final JSON into the conversation transcript\n"
         )
         payload = dict(payload)

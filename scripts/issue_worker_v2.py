@@ -256,12 +256,20 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     artifact_summary = ''
     if existing_feishu_docs:
         lines = []
-        for item in existing_feishu_docs[:3]:
+        for item in existing_feishu_docs[:5]:
             if not isinstance(item, dict):
                 continue
-            lines.append(f"- 文档: {item.get('doc_url') or item.get('doc_token') or ''}")
+            lines.append(
+                f"- 文档: {item.get('doc_url') or item.get('doc_token') or ''}"
+                + (f" | summary: {item.get('summary')}" if item.get('summary') else '')
+            )
         if lines:
-            artifact_summary = "已记录的产物：\n" + "\n".join(lines) + "\n- 如已满足验收，请复用，不要重复创建。\n\n"
+            artifact_summary = (
+                "已有中间产出（不可跳过，必须显式处理）：\n"
+                + "\n".join(lines)
+                + "\n- 你必须基于这些已有中间产出进行本角色的一轮显式判断与回复。\n"
+                + "- 不要因为已有产物就省略本角色对话；请明确判断是继续推进、收尾关闭，还是提出阻塞。\n\n"
+            )
 
     role_boundary_rules = {
         'ceo': '你是治理与分派角色，默认不要亲自调研、实现、测试、部署。优先做判断、分派、升级、关闭。',
@@ -281,9 +289,10 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         "要求：\n"
         "1. 只做当前角色最小必要的工作。\n"
         "2. 不要做无关探索。\n"
-        "3. 如果验收已满足，直接收尾。\n"
-        "4. 如果创建了飞书文档等外部产物，请先记录 artifact callback。\n"
-        "5. 最终回复必须是单个 JSON 对象，不要带 markdown、代码块或额外说明。\n\n"
+        "3. 即使已有中间产出，也必须做本角色的一轮显式判断，不要静默跳过。\n"
+        "4. 如果验收已满足，请明确给出关闭或继续流转建议。\n"
+        "5. 如果创建了飞书文档等外部产物，请先记录 artifact callback。\n"
+        "6. 最终回复必须是单个 JSON 对象，不要带 markdown、代码块或额外说明。\n\n"
         "最终 JSON 只需要包含这些字段：\n"
         f"marker={marker}\n"
         "status, summary, artifacts, blocking_findings, suggested_next_role, reason, risk_level, needs_human, create_issue_proposal\n\n"
@@ -525,67 +534,6 @@ def main() -> int:
 
         ready_items = fetch_ready_candidates(svc)
         for issue in ready_items[:MAX_DISPATCH_PER_RUN]:
-            reusable_artifact = extract_reusable_artifact_for_issue(issue)
-            if reusable_artifact:
-                gate_out = svc.apply_artifact_gate(
-                    issue_id=issue['issue_id'],
-                    artifact_payload=reusable_artifact,
-                    current_role=issue.get('role'),
-                    summary=str(reusable_artifact.get('summary') or 'Existing artifact already satisfies acceptance'),
-                )
-                changed = True
-                item = {
-                    'kind': 'artifact_gate',
-                    'issue_id': issue['issue_id'],
-                    'issue_no': issue['issue_no'],
-                    'status_before': issue['status'],
-                    'role': issue.get('role'),
-                    'issue_status_after': gate_out.get('status'),
-                    'artifact': reusable_artifact,
-                }
-                handoff_payload = gate_out.get('handoff_payload') if isinstance(gate_out.get('handoff_payload'), dict) else {}
-                next_role = handoff_payload.get('suggested_next_role') if isinstance(handoff_payload.get('suggested_next_role'), str) else None
-                item['next_role_decision'] = next_role
-                if next_role == 'close':
-                    closed = svc.close_issue(issue_id=issue['issue_id'], resolution='completed')
-                    close_item = {
-                        'kind': 'close',
-                        'issue_id': issue['issue_id'],
-                        'issue_no': issue['issue_no'],
-                        'from_role': issue.get('role'),
-                        'resolution': closed.get('resolution'),
-                        'summary': 'auto closed after artifact gate',
-                    }
-                    item['close'] = close_item
-                    item['issue_status_after'] = 'closed'
-                    append_action({'at': report['ran_at'], **close_item})
-                elif next_role and next_role != 'close':
-                    target_employee_key = pick_target_employee_key(svc, project_key=issue.get('project_key') or 'shared', role=next_role)
-                    if target_employee_key:
-                        route_out = svc.handoff_issue(
-                            issue_id=issue['issue_id'],
-                            to_employee_key=target_employee_key,
-                            note=f'auto route after artifact gate from {issue.get("role") or "unknown"}',
-                            issue_type='normal',
-                            risk_level='normal',
-                        )
-                        route_item = {
-                            'kind': 'route',
-                            'issue_id': issue['issue_id'],
-                            'issue_no': issue['issue_no'],
-                            'from_role': issue.get('role'),
-                            'to_role': next_role,
-                            'target_employee_key': target_employee_key,
-                            'routing_reason': route_out.get('routing_reason'),
-                        }
-                        item['route'] = route_item
-                        item['issue_status_after'] = route_out.get('status', item['issue_status_after'])
-                        append_action({'at': report['ran_at'], **route_item})
-                    else:
-                        item['route_error'] = f'missing employee for role={next_role} project={issue.get("project_key") or "shared"}'
-                report['skipped'].append(item)
-                append_action({'at': report['ran_at'], **item})
-                continue
             if not issue.get('binding_key'):
                 report['skipped'].append({
                     'kind': 'dispatch',
@@ -622,6 +570,7 @@ def main() -> int:
                 'dispatch_ref': out['dispatch_ref'],
                 'attempt_no': out['attempt_no'],
                 'role': issue.get('role'),
+                'artifact_hint': bool(extract_reusable_artifact_for_issue(issue)),
             }
             report['dispatched'].append(item)
             append_action({'at': report['ran_at'], **item})

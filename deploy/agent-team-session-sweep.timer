@@ -1,0 +1,10 @@
+[Unit]
+Description=Agent Team session sweep timer
+
+[Timer]
+OnBootSec=90s
+OnUnitActiveSec=15m
+Unit=agent-team-session-sweep.service
+
+[Install]
+WantedBy=timers.target

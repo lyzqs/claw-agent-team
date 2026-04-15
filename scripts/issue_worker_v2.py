@@ -256,13 +256,20 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     artifact_summary = ''
     if existing_feishu_docs:
         lines = []
-        for item in existing_feishu_docs[:5]:
+        seen_refs: set[str] = set()
+        for item in existing_feishu_docs:
             if not isinstance(item, dict):
                 continue
+            ref = str(item.get('doc_url') or item.get('doc_token') or '').strip()
+            if not ref or ref in seen_refs:
+                continue
+            seen_refs.add(ref)
             lines.append(
-                f"- 文档: {item.get('doc_url') or item.get('doc_token') or ''}"
+                f"- 文档: {ref}"
                 + (f" | summary: {item.get('summary')}" if item.get('summary') else '')
             )
+            if len(lines) >= 5:
+                break
         if lines:
             artifact_summary = (
                 "已有中间产出（不可跳过，必须显式处理）：\n"
@@ -296,10 +303,7 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         "最终 JSON 只需要包含这些字段：\n"
         f"marker={marker}\n"
         "status, summary, artifacts, blocking_findings, suggested_next_role, reason, risk_level, needs_human, create_issue_proposal\n\n"
-        "Callback：\n"
-        f"artifact 文档：python3 /root/.openclaw/workspace-agent-team/scripts/attempt_callback_helper.py artifact-doc --attempt-id <attempt_id> --callback-token {callback_token} --doc-url <url> [--doc-token <token>] [--summary <summary>]\n"
-        f"terminal 完成：python3 /root/.openclaw/workspace-agent-team/scripts/attempt_callback_helper.py terminal --attempt-id <attempt_id> --callback-token {callback_token} --status done --summary '<总结>' --next <pm|dev|qa|ops|ceo|close> --reason '<原因>'\n"
-        "先记 callback，再发送最终 JSON。"
+        "系统会在消息末尾追加本轮可直接执行的 callback 命令，请按追加后的具体命令调用。"
     )
 
     return {

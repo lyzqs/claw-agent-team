@@ -588,57 +588,12 @@ class AgentTeamService:
             return result
 
         artifact_callback = callback_payload.get('artifact_callback') if isinstance(callback_payload.get('artifact_callback'), dict) else None
-        if artifact_callback and can_use_artifact_fallback(acceptance_criteria_md=row['acceptance_criteria_md'], artifact_payload=artifact_callback):
-            normalized_payload = {
-                'marker': str(input_snapshot.get('marker') or ''),
-                'status': 'done',
-                'summary': str(artifact_callback.get('summary') or 'Artifact satisfies acceptance criteria'),
-                'artifacts': [artifact_callback],
-                'blocking_findings': [],
-                'suggested_next_role': default_next_role_for(input_snapshot.get('attempt_role')),
-                'reason': 'artifact fallback success',
-                'risk_level': 'normal',
-                'needs_human': False,
-                'create_issue_proposal': None,
-            }
-            ts = now_ms()
-            output_snapshot = {
-                'source': 'artifact_fallback',
-                'payload': normalized_payload,
-            }
-            self.db.conn.execute(
-                'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
-                ('succeeded', ts, normalized_payload['summary'], json.dumps(output_snapshot, ensure_ascii=False), 'artifact_fallback', ts, row['attempt_id']),
+        if artifact_callback:
+            result['artifact_callback'] = artifact_callback
+            result['artifact_ready'] = can_use_artifact_fallback(
+                acceptance_criteria_md=row['acceptance_criteria_md'],
+                artifact_payload=artifact_callback,
             )
-            self.db.conn.execute(
-                'UPDATE issues SET status = ?, updated_at_ms = ? WHERE id = ?',
-                ('review', ts, row['issue_id']),
-            )
-            self._record_checkpoint(
-                issue_id=row['issue_id'],
-                attempt_id=row['attempt_id'],
-                kind='progress',
-                summary='Execution completed via artifact fallback',
-                details_md=json.dumps(output_snapshot, ensure_ascii=False),
-                next_action='Hand off to next role / review',
-                created_by_employee_id=row['assigned_employee_id'],
-                percent_complete=100,
-            )
-            record_issue_activity(
-                self.db.conn,
-                now_ms=ts,
-                issue_id=row['issue_id'],
-                attempt_id=row['attempt_id'],
-                action_type='execution_succeeded',
-                summary='Execution succeeded via artifact fallback',
-                actor_employee_id=row['assigned_employee_id'],
-                details={'artifact_payload': artifact_callback, 'issue_status': 'review'},
-            )
-            self.db.commit()
-            result['status'] = 'succeeded'
-            result['issue_status'] = 'review'
-            result['wait_result'] = output_snapshot
-            return result
 
         if expected_text or expected_marker:
             adapter = OpenClawExecutionAdapter(effective_session_key)

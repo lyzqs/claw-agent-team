@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from .db import AgentTeamDB, NotFoundError, ValidationError, now_ms
@@ -61,6 +62,22 @@ def append_unique_artifact(existing: list[Any], artifact: Any) -> list[Any]:
     if marker not in seen:
         items.append(artifact)
     return items
+
+
+def resolve_session_snapshot(session_key: str) -> dict[str, Any]:
+    parts = session_key.split(':')
+    if len(parts) < 2 or parts[0] != 'agent':
+        return {}
+    agent_id = parts[1]
+    sessions_path = Path('/root/.openclaw/agents') / agent_id / 'sessions' / 'sessions.json'
+    if not sessions_path.exists():
+        return {}
+    try:
+        data = json.loads(sessions_path.read_text(encoding='utf-8'))
+    except Exception:
+        return {}
+    entry = data.get(session_key)
+    return entry if isinstance(entry, dict) else {}
 
 
 @dataclass
@@ -296,14 +313,18 @@ class AgentTeamService:
         dispatch = adapter.dispatch(prompt=payload['prompt'], dispatch_id=dispatch_ref)
 
         real_dispatch_ref = dispatch['dispatch_ref']
+        session_snapshot = resolve_session_snapshot(effective_session_key)
+        runtime_session_id = session_snapshot.get('sessionId') if isinstance(session_snapshot.get('sessionId'), str) else None
+        runtime_session_file = session_snapshot.get('sessionFile') if isinstance(session_snapshot.get('sessionFile'), str) else None
 
         self.db.conn.execute(
             '''INSERT INTO issue_attempts (
                 id, issue_id, attempt_no, assigned_employee_id, runtime_binding_id,
                 dispatch_kind, status, dispatch_ref, input_snapshot_json, metadata_json,
                 flow_id, callback_token, callback_status, artifact_status, timeout_deadline_ms,
+                runtime_session_key, runtime_session_id, runtime_session_file,
                 created_at_ms, updated_at_ms
-            ) VALUES (?, ?, ?, ?, ?, 'run', 'dispatching', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            ) VALUES (?, ?, ?, ?, ?, 'run', 'dispatching', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             (
                 attempt_id,
                 issue_id,
@@ -318,10 +339,14 @@ class AgentTeamService:
                 'pending',
                 'none',
                 timeout_deadline_ms,
+                effective_session_key,
+                runtime_session_id,
+                runtime_session_file,
                 ts,
                 ts,
             ),
         )
+
         self.db.conn.execute(
             'UPDATE issues SET status = ?, active_attempt_no = ?, assigned_employee_id = ?, updated_at_ms = ? WHERE id = ?',
             ('dispatching', attempt_no, binding['employee_id'], ts, issue_id),
@@ -331,7 +356,7 @@ class AgentTeamService:
             attempt_id=attempt_id,
             kind='handoff',
             summary='Execution dispatched',
-            details_md=json.dumps({'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key'], 'flow_id': flow_id, 'callback_token': callback_token}, ensure_ascii=False),
+            details_md=json.dumps({'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key'], 'flow_id': flow_id, 'callback_token': callback_token, 'session_key': effective_session_key, 'session_id': runtime_session_id, 'session_file': runtime_session_file}, ensure_ascii=False),
             next_action='Wait for callback or observe completion',
             created_by_employee_id=binding['employee_id'],
             percent_complete=10,
@@ -344,7 +369,7 @@ class AgentTeamService:
             action_type='dispatch_execution',
             summary='Execution dispatched to runtime',
             actor_employee_id=binding['employee_id'],
-            details={'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key'], 'session_key': effective_session_key, 'flow_id': flow_id, 'callback_token': callback_token},
+            details={'dispatch_ref': real_dispatch_ref, 'binding_key': binding['binding_key'], 'session_key': effective_session_key, 'session_id': runtime_session_id, 'session_file': runtime_session_file, 'flow_id': flow_id, 'callback_token': callback_token},
         )
         self.db.commit()
         return {
@@ -356,6 +381,8 @@ class AgentTeamService:
             'session_key': effective_session_key,
             'status': 'dispatching',
             'accepted': dispatch.get('accepted', True),
+            'runtime_session_id': runtime_session_id,
+            'runtime_session_file': runtime_session_file,
             'flow_id': flow_id,
             'callback_token': callback_token,
             'timeout_deadline_ms': timeout_deadline_ms,

@@ -48,6 +48,12 @@ def ensure_attempt_callback_schema(conn: sqlite3.Connection) -> None:
         alter_statements.append("ALTER TABLE issue_attempts ADD COLUMN reconciled_at_ms INTEGER")
     if 'completion_mode' not in columns:
         alter_statements.append("ALTER TABLE issue_attempts ADD COLUMN completion_mode TEXT")
+    if 'runtime_session_key' not in columns:
+        alter_statements.append("ALTER TABLE issue_attempts ADD COLUMN runtime_session_key TEXT")
+    if 'runtime_session_id' not in columns:
+        alter_statements.append("ALTER TABLE issue_attempts ADD COLUMN runtime_session_id TEXT")
+    if 'runtime_session_file' not in columns:
+        alter_statements.append("ALTER TABLE issue_attempts ADD COLUMN runtime_session_file TEXT")
     for sql in alter_statements:
         conn.execute(sql)
 

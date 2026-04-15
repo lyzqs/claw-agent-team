@@ -275,25 +275,27 @@ def load_recent_session_events(session_file: str, *, max_lines: int = 400) -> li
     return out
 
 
-def has_recent_runtime_activity(*, session_key: str, since_ms: int, lookback_seconds: int = 300, marker: str | None = None, dispatch_ref: str | None = None) -> tuple[bool, dict[str, Any]]:
+def has_recent_runtime_activity(*, session_key: str, since_ms: int, lookback_seconds: int = 300, marker: str | None = None, dispatch_ref: str | None = None, session_id: str | None = None, session_file: str | None = None) -> tuple[bool, dict[str, Any]]:
     info: dict[str, Any] = {
         'session_key': session_key,
         'since_ms': since_ms,
         'lookback_seconds': lookback_seconds,
         'marker': marker,
         'dispatch_ref': dispatch_ref,
+        'session_id': session_id,
+        'session_file': session_file,
     }
     now_ms_local = int(time.time() * 1000)
     threshold_ms = now_ms_local - lookback_seconds * 1000
-    session_record = resolve_session_record(session_key)
+    session_record = resolve_session_record(session_key) if session_key else {}
     if session_record:
-        info['session_id'] = session_record.get('sessionId')
-        info['session_file'] = session_record.get('sessionFile')
+        info['registry_session_id'] = session_record.get('sessionId')
+        info['registry_session_file'] = session_record.get('sessionFile')
         info['session_updated_at'] = session_record.get('updatedAt')
-    session_file = session_record.get('sessionFile') if isinstance(session_record.get('sessionFile'), str) else ''
+    effective_session_file = session_file or (session_record.get('sessionFile') if isinstance(session_record.get('sessionFile'), str) else '')
 
-    if session_file:
-        events = load_recent_session_events(session_file)
+    if effective_session_file:
+        events = load_recent_session_events(effective_session_file)
         anchor_ts = None
         anchor_source = None
         for event in events:
@@ -619,6 +621,9 @@ def fetch_dispatching_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
                   ia.input_snapshot_json,
                   ia.created_at_ms,
                   ia.updated_at_ms,
+                  ia.runtime_session_key,
+                  ia.runtime_session_id,
+                  ia.runtime_session_file,
                   i.issue_no,
                   i.title,
                   i.status AS issue_status,
@@ -950,11 +955,13 @@ def main() -> int:
                     if age_seconds >= STALE_ATTEMPT_SECONDS:
                         session_key = payload.get('session_key') if isinstance(payload.get('session_key'), str) else ''
                         active, activity_info = has_recent_runtime_activity(
-                            session_key=session_key,
+                            session_key=session_key or str(attempt.get('runtime_session_key') or ''),
+                            session_id=str(attempt.get('runtime_session_id') or '') or None,
+                            session_file=str(attempt.get('runtime_session_file') or '') or None,
                             since_ms=int(attempt.get('created_at_ms') or 0),
                             marker=expected_marker or expected_text,
                             dispatch_ref=attempt.get('dispatch_ref'),
-                        ) if session_key else (False, {'check_error': 'missing session_key'})
+                        ) if (session_key or attempt.get('runtime_session_key')) else (False, {'check_error': 'missing session_key'})
                         item['recent_activity'] = activity_info
                         if active:
                             item['stale_deferred'] = True

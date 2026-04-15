@@ -15,7 +15,7 @@ from typing import Any
 ROOT = Path('/root/.openclaw/workspace-agent-team')
 sys.path.insert(0, str(ROOT))
 
-from services.agent_team_service import AgentTeamService  # noqa: E402
+from services.agent_team_service import AgentTeamService, WAITING_HUMAN_STATUSES  # noqa: E402
 from services.activity import record_issue_activity  # noqa: E402
 from services.workflow_control import load_control  # noqa: E402
 
@@ -707,6 +707,8 @@ def pick_target_employee_key(svc: AgentTeamService, *, project_key: str, role: s
 
 
 def decide_next_role(*, current_role: str | None, metadata: dict[str, Any]) -> str | None:
+    if bool(metadata.get('needs_human')):
+        return 'human_queue'
     suggested = metadata.get('suggested_next_role')
     if isinstance(suggested, str) and suggested.strip():
         return suggested.strip()
@@ -905,9 +907,10 @@ def main() -> int:
                         metadata['suggested_next_role'] = wait_payload.get('suggested_next_role').strip()
                     if isinstance(wait_payload.get('risk_level'), str) and wait_payload.get('risk_level').strip():
                         metadata['risk_level'] = wait_payload.get('risk_level').strip()
+                    metadata['needs_human'] = bool(wait_payload.get('needs_human')) or str(wait_payload.get('status') or '').strip() == 'needs_human'
                     item['agent_suggestion'] = wait_payload
-                    next_role = decide_next_role(current_role=attempt.get('role'), metadata=metadata)
-                    item['next_role_decision'] = next_role
+                    next_role = None if out.get('issue_status') in WAITING_HUMAN_STATUSES else decide_next_role(current_role=attempt.get('role'), metadata=metadata)
+                    item['next_role_decision'] = next_role or ('human_queue_wait' if out.get('issue_status') in WAITING_HUMAN_STATUSES else None)
                     if next_role == 'close':
                         closed = svc.close_issue(issue_id=attempt['issue_id'], resolution='completed')
                         close_item = {
@@ -921,7 +924,7 @@ def main() -> int:
                         item['close'] = close_item
                         item['issue_status'] = 'closed'
                         append_action({'at': report['ran_at'], **close_item})
-                    elif next_role and next_role != 'close':
+                    elif next_role and next_role not in {'close', 'human_queue'}:
                         target_employee_key = pick_target_employee_key(svc, project_key=issue_ctx['project_key'], role=next_role)
                         if target_employee_key:
                             route_out = svc.handoff_issue(

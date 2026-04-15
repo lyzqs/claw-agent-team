@@ -4,10 +4,10 @@
       "project_key": "agent-team-core",
       "name": "Agent Team Core",
       "status": "active",
-      "total_issues": 35,
+      "total_issues": 36,
       "closed_issues": 35,
       "agent_queue_issues": 0,
-      "human_queue_issues": 0
+      "human_queue_issues": 1
     },
     {
       "project_key": "agent-team-labs",
@@ -20,7 +20,19 @@
     }
   ],
   "agent_queue": [],
-  "human_queue": [],
+  "human_queue": [
+    {
+      "id": "issue_b6d4b678a31e",
+      "project_id": "proj_e1ff724206fd",
+      "issue_no": 36,
+      "title": "人工审核测试",
+      "priority": "p2",
+      "status": "waiting_human_approval",
+      "blocker_summary": "PM已完成显式判断：该 issue 已流转到人工确认，当前等待人工确认结果。",
+      "required_human_input": "该 issue 的验收要求是进入人工确认流程；当前由人工确认决定后续动作。",
+      "updated_at_ms": 1776271394474
+    }
+  ],
   "employee_view": [
     {
       "employee_key": "agent-team-core.dev",
@@ -404,6 +416,14 @@
           "title": "E2E validate auto issue_relations from create_issue_proposal",
           "status": "closed",
           "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_b6d4b678a31e",
+          "issue_no": 36,
+          "title": "人工审核测试",
+          "status": "waiting_human_approval",
+          "priority": "p2",
           "has_open_dependencies": false
         }
       ]

@@ -55,6 +55,86 @@ def default_next_role_for(role: str | None) -> str:
     return mapping.get(str(role or '').strip(), 'close')
 
 
+WAITING_HUMAN_STATUS_BY_TYPE = {
+    'info': 'waiting_human_info',
+    'action': 'waiting_human_action',
+    'approval': 'waiting_human_approval',
+}
+WAITING_HUMAN_STATUSES = set(WAITING_HUMAN_STATUS_BY_TYPE.values())
+
+
+def stringify_human_detail(value: Any) -> str:
+    if value is None:
+        return ''
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, (int, float, bool)):
+        return str(value)
+    if isinstance(value, dict):
+        for key in ('summary', 'detail', 'message', 'text', 'reason', 'title'):
+            inner = value.get(key)
+            if isinstance(inner, str) and inner.strip():
+                return inner.strip()
+        try:
+            return json.dumps(value, ensure_ascii=False)
+        except Exception:
+            return str(value)
+    if isinstance(value, list):
+        parts = [stringify_human_detail(item) for item in value]
+        return '；'.join(part for part in parts if part)
+    return str(value)
+
+
+def infer_human_type(payload: dict[str, Any]) -> str:
+    explicit = str(payload.get('human_type') or '').strip()
+    if explicit in WAITING_HUMAN_STATUS_BY_TYPE:
+        return explicit
+
+    text = ' '.join(
+        part for part in [
+            stringify_human_detail(payload.get('summary')),
+            stringify_human_detail(payload.get('reason')),
+            stringify_human_detail(payload.get('required_human_input')),
+            stringify_human_detail(payload.get('human_prompt')),
+            stringify_human_detail(payload.get('blocking_findings')),
+        ]
+        if part
+    ).lower()
+    if any(marker in text for marker in ['补充信息', '更多信息', '需要信息', 'provide info', 'need info', 'clarify', '澄清']):
+        return 'info'
+    if any(marker in text for marker in ['批准', '审批', '确认', '拍板', 'approve', 'approval', 'review']):
+        return 'approval'
+    return 'action'
+
+
+def derive_human_queue_request(payload: dict[str, Any]) -> dict[str, str]:
+    human_type = infer_human_type(payload)
+    summary = stringify_human_detail(payload.get('summary'))
+    reason = stringify_human_detail(payload.get('reason'))
+    findings = stringify_human_detail(payload.get('blocking_findings'))
+    prompt = stringify_human_detail(payload.get('human_prompt')) or summary or findings or reason
+    required_input = stringify_human_detail(payload.get('required_human_input')) or findings
+
+    if not prompt:
+        prompt = {
+            'info': '该 issue 需要人工补充信息后再继续推进。',
+            'action': '该 issue 需要人工执行额外动作或给出处理决定。',
+            'approval': '该 issue 需要人工确认或批准后再继续推进。',
+        }[human_type]
+    if not required_input:
+        required_input = {
+            'info': reason or '请补充继续推进该 issue 所需的关键信息。',
+            'action': reason or '请说明需要人工采取的动作或给出下一步处理决定。',
+            'approval': reason or '请明确确认是否批准当前方案或是否结束该 issue。',
+        }[human_type]
+
+    return {
+        'human_type': human_type,
+        'prompt': prompt,
+        'required_input': required_input,
+    }
+
+
 def append_unique_artifact(existing: list[Any], artifact: Any) -> list[Any]:
     items = list(existing)
     marker = json.dumps(artifact, ensure_ascii=False, sort_keys=True)
@@ -526,6 +606,7 @@ class AgentTeamService:
                       ia.assigned_employee_id, ia.input_snapshot_json, ia.callback_status,
                       ia.callback_payload_json, ia.artifact_status, ia.artifact_snapshot_json,
                       ia.completion_mode, ia.created_at_ms, rb.binding_key, rb.session_key,
+                      i.status AS issue_status, i.blocker_summary, i.required_human_input,
                       i.acceptance_criteria_md
                FROM issue_attempts ia
                JOIN issues i ON i.id = ia.issue_id
@@ -571,11 +652,21 @@ class AgentTeamService:
                 'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
                 ('succeeded', ts, summary, json.dumps(output_snapshot, ensure_ascii=False), 'callback_terminal', ts, row['attempt_id']),
             )
-            next_issue_status = 'closed' if close_issue_on_success else 'review'
-            closed_at = ts if close_issue_on_success else None
+            human_request = None
+            if normalized_payload.get('needs_human') or str(normalized_payload.get('status') or '').strip() == 'needs_human':
+                human_request = derive_human_queue_request(normalized_payload)
+                next_issue_status = WAITING_HUMAN_STATUS_BY_TYPE[human_request['human_type']]
+                blocker_summary = human_request['prompt']
+                required_human_input = human_request['required_input']
+                closed_at = None
+            else:
+                next_issue_status = 'closed' if close_issue_on_success else ('review' if str(row['issue_status'] or '') not in WAITING_HUMAN_STATUSES else str(row['issue_status']))
+                blocker_summary = None if next_issue_status == 'review' else row['blocker_summary']
+                required_human_input = None if next_issue_status == 'review' else row['required_human_input']
+                closed_at = ts if close_issue_on_success and next_issue_status == 'closed' else None
             self.db.conn.execute(
-                'UPDATE issues SET status = ?, closed_at_ms = ?, updated_at_ms = ? WHERE id = ?',
-                (next_issue_status, closed_at, ts, row['issue_id']),
+                'UPDATE issues SET status = ?, closed_at_ms = ?, blocker_summary = ?, required_human_input = ?, updated_at_ms = ? WHERE id = ?',
+                (next_issue_status, closed_at, blocker_summary, required_human_input, ts, row['issue_id']),
             )
             self._record_checkpoint(
                 issue_id=row['issue_id'],
@@ -583,7 +674,7 @@ class AgentTeamService:
                 kind='progress',
                 summary='Execution completed via callback',
                 details_md=json.dumps(output_snapshot, ensure_ascii=False),
-                next_action='Close issue' if close_issue_on_success else 'Hand off to next role / review',
+                next_action='Await human resolution' if human_request else ('Close issue' if close_issue_on_success else 'Hand off to next role / review'),
                 created_by_employee_id=row['assigned_employee_id'],
                 percent_complete=100,
             )
@@ -600,6 +691,8 @@ class AgentTeamService:
             self.db.commit()
             result['status'] = 'succeeded'
             result['issue_status'] = next_issue_status
+            if human_request:
+                result['human_queue'] = human_request
             result['wait_result'] = output_snapshot
             return result
 
@@ -632,11 +725,22 @@ class AgentTeamService:
                     'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
                     ('succeeded', ts, 'Observed structured completion' if expected_marker else 'Observed exact completion text', json.dumps(wait_result, ensure_ascii=False), 'transcript_marker', ts, row['attempt_id']),
                 )
-                next_issue_status = 'closed' if close_issue_on_success else 'review'
-                closed_at = ts if close_issue_on_success else None
+                observed_payload = wait_result.get('payload') if isinstance(wait_result.get('payload'), dict) else {}
+                human_request = None
+                if observed_payload and (observed_payload.get('needs_human') or str(observed_payload.get('status') or '').strip() == 'needs_human'):
+                    human_request = derive_human_queue_request(observed_payload)
+                    next_issue_status = WAITING_HUMAN_STATUS_BY_TYPE[human_request['human_type']]
+                    blocker_summary = human_request['prompt']
+                    required_human_input = human_request['required_input']
+                    closed_at = None
+                else:
+                    next_issue_status = 'closed' if close_issue_on_success else ('review' if str(row['issue_status'] or '') not in WAITING_HUMAN_STATUSES else str(row['issue_status']))
+                    blocker_summary = None if next_issue_status == 'review' else row['blocker_summary']
+                    required_human_input = None if next_issue_status == 'review' else row['required_human_input']
+                    closed_at = ts if close_issue_on_success and next_issue_status == 'closed' else None
                 self.db.conn.execute(
-                    'UPDATE issues SET status = ?, closed_at_ms = ?, updated_at_ms = ? WHERE id = ?',
-                    (next_issue_status, closed_at, ts, row['issue_id']),
+                    'UPDATE issues SET status = ?, closed_at_ms = ?, blocker_summary = ?, required_human_input = ?, updated_at_ms = ? WHERE id = ?',
+                    (next_issue_status, closed_at, blocker_summary, required_human_input, ts, row['issue_id']),
                 )
                 self._record_checkpoint(
                     issue_id=row['issue_id'],
@@ -644,7 +748,7 @@ class AgentTeamService:
                     kind='progress',
                     summary='Execution observed completion',
                     details_md=json.dumps(wait_result, ensure_ascii=False),
-                    next_action='Close issue' if close_issue_on_success else 'Hand off to next role / review',
+                    next_action='Await human resolution' if human_request else ('Close issue' if close_issue_on_success else 'Hand off to next role / review'),
                     created_by_employee_id=row['assigned_employee_id'],
                     percent_complete=100,
                 )
@@ -661,6 +765,8 @@ class AgentTeamService:
                 self.db.commit()
                 result['status'] = 'succeeded'
                 result['issue_status'] = next_issue_status
+                if human_request:
+                    result['human_queue'] = human_request
                 result['wait_result'] = wait_result
             except RunAbortedObserved as e:
                 lifecycle = self.observe_dispatch_lifecycle_event(

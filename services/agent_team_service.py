@@ -798,7 +798,7 @@ class AgentTeamService:
             )
             self.db.conn.execute(
                 'UPDATE issues SET status = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
-                ('ready', fail_summary, ts, attempt['issue_id']),
+                ('waiting_recovery_completion', fail_summary, ts, attempt['issue_id']),
             )
             action_type = 'execution_cancelled'
             summary = 'Execution ended without terminal callback or JSON completion'
@@ -1137,7 +1137,7 @@ class AgentTeamService:
             '''SELECT p.project_key, p.name, p.status,
                       (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id) AS total_issues,
                       (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status = 'closed') AS closed_issues,
-                      (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status IN ('ready','dispatching','running','blocked','review')) AS agent_queue_issues,
+                      (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status IN ('ready','dispatching','running','blocked','review','waiting_recovery_completion')) AS agent_queue_issues,
                       (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status IN ('waiting_human_info','waiting_human_action','waiting_human_approval')) AS human_queue_issues
                FROM projects p
                ORDER BY p.project_key'''

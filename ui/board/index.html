@@ -747,8 +747,8 @@
       const openCount = issuesData.filter(x => x.issue.status !== 'closed').length;
       const closedCount = issuesData.filter(x => x.issue.status === 'closed').length;
       const humanCount = (humanQueueData.items || []).length;
-      const runningCount = issuesData.filter(x => ['dispatching', 'running', 'review'].includes(x.issue.status)).length;
-      document.getElementById('runtimeSummary').innerHTML = `<div class="detail-stack"><div class="detail-item"><div class="detail-head"><span>当前系统态势</span><span>${workflowControl.mode === 'paused' ? 'paused' : 'running'}</span></div><div class="detail-sub">open/non-closed：${openCount}，running/review：${runningCount}，waiting_human：${humanCount}，closed：${closedCount}</div></div></div>`;
+      const runningCount = issuesData.filter(x => ['dispatching', 'running', 'review', 'waiting_recovery_completion'].includes(x.issue.status)).length;
+      document.getElementById('runtimeSummary').innerHTML = `<div class="detail-stack"><div class="detail-item"><div class="detail-head"><span>当前系统态势</span><span>${workflowControl.mode === 'paused' ? 'paused' : 'running'}</span></div><div class="detail-sub">open/non-closed：${openCount}，running/review/recovery：${runningCount}，waiting_human：${humanCount}，closed：${closedCount}</div></div></div>`;
     }
 
     function getAllIssuesEnriched() {

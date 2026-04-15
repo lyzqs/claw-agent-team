@@ -283,7 +283,7 @@
     .token-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
     .board-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; }
     .board-hero { align-items:flex-end; gap:16px; }
-    .storyboard-card { padding:12px; min-height: calc(100vh - 106px); display:flex; flex-direction:column; }
+    .storyboard-card { padding:12px; display:flex; flex-direction:column; }
     .board-filters { margin-top: 8px; }
     .hero-pills { display:flex; gap:8px; flex-wrap:wrap; }
     .filters { display:grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap:8px; margin-bottom: 10px; }
@@ -303,7 +303,7 @@
       background: linear-gradient(180deg, #fbfcff, #f7f9fd);
       border:1px solid var(--line);
       border-radius: 16px;
-      min-height: 100%;
+      min-height: 0;
       padding: 6px;
       box-shadow: var(--shadow-soft);
       display:flex;
@@ -333,7 +333,7 @@
     .lane-body {
       overflow: hidden;
       padding-right: 0;
-      flex: 1;
+      flex: 0 0 auto;
       min-height: 0;
       display:flex;
       flex-direction:column;
@@ -345,8 +345,8 @@
       border-top: 3px solid var(--blue);
       border-left: 1px solid var(--line);
       border-radius:12px;
-      padding:7px;
-      margin-bottom:6px;
+      padding:9px;
+      margin-bottom:8px;
       box-shadow: 0 1px 4px rgba(15,23,42,.04);
       cursor:pointer;
       transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
@@ -361,13 +361,13 @@
     .issue-card.waiting_human_approval { border-top-color: var(--purple); }
     .issue-card.waiting_children { border-top-color: var(--cyan); }
     .issue-card.blocked { border-top-color: #f97316; }
-    .issue-title { font-weight: 700; line-height: 1.32; margin-bottom: 5px; color:#111827; font-size:12px; }
+    .issue-title { font-weight: 700; line-height: 1.38; margin-bottom: 6px; color:#111827; font-size:13px; }
     .issue-meta { display:flex; gap:6px; flex-wrap:wrap; }
     .issue-meta span, .pill {
-      display:inline-flex; align-items:center; padding:2px 6px; border-radius:999px; font-size:10px; background:#f8fafc; border:1px solid var(--line); color:#475467;
+      display:inline-flex; align-items:center; padding:3px 6px; border-radius:999px; font-size:10px; background:#f8fafc; border:1px solid var(--line); color:#475467;
     }
-    .issue-desc { font-size: 11px; color:#667085; line-height: 1.35; margin-top: 5px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
-    .issue-footer { display:flex; justify-content:space-between; align-items:center; gap:6px; margin-top: 6px; color:#667085; font-size:10px; }
+    .issue-desc { font-size: 11px; color:#667085; line-height: 1.45; margin-top: 6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .issue-footer { display:flex; justify-content:space-between; align-items:center; gap:6px; margin-top: 8px; color:#667085; font-size:10px; }
     .issue-footer button { padding:4px 7px; font-size:10px; border-radius:8px; }
     .lane-empty, .empty { color: var(--muted); padding: 10px 4px; }
     .explorer { margin-top: 0; }
@@ -665,7 +665,7 @@
     let selectedIssueId = null;
     let currentPage = 1;
     const pageSize = 8;
-    const lanePageSize = 4;
+    const lanePageSize = 5;
     const lanePages = {};
     const FLOW_ROLES = ['ceo', 'pm', 'dev', 'qa', 'ops'];
     const FLOW_AGENTS = ['agent-team-ceo', 'agent-team-pm', 'agent-team-dev', 'agent-team-qa', 'agent-team-ops'];

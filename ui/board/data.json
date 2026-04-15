@@ -4,9 +4,9 @@
       "project_key": "agent-team-core",
       "name": "Agent Team Core",
       "status": "active",
-      "total_issues": 25,
-      "closed_issues": 24,
-      "agent_queue_issues": 1,
+      "total_issues": 35,
+      "closed_issues": 35,
+      "agent_queue_issues": 0,
       "human_queue_issues": 0
     },
     {
@@ -19,19 +19,7 @@
       "human_queue_issues": 0
     }
   ],
-  "agent_queue": [
-    {
-      "id": "issue_b157210af36d",
-      "project_id": "proj_e1ff724206fd",
-      "issue_no": 24,
-      "title": "Add visible derived-issue section to the UI issue detail modal",
-      "priority": "p2",
-      "status": "ready",
-      "assigned_employee_id": "emp_1d0773e7001f",
-      "active_attempt_no": 4,
-      "updated_at_ms": 1776054054651
-    }
-  ],
+  "agent_queue": [],
   "human_queue": [],
   "employee_view": [
     {
@@ -143,55 +131,95 @@
       "role": "ceo",
       "employee_key": "shared.ceo",
       "display_name": "Shared CEO",
+      "active_issue_count": 0,
       "issues": [
         {
           "issue_id": "issue_f6bf1c5a4cb7",
           "issue_no": 4,
           "title": "Run unified execution_adapter provider-error demo",
           "status": "closed",
-          "priority": "p1"
+          "priority": "p1",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_70773c5e01a4",
           "issue_no": 14,
           "title": "API adapter cancel live check",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_c2b613e0f5ca",
           "issue_no": 16,
           "title": "Minimal multi-role chain live check",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_21f1261e2928",
           "issue_no": 17,
           "title": "Minimal PM-Dev-QA-CEO chain live check",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_live_human_return_19",
           "issue_no": 19,
           "title": "Live human return worker check",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_ed9277b5c40c",
           "issue_no": 20,
           "title": "Canonical session routing verification",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_5ae0a08f7217",
           "issue_no": 22,
           "title": "调研美团月付和抖音月付和花呗的区别",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_bc3f6eb9cbae",
+          "issue_no": 29,
+          "title": "信用支付调研",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_ceab0213987a",
+          "issue_no": 31,
+          "title": "Minimal multi-role chain live check",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_5eb432bff9c9",
+          "issue_no": 32,
+          "title": "Minimal PM-Dev-QA-CEO chain live check",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_cab43d465791",
+          "issue_no": 35,
+          "title": "openclaw版本调研",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
         }
       ]
     },
@@ -202,104 +230,119 @@
       "role": "dev",
       "employee_key": "agent-team-core.dev",
       "display_name": "Agent Team Core Dev",
+      "active_issue_count": 0,
       "issues": [
         {
           "issue_id": "issue_1a7f7dcadcd9",
           "issue_no": 1,
           "title": "Run unified execution_adapter success demo",
           "status": "closed",
-          "priority": "p1"
+          "priority": "p1",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_1d6aa03d10e1",
           "issue_no": 1,
           "title": "Project B isolation proof task",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_93645c0764e8",
           "issue_no": 2,
           "title": "Run unified execution_adapter abort demo",
           "status": "closed",
-          "priority": "p1"
+          "priority": "p1",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_66f005d8148b",
           "issue_no": 3,
           "title": "Run unified execution_adapter timeout demo",
           "status": "closed",
-          "priority": "p1"
+          "priority": "p1",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_ea22eebb94da",
           "issue_no": 5,
           "title": "Human info roundtrip demo",
           "status": "closed",
-          "priority": "p1"
+          "priority": "p1",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_609461c6a4fd",
           "issue_no": 6,
           "title": "Human approval roundtrip demo",
           "status": "closed",
-          "priority": "p1"
+          "priority": "p1",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_07fc15841f39",
           "issue_no": 7,
           "title": "Project A isolation proof task",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_17901144395e",
           "issue_no": 9,
           "title": "Implement queue recovery reporting improvements",
           "status": "closed",
-          "priority": "p1"
+          "priority": "p1",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_272ccdc9c41b",
           "issue_no": 12,
           "title": "API service live check issue",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_736c17314db7",
           "issue_no": 13,
           "title": "API adapter dispatch live check",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_bd2315c5392f",
           "issue_no": 15,
           "title": "API adapter retry live check",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_b722ccf9cd1f",
           "issue_no": 18,
           "title": "Routing policy validation issue",
           "status": "closed",
-          "priority": "p2"
-        },
-        {
-          "issue_id": "issue_b157210af36d",
-          "issue_no": 24,
-          "title": "Add visible derived-issue section to the UI issue detail modal",
-          "status": "ready",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_9b41b3aad7ec",
           "issue_no": 25,
           "title": "TEMP relation insert probe",
           "status": "closed",
-          "priority": "p3"
+          "priority": "p3",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_eb34c473517e",
+          "issue_no": 33,
+          "title": "API adapter dispatch live check",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
         }
       ]
     },
@@ -310,13 +353,15 @@
       "role": "ops",
       "employee_key": "agent-team-core.ops",
       "display_name": "Agent Team Core Ops",
+      "active_issue_count": 0,
       "issues": [
         {
           "issue_id": "issue_136818de138c",
           "issue_no": 11,
           "title": "Prepare release and observability follow-up",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         }
       ]
     },
@@ -327,27 +372,39 @@
       "role": "pm",
       "employee_key": "agent-team-core.pm",
       "display_name": "Agent Team Core PM",
+      "active_issue_count": 0,
       "issues": [
         {
           "issue_id": "issue_e25aed0b0b47",
           "issue_no": 8,
           "title": "Optimize queue recovery and reporting workflow",
           "status": "closed",
-          "priority": "p1"
+          "priority": "p1",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_57c9c49f33a3",
           "issue_no": 21,
           "title": "Canonical session routing verification",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_12ac2d4e47f6",
           "issue_no": 23,
           "title": "E2E validate agent create_issue_proposal flow",
           "status": "closed",
-          "priority": "p1"
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_23050f36d61d",
+          "issue_no": 26,
+          "title": "E2E validate auto issue_relations from create_issue_proposal",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
         }
       ]
     },
@@ -358,13 +415,55 @@
       "role": "qa",
       "employee_key": "agent-team-core.qa",
       "display_name": "Agent Team Core QA",
+      "active_issue_count": 0,
       "issues": [
         {
           "issue_id": "issue_91a66f1e2cc3",
           "issue_no": 10,
           "title": "Validate queue recovery reporting improvements",
           "status": "closed",
-          "priority": "p2"
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_b157210af36d",
+          "issue_no": 24,
+          "title": "Add visible derived-issue section to the UI issue detail modal",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_c9e4bf4068fd",
+          "issue_no": 27,
+          "title": "Verify auto-created issue relations are visible in exported issue data",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_96048171f515",
+          "issue_no": 28,
+          "title": "Verify auto-created issue relations are visible in exported issue data",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_2ba05567f98c",
+          "issue_no": 30,
+          "title": "API adapter dispatch live check",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_f2b311db0ca5",
+          "issue_no": 34,
+          "title": "API adapter cancel live check",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
         }
       ]
     }

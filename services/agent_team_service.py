@@ -1055,7 +1055,22 @@ class AgentTeamService:
         }
 
     def list_issues(self, *, project_key: str | None = None, status: str | None = None) -> dict[str, Any]:
-        sql = 'SELECT i.id, i.issue_no, i.title, i.priority, i.status, i.active_attempt_no, p.project_key FROM issues i JOIN projects p ON p.id = i.project_id WHERE 1=1'
+        sql = '''SELECT i.id, i.issue_no, i.title, i.priority, i.status, i.active_attempt_no, p.project_key,
+                        ei.employee_key AS assigned_employee_key,
+                        rt.template_key AS assigned_role,
+                        rb.agent_id,
+                        rb.session_key,
+                        EXISTS (
+                          SELECT 1 FROM issue_relations ir
+                          JOIN issues dep ON dep.id = ir.to_issue_id
+                          WHERE ir.from_issue_id = i.id AND ir.relation_type = 'blocked_by' AND dep.status != 'closed'
+                        ) AS has_open_dependencies
+                 FROM issues i
+                 JOIN projects p ON p.id = i.project_id
+                 LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id
+                 LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
+                 LEFT JOIN runtime_bindings rb ON rb.employee_id = ei.id AND rb.is_primary = 1
+                 WHERE 1=1'''
         params: list[Any] = []
         if project_key:
             sql += ' AND p.project_key = ?'
@@ -1083,10 +1098,30 @@ class AgentTeamService:
                 (attempt['id'],),
             )
             callbacks_by_attempt[str(attempt['id'])] = [dict(r) for r in rows]
+        blocking = self.db.fetch_all(
+            '''SELECT ir.id, ir.relation_type, ir.created_at_ms, dep.id AS related_issue_id, dep.issue_no AS related_issue_no, dep.title AS related_issue_title, dep.status AS related_issue_status
+               FROM issue_relations ir
+               JOIN issues dep ON dep.id = ir.to_issue_id
+               WHERE ir.from_issue_id = ? AND ir.relation_type = 'blocked_by'
+               ORDER BY ir.created_at_ms DESC''',
+            (issue_id,),
+        )
+        blocked_dependents = self.db.fetch_all(
+            '''SELECT ir.id, ir.relation_type, ir.created_at_ms, src.id AS related_issue_id, src.issue_no AS related_issue_no, src.title AS related_issue_title, src.status AS related_issue_status
+               FROM issue_relations ir
+               JOIN issues src ON src.id = ir.from_issue_id
+               WHERE ir.to_issue_id = ? AND ir.relation_type = 'blocked_by'
+               ORDER BY ir.created_at_ms DESC''',
+            (issue_id,),
+        )
         return {
             'issue': dict(issue),
             'attempts': [dict(r) for r in attempts],
             'callbacks_by_attempt': callbacks_by_attempt,
+            'dependencies': {
+                'blocking': [dict(r) for r in blocking],
+                'blocked_dependents': [dict(r) for r in blocked_dependents],
+            },
         }
 
     def get_attempt_timeline(self, *, attempt_id: str) -> dict[str, Any]:
@@ -1111,7 +1146,12 @@ class AgentTeamService:
                       rt.template_key AS role,
                       rb.agent_id,
                       rb.session_key,
-                      rb.binding_key
+                      rb.binding_key,
+                      EXISTS (
+                        SELECT 1 FROM issue_relations ir
+                        JOIN issues dep ON dep.id = ir.to_issue_id
+                        WHERE ir.from_issue_id = i.id AND ir.relation_type = 'blocked_by' AND dep.status != 'closed'
+                      ) AS has_open_dependencies
                FROM issues i
                LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id
                LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
@@ -1128,14 +1168,18 @@ class AgentTeamService:
                 'role': row['role'],
                 'employee_key': row['employee_key'],
                 'display_name': row['display_name'],
+                'active_issue_count': 0,
                 'issues': [],
             })
+            if row['status'] in {'dispatching', 'running'}:
+                grouped[agent_id]['active_issue_count'] += 1
             grouped[agent_id]['issues'].append({
                 'issue_id': row['issue_id'],
                 'issue_no': row['issue_no'],
                 'title': row['title'],
                 'status': row['status'],
                 'priority': row['priority'],
+                'has_open_dependencies': bool(row['has_open_dependencies']),
             })
         return {
             'items': list(grouped.values()),

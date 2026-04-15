@@ -693,9 +693,34 @@
           </div>
           ${payload.artifacts && payload.artifacts.length ? `<div class="json-lite-item"><div class="json-lite-key">artifacts</div>${renderNestedValue(payload.artifacts)}</div>` : ''}
           ${payload.blocking_findings && payload.blocking_findings.length ? `<div class="json-lite-item"><div class="json-lite-key">blocking_findings</div>${renderNestedValue(payload.blocking_findings)}</div>` : ''}
-          ${payload.create_issue_proposal ? `<div class="json-lite-item"><div class="json-lite-key">create_issue_proposal</div>${renderNestedValue(payload.create_issue_proposal)}</div>` : ''}
         </div>
       `;
+    }
+
+    function renderDerivedIssueActivity(details) {
+      const created = Array.isArray(details?.created) ? details.created : [];
+      const skipped = Array.isArray(details?.skipped) ? details.skipped : [];
+      if (!created.length && !skipped.length) return '';
+      return `
+        <div class="nested-box">
+          <div class="nested-title">derived issues</div>
+          ${created.length ? `<div class="json-lite-item"><div class="json-lite-key">created</div><div class="detail-stack">${created.map(item => `<div class="detail-item"><div class="detail-head"><span>#${item?.created?.issue_no || '?'} ${item?.created?.status || ''}</span><span>${item?.record?.route_role || ''}</span></div><div class="detail-sub">${item?.record?.title || ''} · ${item?.record?.relation_type || ''} · key=${item?.record?.proposal_key || ''}</div></div>`).join('')}</div></div>` : ''}
+          ${skipped.length ? `<div class="json-lite-item"><div class="json-lite-key">skipped</div><div class="detail-stack">${skipped.map(item => `<div class="detail-item"><div class="detail-head"><span>${item?.proposal_key || 'unknown proposal'}</span><span>${item?.reason || 'skipped'}</span></div><div class="detail-sub">${item?.existing?.title || ''}</div></div>`).join('')}</div></div>` : ''}
+        </div>
+      `;
+    }
+
+    function renderDependencies(dependencies) {
+      const blocking = Array.isArray(dependencies?.blocking) ? dependencies.blocking : [];
+      const dependents = Array.isArray(dependencies?.blocked_dependents) ? dependencies.blocked_dependents : [];
+      if (!blocking.length && !dependents.length) return '<div class="empty">暂无依赖关系</div>';
+      const renderItems = (items, label) => items.length ? `
+        <div class="json-lite-item">
+          <div class="json-lite-key">${label}</div>
+          <div class="detail-stack">${items.map(r => `<div class="detail-item"><div class="detail-head"><span>#${r.related_issue_no} ${r.related_issue_title}</span><span>${r.related_issue_status}</span></div><div class="detail-sub">${r.relation_type}</div></div>`).join('')}</div>
+        </div>
+      ` : '';
+      return `<div class="json-lite">${renderItems(blocking, '当前 issue 依赖这些 issue')} ${renderItems(dependents, '这些 issue 依赖当前 issue')}</div>`;
     }
 
     function renderActivityDetails(details) {
@@ -713,7 +738,7 @@
       for (const entry of entries) {
         if (!orderedKeys.includes(entry[0])) rest.push(entry);
       }
-      return `${waitPayload ? renderHandoffCard(waitPayload) : ''}<div class="json-lite">${[...ordered, ...rest].map(([k,v]) => `<div class="json-lite-item"><div class="json-lite-key">${k}</div>${renderNestedValue(v)}</div>`).join('')}</div>`;
+      return `${waitPayload ? renderHandoffCard(waitPayload) : ''}${details?.created || details?.skipped ? renderDerivedIssueActivity(details) : ''}<div class="json-lite">${[...ordered, ...rest].map(([k,v]) => `<div class="json-lite-item"><div class="json-lite-key">${k}</div>${renderNestedValue(v)}</div>`).join('')}</div>`;
     }
 
     function renderSummary() {
@@ -941,6 +966,7 @@
           <div>Required Input</div><div>${issue.required_human_input || ''}</div>
           <div>Description</div><div>${issue.description_md || ''}</div>
         </div>
+        <div style="margin-top:12px;"><div class="k">依赖关系</div>${renderDependencies(wrap.dependencies)}</div>
         <div style="margin-top:12px;"><div class="k">派生关系</div>${renderRelations(wrap.relations)}</div>
         <div class="actions">
           <button onclick="openIssueModal('${issue.id}')">打开弹窗详情</button>
@@ -988,6 +1014,10 @@
           </div>
         </div>
         ${modalActions(wrap)}
+        <div class="modal-section">
+          <h3>依赖关系</h3>
+          ${renderDependencies(wrap.dependencies)}
+        </div>
         <div class="modal-section">
           <h3>派生关系</h3>
           ${renderRelations(wrap.relations)}

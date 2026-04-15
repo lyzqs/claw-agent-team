@@ -561,7 +561,9 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         "4. 如果验收已满足，请明确给出关闭或继续流转建议。\n"
         "5. 如果创建了飞书文档等外部产物，请先记录 artifact callback。\n"
         "6. 如需创建新的独立 issue，只能使用 skill `agent-team-issue-authoring`，并通过唯一入口 `python3 /root/.openclaw/workspace-agent-team/scripts/attempt_callback_helper.py create-issues --attempt-id <attempt_id> --callback-token <callback_token> --created-by-role <role> --proposals-json \"[...]\"`。不要在最终 JSON 中夹带 issue proposal。\n"
-        "7. 最终回复必须是单个 JSON 对象，不要带 markdown、代码块或额外说明。\n\n"
+        "7. `--proposals-json` 必须传 JSON 数组，即使只创建 1 个 issue 也要传数组；每个 proposal 都应包含稳定的 `proposal_key` 用于去重。\n"
+        "8. proposal 推荐字段：proposal_key, title, description_md, acceptance_criteria_md, priority, route_role, relation_type(parent_of|blocked_by|related_to), metadata。\n"
+        "9. 最终回复必须是单个 JSON 对象，不要带 markdown、代码块或额外说明。\n\n"
         "最终 JSON 只需要包含这些字段：\n"
         f"marker={marker}\n"
         "status, summary, artifacts, blocking_findings, suggested_next_role, reason, risk_level, needs_human\n\n"
@@ -594,10 +596,24 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
                   i.required_human_input,
                   i.metadata_json,
                   ei.employee_key,
+                  ei.id AS assigned_employee_id,
                   rt.template_key AS role,
                   rb.binding_key,
                   rb.session_key,
-                  p.project_key
+                  rb.agent_id,
+                  p.project_key,
+                  EXISTS (
+                    SELECT 1
+                    FROM issue_relations ir
+                    JOIN issues dep ON dep.id = ir.to_issue_id
+                    WHERE ir.from_issue_id = i.id AND ir.relation_type = 'blocked_by' AND dep.status != 'closed'
+                  ) AS has_open_dependencies,
+                  EXISTS (
+                    SELECT 1
+                    FROM issues i2
+                    JOIN issue_attempts ia2 ON ia2.issue_id = i2.id AND ia2.status IN ('dispatching','running')
+                    WHERE i2.assigned_employee_id = i.assigned_employee_id AND i2.id != i.id
+                  ) AS agent_has_active_issue
            FROM issues i
            LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id
            LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
@@ -762,7 +778,27 @@ def main() -> int:
             report['errors'].append({'message': f'dispatch observer drain failed: {e}'})
 
         ready_items = fetch_ready_candidates(svc)
-        for issue in ready_items[:MAX_DISPATCH_PER_RUN]:
+        dispatched_this_run = 0
+        for issue in ready_items:
+            if dispatched_this_run >= MAX_DISPATCH_PER_RUN:
+                break
+            if issue.get('has_open_dependencies'):
+                report['skipped'].append({
+                    'kind': 'dispatch',
+                    'issue_id': issue['issue_id'],
+                    'issue_no': issue['issue_no'],
+                    'reason': 'blocked_by_open_dependency',
+                })
+                continue
+            if issue.get('agent_has_active_issue'):
+                report['skipped'].append({
+                    'kind': 'dispatch',
+                    'issue_id': issue['issue_id'],
+                    'issue_no': issue['issue_no'],
+                    'reason': 'agent_has_active_issue',
+                    'agent_id': issue.get('agent_id'),
+                })
+                continue
             if not issue.get('binding_key'):
                 report['skipped'].append({
                     'kind': 'dispatch',
@@ -803,6 +839,7 @@ def main() -> int:
             }
             report['dispatched'].append(item)
             append_action({'at': report['ran_at'], **item})
+            dispatched_this_run += 1
 
         observe_items = fetch_dispatching_candidates(svc)
         for attempt in observe_items[:MAX_OBSERVE_PER_RUN]:

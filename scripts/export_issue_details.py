@@ -49,6 +49,7 @@ def main():
                     'outgoing': [dict(r) for r in outgoing],
                     'incoming': [dict(r) for r in incoming],
                 },
+                'dependencies': detail.get('dependencies') or {'blocking': [], 'blocked_dependents': []},
             })
     finally:
         svc.close()

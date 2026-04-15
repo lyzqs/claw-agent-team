@@ -939,6 +939,35 @@ class AgentTeamService:
     def close_issue(self, *, issue_id: str, resolution: str = 'completed') -> dict[str, Any]:
         ts = now_ms()
         issue = self.db.get_one('SELECT assigned_employee_id FROM issues WHERE id = ?', (issue_id,))
+        open_children = self.db.conn.execute(
+            '''SELECT COUNT(*)
+               FROM issue_relations ir
+               JOIN issues child ON child.id = ir.to_issue_id
+               WHERE ir.from_issue_id = ? AND ir.relation_type = 'parent_of' AND child.status != 'closed' ''',
+            (issue_id,),
+        ).fetchone()[0]
+        if int(open_children or 0) > 0:
+            self.db.conn.execute(
+                'UPDATE issues SET status = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
+                ('waiting_children', f'waiting for {int(open_children)} child issue(s) to close', ts, issue_id),
+            )
+            record_issue_activity(
+                self.db.conn,
+                now_ms=ts,
+                issue_id=issue_id,
+                action_type='issue_waiting_children',
+                summary='Issue moved to waiting_children instead of closing',
+                actor_employee_id=issue['assigned_employee_id'],
+                details={'resolution': resolution, 'open_child_count': int(open_children)},
+            )
+            self.db.commit()
+            return {
+                'issue_id': issue_id,
+                'status': 'waiting_children',
+                'resolution': resolution,
+                'open_child_count': int(open_children),
+                'updated_at_ms': ts,
+            }
         self.db.conn.execute(
             'UPDATE issues SET status = ?, closed_at_ms = ?, blocker_summary = NULL, updated_at_ms = ? WHERE id = ?',
             ('closed', ts, ts, issue_id),
@@ -1208,7 +1237,7 @@ class AgentTeamService:
             '''SELECT p.project_key, p.name, p.status,
                       (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id) AS total_issues,
                       (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status = 'closed') AS closed_issues,
-                      (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status IN ('ready','dispatching','running','blocked','review','waiting_recovery_completion')) AS agent_queue_issues,
+                      (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status IN ('ready','dispatching','running','blocked','review','waiting_recovery_completion','waiting_children')) AS agent_queue_issues,
                       (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status IN ('waiting_human_info','waiting_human_action','waiting_human_approval')) AS human_queue_issues
                FROM projects p
                ORDER BY p.project_key'''
@@ -1219,6 +1248,77 @@ class AgentTeamService:
             'human_queue': [dict(r) for r in human_queue],
             'employee_view': [dict(r) for r in employees],
             'agent_workload': self.get_agent_workload()['items'],
+        }
+
+    def reconcile_dependency_transitions(self) -> dict[str, Any]:
+        ts = now_ms()
+        dependency_released: list[dict[str, Any]] = []
+        parent_progressed: list[dict[str, Any]] = []
+
+        blocked_rows = self.db.fetch_all(
+            '''SELECT i.id, i.assigned_employee_id
+               FROM issues i
+               WHERE i.status IN ('triaged', 'ready', 'review', 'blocked', 'waiting_children', 'waiting_recovery_completion')'''
+        )
+        for row in blocked_rows:
+            open_deps = self.db.conn.execute(
+                '''SELECT COUNT(*)
+                   FROM issue_relations ir
+                   JOIN issues dep ON dep.id = ir.to_issue_id
+                   WHERE ir.from_issue_id = ? AND ir.relation_type = 'blocked_by' AND dep.status != 'closed' ''',
+                (row['id'],),
+            ).fetchone()[0]
+            if int(open_deps or 0) == 0:
+                current = self.db.get_one('SELECT status FROM issues WHERE id = ?', (row['id'],))
+                if current['status'] == 'blocked':
+                    self.db.conn.execute(
+                        'UPDATE issues SET status = ?, blocker_summary = NULL, updated_at_ms = ? WHERE id = ?',
+                        ('ready', ts, row['id']),
+                    )
+                    record_issue_activity(
+                        self.db.conn,
+                        now_ms=ts,
+                        issue_id=row['id'],
+                        action_type='dependency_satisfied',
+                        summary='Blocked issue returned to ready after dependencies closed',
+                        actor_employee_id=row['assigned_employee_id'],
+                        details={'new_status': 'ready'},
+                    )
+                    dependency_released.append({'issue_id': row['id'], 'new_status': 'ready'})
+
+        waiting_children_rows = self.db.fetch_all(
+            '''SELECT i.id, i.assigned_employee_id
+               FROM issues i
+               WHERE i.status = 'waiting_children' '''
+        )
+        for row in waiting_children_rows:
+            open_children = self.db.conn.execute(
+                '''SELECT COUNT(*)
+                   FROM issue_relations ir
+                   JOIN issues child ON child.id = ir.to_issue_id
+                   WHERE ir.from_issue_id = ? AND ir.relation_type = 'parent_of' AND child.status != 'closed' ''',
+                (row['id'],),
+            ).fetchone()[0]
+            if int(open_children or 0) == 0:
+                self.db.conn.execute(
+                    'UPDATE issues SET status = ?, blocker_summary = NULL, updated_at_ms = ? WHERE id = ?',
+                    ('review', ts, row['id']),
+                )
+                record_issue_activity(
+                    self.db.conn,
+                    now_ms=ts,
+                    issue_id=row['id'],
+                    action_type='child_issues_completed',
+                    summary='All child issues completed; parent returned to review',
+                    actor_employee_id=row['assigned_employee_id'],
+                    details={'new_status': 'review'},
+                )
+                parent_progressed.append({'issue_id': row['id'], 'new_status': 'review'})
+
+        self.db.commit()
+        return {
+            'dependency_released': dependency_released,
+            'parent_progressed': parent_progressed,
         }
 
     def create_derived_issues(

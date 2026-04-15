@@ -16,6 +16,7 @@ ROOT = Path('/root/.openclaw/workspace-agent-team')
 sys.path.insert(0, str(ROOT))
 
 from services.agent_team_service import AgentTeamService  # noqa: E402
+from services.activity import record_issue_activity  # noqa: E402
 from services.workflow_control import load_control  # noqa: E402
 
 STATE_DIR = ROOT / 'state'
@@ -619,7 +620,7 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
            LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
            LEFT JOIN runtime_bindings rb ON rb.employee_id = ei.id AND rb.is_primary = 1
            LEFT JOIN projects p ON p.id = ei.project_id
-           WHERE i.status IN ('triaged', 'ready', 'review', 'waiting_recovery_completion')
+           WHERE i.status IN ('triaged', 'ready', 'review', 'waiting_recovery_completion', 'waiting_children')
              AND NOT EXISTS (SELECT 1 FROM issue_attempts ia WHERE ia.issue_id = i.id AND ia.status IN ('dispatching','running'))
            ORDER BY i.updated_at_ms ASC'''
     )
@@ -776,6 +777,18 @@ def main() -> int:
                     append_action({'at': report['ran_at'], 'kind': 'observer_apply', **applied})
         except Exception as e:
             report['errors'].append({'message': f'dispatch observer drain failed: {e}'})
+
+        try:
+            dep_report = svc.reconcile_dependency_transitions()
+            report['dependency_reconcile'] = dep_report
+            if (dep_report.get('dependency_released') or dep_report.get('parent_progressed')):
+                changed = True
+                for item in dep_report.get('dependency_released') or []:
+                    append_action({'at': report['ran_at'], 'kind': 'dependency_released', **item})
+                for item in dep_report.get('parent_progressed') or []:
+                    append_action({'at': report['ran_at'], 'kind': 'parent_progressed', **item})
+        except Exception as e:
+            report['errors'].append({'message': f'dependency reconcile failed: {e}'})
 
         ready_items = fetch_ready_candidates(svc)
         dispatched_this_run = 0

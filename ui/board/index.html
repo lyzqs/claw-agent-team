@@ -39,6 +39,31 @@
       margin: 0;
       padding: 20px 16px 28px;
     }
+    .layout-shell {
+      display:grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap:18px;
+      align-items:start;
+    }
+    .control-rail {
+      position: sticky;
+      top: 102px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      max-height: calc(100vh - 122px);
+      overflow:auto;
+      padding-right:4px;
+    }
+    .control-rail::-webkit-scrollbar { width:8px; }
+    .control-rail::-webkit-scrollbar-thumb { background: rgba(148,163,184,.18); border-radius:999px; }
+    .workspace-main { min-width:0; display:flex; flex-direction:column; gap:18px; }
+    .rail-card { padding:14px; }
+    .summary-compact {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 12px;
+      margin-bottom: 0;
+    }
     h1,h2,h3 { margin: 0; }
     .muted { color: var(--muted); }
     .topbar {
@@ -99,7 +124,7 @@
     .queue-meta { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
     .queue-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
     .queue-empty { color:var(--muted); font-size:13px; padding-top:10px; }
-    .tabs { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+    .tabs { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:0; }
     .tab-btn { background:rgba(148,163,184,.10); color:#b8c5d8; box-shadow:none; border:1px solid rgba(148,163,184,.12); }
     .tab-btn.active { background:linear-gradient(180deg, rgba(79,140,255,.22), rgba(79,140,255,.12)); color:#fff; border-color:rgba(79,140,255,.35); }
     .view { display:none; }
@@ -120,6 +145,10 @@
     .nested-title { font-size:12px; color:#475569; font-weight:700; margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em; }
     .token-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
     .board-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px; }
+    .board-hero { align-items:flex-end; gap:16px; }
+    .storyboard-card { padding:18px; }
+    .board-filters { margin-top: 14px; }
+    .hero-pills { display:flex; gap:8px; flex-wrap:wrap; }
     .filters { display:grid; grid-template-columns: repeat(4, minmax(180px, 1fr)); gap:10px; margin-bottom: 14px; }
     .filter-group { display:flex; flex-direction:column; gap:6px; }
     .filter-group label { font-size:12px; color:var(--muted); font-weight:600; }
@@ -128,13 +157,13 @@
       box-shadow: inset 0 1px 2px rgba(15,23,42,.03);
     }
     .storyboard {
-      display:flex; gap:16px; overflow-x:auto; padding-bottom:10px; align-items:stretch;
+      display:flex; gap:16px; overflow-x:auto; padding-bottom:10px; align-items:stretch; min-height: 72vh;
     }
     .storyboard::-webkit-scrollbar { height: 10px; }
     .storyboard::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:999px; }
     .lane {
-      flex: 0 0 320px;
-      background: linear-gradient(180deg, rgba(19,27,48,.92), rgba(15,21,38,.92)); border:1px solid var(--line); border-radius: 20px; min-height: 660px; max-height: 660px; padding: 12px;
+      flex: 0 0 340px;
+      background: linear-gradient(180deg, rgba(19,27,48,.92), rgba(15,21,38,.92)); border:1px solid var(--line); border-radius: 20px; min-height: 72vh; max-height: 72vh; padding: 12px;
       box-shadow: var(--glow); display:flex; flex-direction:column;
     }
     .lane-title { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom: 4px; }
@@ -163,6 +192,8 @@
     .issue-card.waiting_human_info,
     .issue-card.waiting_human_action,
     .issue-card.waiting_human_approval { border-left-color: var(--purple); }
+    .issue-card.waiting_children { border-left-color: #38bdf8; }
+    .issue-card.blocked { border-left-color: #fb7185; }
     .issue-title { font-weight: 700; line-height: 1.35; margin-bottom: 8px; }
     .issue-meta { display:flex; gap:6px; flex-wrap:wrap; }
     .issue-meta span, .pill {
@@ -171,7 +202,7 @@
     .issue-desc { font-size: 13px; color:#475569; line-height: 1.55; margin-top: 10px; }
     .issue-footer { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top: 10px; color:#64748b; font-size:12px; }
     .lane-empty, .empty { color: var(--muted); padding: 10px 4px; }
-    .explorer { margin-top: 24px; }
+    .explorer { margin-top: 0; }
     .explorer-grid { display:grid; grid-template-columns: 360px 1fr; gap: 18px; }
     .issue-list-item {
       padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; margin-bottom: 10px; cursor:pointer; background:linear-gradient(180deg, rgba(20,28,49,.94), rgba(15,22,38,.94));
@@ -215,6 +246,15 @@
     th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
     th { color:#475569; font-size:13px; }
     code { color:#7c3aed; }
+    @media (max-width: 1280px) {
+      .layout-shell { grid-template-columns: 1fr; }
+      .control-rail {
+        position: static;
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+      }
+    }
     @media (max-width: 1200px) {
       .topbar { flex-direction:column; }
       .filters { grid-template-columns: 1fr; }
@@ -227,7 +267,7 @@
     <div class="topbar">
       <div class="topbar-left">
         <h1>Agent Team 控制台</h1>
-        <div class="muted">亮色主题 · Storyboard · Issue Explorer · 弹窗详情</div>
+        <div class="muted">Storyboard-first · Dependency-aware · Orchestration Console</div>
       </div>
       <div class="toolbar">
         <button id="reloadBtn">重新加载</button>
@@ -237,178 +277,169 @@
       </div>
     </div>
 
-    <div class="entry-grid">
-      <div class="card">
-        <div class="k">新增 Issue</div>
-        <div class="entry-form">
-          <input id="newIssueTitle" placeholder="输入 issue 标题" />
-          <textarea id="newIssueDesc" placeholder="描述要做什么、背景是什么"></textarea>
-          <textarea id="newIssueAcceptance" placeholder="验收标准（可选）"></textarea>
-          <div class="filters" style="margin-bottom:0; grid-template-columns: repeat(3, minmax(140px, 1fr));">
-            <div class="filter-group">
-              <label for="newIssueProject">项目</label>
-              <select id="newIssueProject">
-                <option value="agent-team-core">agent-team-core</option>
-                <option value="agent-team-labs">agent-team-labs</option>
-              </select>
+    <div class="layout-shell">
+      <aside class="control-rail">
+        <div class="card rail-card">
+          <div class="k">快速创建 Issue</div>
+          <div class="entry-form">
+            <input id="newIssueTitle" placeholder="输入 issue 标题" />
+            <textarea id="newIssueDesc" placeholder="描述要做什么、背景是什么"></textarea>
+            <textarea id="newIssueAcceptance" placeholder="验收标准（可选）"></textarea>
+            <div class="filters" style="margin-bottom:0; grid-template-columns: repeat(3, minmax(0, 1fr));">
+              <div class="filter-group">
+                <label for="newIssueProject">项目</label>
+                <select id="newIssueProject">
+                  <option value="agent-team-core">agent-team-core</option>
+                  <option value="agent-team-labs">agent-team-labs</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="newIssuePriority">优先级</label>
+                <select id="newIssuePriority">
+                  <option value="p1">p1</option>
+                  <option value="p2" selected>p2</option>
+                  <option value="p3">p3</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="newIssueRoute">入口</label>
+                <select id="newIssueRoute">
+                  <option value="pm" selected>交给 PM</option>
+                  <option value="ceo">直接给 CEO</option>
+                </select>
+              </div>
             </div>
-            <div class="filter-group">
-              <label for="newIssuePriority">优先级</label>
-              <select id="newIssuePriority">
-                <option value="p1">p1</option>
-                <option value="p2" selected>p2</option>
-                <option value="p3">p3</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label for="newIssueRoute">入口</label>
-              <select id="newIssueRoute">
-                <option value="pm" selected>交给 PM</option>
-                <option value="ceo">直接给 CEO</option>
-              </select>
-            </div>
-          </div>
-          <textarea id="newIssueInstruction" placeholder="可选：给首个处理角色的额外说明。例如：先和我确认预算、先补方案、先做最小验证"></textarea>
-          <div class="entry-actions">
-            <button id="createIssueBtn">创建 Issue</button>
-            <button id="createCeoIssueBtn" class="secondary">发给 CEO</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="k">怎么和 CEO / 团队交流</div>
-        <div class="detail-stack">
-          <div class="detail-item">
-            <div class="detail-head"><span>建议默认入口</span><span>PM</span></div>
-            <div class="detail-sub">大多数需求、变更、任务建议默认先交给 PM，由 PM 拆解、澄清、再流转给 Dev / QA / Ops。</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-head"><span>什么时候直接找 CEO</span><span>CEO</span></div>
-            <div class="detail-sub">当问题涉及方向拍板、优先级冲突、预算/资源、跨项目协调、是否继续推进等治理问题时，直接走 CEO 入口更合适。</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-head"><span>我现在推荐的策略</span><span>混合</span></div>
-            <div class="detail-sub">默认你和 CEO 交流，CEO 负责拍板和关键确认；但 PM / 其他角色在业务执行中也可以直接把需要你确认的信息放进 Human Queue，不必所有事情都先绕 CEO。</div>
-          </div>
-        </div>
-        <div class="entry-note" style="margin-top:10px;">也就是说：治理问题优先 CEO，业务澄清和补信息可以由 PM / QA / Ops 直接找你，避免 CEO 变成所有细碎沟通的瓶颈。</div>
-      </div>
-    </div>
-
-    <div class="tabs">
-      <button class="tab-btn" data-view="analyticsView">运营总览</button>
-      <button class="tab-btn active" data-view="boardView">Storyboard</button>
-      <button class="tab-btn" data-view="explorerView">Issue Explorer</button>
-    </div>
-
-    <div class="queue-grid">
-      <div class="card">
-        <div class="k">待你确认</div>
-        <div id="humanQueuePanel" class="card-sub"></div>
-      </div>
-      <div class="card">
-        <div class="k">给 CEO 的治理入口</div>
-        <div class="detail-stack">
-          <div class="detail-item">
-            <div class="detail-head"><span>适合场景</span><span>治理 / 拍板</span></div>
-            <div class="detail-sub">方向选择、优先级冲突、资源/预算、跨项目协调、是否继续推进，这些优先发给 CEO。</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-head"><span>业务澄清</span><span>不必都绕 CEO</span></div>
-            <div class="detail-sub">PM / QA / Ops 在执行过程中如果只是缺信息、缺确认、缺输入，建议直接通过 Human Queue 找你，不必所有小事都先经过 CEO。</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="summary" class="summary"></div>
-
-    <div class="card" style="margin-bottom:18px;">
-      <div class="k">运行态摘要</div>
-      <div id="runtimeSummary" class="card-sub"></div>
-    </div>
-
-    <div class="info-grid">
-      <div class="card">
-        <div class="k">项目说明</div>
-        <div id="projectMeta" class="card-sub"></div>
-      </div>
-      <div class="card">
-        <div class="k">固定角色</div>
-        <div id="roleMeta" class="chips-wrap"></div>
-      </div>
-      <div class="card">
-        <div class="k">角色实例说明</div>
-        <div id="instanceMeta" class="card-sub"></div>
-      </div>
-    </div>
-
-    <div id="analyticsView" class="view">
-      <div class="analytics-grid">
-        <div class="card"><div class="k">状态分布</div><div id="statusAnalytics" class="card-sub"></div></div>
-        <div class="card"><div class="k">Attempt 成功率</div><div id="attemptAnalytics" class="card-sub"></div></div>
-      </div>
-      <div class="analytics-grid">
-        <div class="card"><div class="chart-title">项目 Issue 规模</div><div id="projectAnalytics"></div></div>
-        <div class="card"><div class="chart-title">失败原因分布</div><div id="failureAnalytics"></div></div>
-      </div>
-      <div class="card"><div class="chart-title">Issue 数量变化（按 issue_no）</div><div id="trendAnalytics"></div></div>
-    </div>
-
-    <div id="boardView" class="view active">
-    <div class="card">
-      <div class="board-header">
-        <div>
-          <h2>故事墙</h2>
-          <div class="muted">第一列是人工队列，中间按 Agent 分列，最后一列是已关闭 Issue。</div>
-        </div>
-      </div>
-      <div class="filters">
-        <div class="filter-group">
-          <label for="searchInput">搜索</label>
-          <input id="searchInput" placeholder="按标题搜索 Issue" />
-        </div>
-        <div class="filter-group">
-          <label for="agentFilter">Agent</label>
-          <select id="agentFilter"></select>
-        </div>
-        <div class="filter-group">
-          <label for="statusFilter">状态</label>
-          <select id="statusFilter"></select>
-        </div>
-        <div class="filter-group">
-          <label for="sortSelect">排序</label>
-          <select id="sortSelect">
-            <option value="issue_no_desc">按 Issue 号倒序</option>
-            <option value="issue_no_asc">按 Issue 号正序</option>
-            <option value="updated_desc">按更新时间倒序</option>
-          </select>
-        </div>
-      </div>
-      <div id="storyboard" class="storyboard"></div>
-    </div>
-    </div>
-
-    <div id="explorerView" class="view explorer">
-      <div class="card">
-        <div class="board-header">
-          <div>
-            <h2>所有 Issue</h2>
-            <div class="muted">支持按 agent、状态、关键词筛选，并分页查看。</div>
-          </div>
-        </div>
-        <div class="explorer-grid">
-          <div>
-            <div id="issueList"></div>
-            <div class="pager">
-              <button id="prevPageBtn" class="secondary">上一页</button>
-              <span id="pageInfo" class="muted"></span>
-              <button id="nextPageBtn" class="secondary">下一页</button>
+            <textarea id="newIssueInstruction" placeholder="可选：给首个处理角色的额外说明，例如先确认预算、先补方案、先做最小验证"></textarea>
+            <div class="entry-actions">
+              <button id="createIssueBtn">创建 Issue</button>
+              <button id="createCeoIssueBtn" class="secondary">发给 CEO</button>
             </div>
           </div>
-          <div id="issuePreview" class="preview"></div>
         </div>
-      </div>
+
+        <div class="card rail-card">
+          <div class="k">待你确认</div>
+          <div id="humanQueuePanel" class="card-sub"></div>
+        </div>
+
+        <div class="card rail-card">
+          <div class="k">运行态摘要</div>
+          <div id="runtimeSummary" class="card-sub"></div>
+          <div id="summary" class="summary summary-compact"></div>
+        </div>
+
+        <div class="card rail-card">
+          <div class="k">治理建议</div>
+          <div class="detail-stack">
+            <div class="detail-item">
+              <div class="detail-head"><span>建议默认入口</span><span>PM</span></div>
+              <div class="detail-sub">大多数需求、变更、任务建议默认先交给 PM，由 PM 拆解、澄清、再流转给 Dev / QA / Ops。</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-head"><span>什么时候直接找 CEO</span><span>CEO</span></div>
+              <div class="detail-sub">当问题涉及方向拍板、优先级冲突、预算/资源、跨项目协调、是否继续推进等治理问题时，直接走 CEO 入口更合适。</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-head"><span>Human Queue</span><span>直接补信息</span></div>
+              <div class="detail-sub">PM / QA / Ops 在执行中如果只是缺信息、缺确认、缺输入，建议直接通过 Human Queue 找你，不必所有事情都先绕 CEO。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card rail-card">
+          <div class="k">项目说明</div>
+          <div id="projectMeta" class="card-sub"></div>
+        </div>
+
+        <div class="card rail-card">
+          <div class="k">固定角色</div>
+          <div id="roleMeta" class="chips-wrap"></div>
+          <div class="k" style="margin-top:16px;">角色实例说明</div>
+          <div id="instanceMeta" class="card-sub"></div>
+        </div>
+      </aside>
+
+      <main class="workspace-main">
+        <div class="tabs">
+          <button class="tab-btn" data-view="analyticsView">运营总览</button>
+          <button class="tab-btn active" data-view="boardView">Storyboard</button>
+          <button class="tab-btn" data-view="explorerView">Issue Explorer</button>
+        </div>
+
+        <div id="analyticsView" class="view">
+          <div class="analytics-grid">
+            <div class="card"><div class="k">状态分布</div><div id="statusAnalytics" class="card-sub"></div></div>
+            <div class="card"><div class="k">Attempt 成功率</div><div id="attemptAnalytics" class="card-sub"></div></div>
+          </div>
+          <div class="analytics-grid">
+            <div class="card"><div class="chart-title">项目 Issue 规模</div><div id="projectAnalytics"></div></div>
+            <div class="card"><div class="chart-title">失败原因分布</div><div id="failureAnalytics"></div></div>
+          </div>
+          <div class="card"><div class="chart-title">Issue 数量变化（按 issue_no）</div><div id="trendAnalytics"></div></div>
+        </div>
+
+        <div id="boardView" class="view active">
+          <div class="card storyboard-card">
+            <div class="board-header board-hero">
+              <div>
+                <div class="k">工作流总览</div>
+                <h2>Storyboard</h2>
+                <div class="muted">从人工队列到 PM / Dev / QA / Ops / CEO，再到关闭，直接看当前流转。</div>
+              </div>
+              <div class="hero-pills">
+                <span class="pill">dependency-aware</span>
+                <span class="pill">single-agent slot</span>
+                <span class="pill">waiting_children</span>
+              </div>
+            </div>
+            <div class="filters board-filters">
+              <div class="filter-group">
+                <label for="searchInput">搜索</label>
+                <input id="searchInput" placeholder="按标题搜索 Issue" />
+              </div>
+              <div class="filter-group">
+                <label for="agentFilter">Agent</label>
+                <select id="agentFilter"></select>
+              </div>
+              <div class="filter-group">
+                <label for="statusFilter">状态</label>
+                <select id="statusFilter"></select>
+              </div>
+              <div class="filter-group">
+                <label for="sortSelect">排序</label>
+                <select id="sortSelect">
+                  <option value="issue_no_desc">按 Issue 号倒序</option>
+                  <option value="issue_no_asc">按 Issue 号正序</option>
+                  <option value="updated_desc">按更新时间倒序</option>
+                </select>
+              </div>
+            </div>
+            <div id="storyboard" class="storyboard"></div>
+          </div>
+        </div>
+
+        <div id="explorerView" class="view explorer">
+          <div class="card">
+            <div class="board-header">
+              <div>
+                <h2>所有 Issue</h2>
+                <div class="muted">支持按 agent、状态、关键词筛选，并分页查看。</div>
+              </div>
+            </div>
+            <div class="explorer-grid">
+              <div>
+                <div id="issueList"></div>
+                <div class="pager">
+                  <button id="prevPageBtn" class="secondary">上一页</button>
+                  <span id="pageInfo" class="muted"></span>
+                  <button id="nextPageBtn" class="secondary">下一页</button>
+                </div>
+              </div>
+              <div id="issuePreview" class="preview"></div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   </div>
 

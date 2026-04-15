@@ -1,9 +1,0 @@
-[Unit]
-Description=Agent Team session sweep
-After=network.target
-
-[Service]
-Type=oneshot
-WorkingDirectory=/root/.openclaw/workspace-agent-team
-ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/session_sweep.py
-User=root

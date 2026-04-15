@@ -63,18 +63,6 @@ def append_unique_artifact(existing: list[Any], artifact: Any) -> list[Any]:
     return items
 
 
-def can_use_artifact_fallback(*, acceptance_criteria_md: str | None, artifact_payload: dict[str, Any] | None) -> bool:
-    text = str(acceptance_criteria_md or '')
-    payload = artifact_payload if isinstance(artifact_payload, dict) else {}
-    artifact_type = str(payload.get('artifact_type') or '')
-    has_doc = artifact_type == 'feishu_doc' or bool(payload.get('doc_url')) or bool(payload.get('doc_token'))
-    if not has_doc:
-        return False
-    if any(token in text for token in ['飞书文档', '产出飞书文档', '文档']):
-        return True
-    return False
-
-
 @dataclass
 class IssueRecord:
     issue_id: str
@@ -590,9 +578,10 @@ class AgentTeamService:
         artifact_callback = callback_payload.get('artifact_callback') if isinstance(callback_payload.get('artifact_callback'), dict) else None
         if artifact_callback:
             result['artifact_callback'] = artifact_callback
-            result['artifact_ready'] = can_use_artifact_fallback(
-                acceptance_criteria_md=row['acceptance_criteria_md'],
-                artifact_payload=artifact_callback,
+            result['artifact_ready'] = bool(
+                artifact_callback.get('artifact_type') == 'feishu_doc'
+                or artifact_callback.get('doc_url')
+                or artifact_callback.get('doc_token')
             )
 
         if expected_text or expected_marker:

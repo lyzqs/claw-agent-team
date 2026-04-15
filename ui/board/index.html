@@ -121,7 +121,7 @@
       gap:10px;
       padding-right:0;
     }
-    .workspace-main { min-width:0; display:flex; flex-direction:column; gap:18px; }
+    .workspace-main { min-width:0; display:flex; flex-direction:column; gap:12px; min-height: calc(100vh - 92px); }
     .card {
       background: var(--panel);
       border:1px solid var(--line);
@@ -141,8 +141,8 @@
     .card-sub { margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 1.6; }
     .summary {
       display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap:12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
       margin-top: 12px;
       margin-bottom: 0;
     }
@@ -173,6 +173,38 @@
     }
     .detail-head { display:flex; justify-content:space-between; gap:10px; align-items:center; font-size:13px; font-weight:700; color:#1f2937; }
     .detail-sub { color:var(--muted); font-size:12px; line-height:1.6; margin-top:4px; }
+    .panel-link {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      width:100%;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      color:var(--text);
+      font-weight:600;
+      box-shadow:none;
+    }
+    .panel-link:hover { transform:none; background:#f8fbff; }
+    .compact-stat-grid {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+    .compact-stat {
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      cursor:pointer;
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .compact-stat:hover { background:#f8fbff; border-color: var(--line-strong); }
+    .compact-stat .num { font-size:24px; font-weight:800; margin-top:6px; }
+
     .entry-form { display:grid; gap:10px; }
     .entry-form textarea, .entry-form input, .entry-form select,
     .filters input, .filters select {
@@ -251,7 +283,7 @@
     .token-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
     .board-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px; }
     .board-hero { align-items:flex-end; gap:16px; }
-    .storyboard-card { padding:18px; }
+    .storyboard-card { padding:14px; min-height: calc(100vh - 118px); display:flex; flex-direction:column; }
     .board-filters { margin-top: 14px; }
     .hero-pills { display:flex; gap:8px; flex-wrap:wrap; }
     .filters { display:grid; grid-template-columns: repeat(4, minmax(180px, 1fr)); gap:10px; margin-bottom: 14px; }
@@ -271,8 +303,7 @@
       background: linear-gradient(180deg, #fbfcff, #f7f9fd);
       border:1px solid var(--line);
       border-radius: 16px;
-      min-height: 0;
-      max-height: none;
+      min-height: 100%;
       padding: 8px;
       box-shadow: var(--shadow-soft);
       display:flex;
@@ -310,8 +341,8 @@
       border-top: 3px solid var(--blue);
       border-left: 1px solid var(--line);
       border-radius:12px;
-      padding:8px;
-      margin-bottom:8px;
+      padding:7px;
+      margin-bottom:6px;
       box-shadow: 0 1px 4px rgba(15,23,42,.04);
       cursor:pointer;
       transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
@@ -439,41 +470,23 @@
     <div class="layout-shell">
       <aside class="control-rail">
         <div class="card rail-card">
-          <div class="k">快速创建 Issue</div>
-          <div class="entry-form">
-            <input id="newIssueTitle" placeholder="输入 issue 标题" />
-            <textarea id="newIssueDesc" placeholder="描述要做什么、背景是什么"></textarea>
-            <textarea id="newIssueAcceptance" placeholder="验收标准（可选）"></textarea>
-            <div class="filters" style="margin-bottom:0; grid-template-columns: repeat(3, minmax(0, 1fr));">
-              <div class="filter-group">
-                <label for="newIssueProject">项目</label>
-                <select id="newIssueProject">
-                  <option value="agent-team-core">agent-team-core</option>
-                  <option value="agent-team-labs">agent-team-labs</option>
-                </select>
-              </div>
-              <div class="filter-group">
-                <label for="newIssuePriority">优先级</label>
-                <select id="newIssuePriority">
-                  <option value="p1">p1</option>
-                  <option value="p2" selected>p2</option>
-                  <option value="p3">p3</option>
-                </select>
-              </div>
-              <div class="filter-group">
-                <label for="newIssueRoute">入口</label>
-                <select id="newIssueRoute">
-                  <option value="pm" selected>交给 PM</option>
-                  <option value="ceo">直接给 CEO</option>
-                </select>
-              </div>
-            </div>
-            <textarea id="newIssueInstruction" placeholder="可选：给首个处理角色的额外说明，例如先确认预算、先补方案、先做最小验证"></textarea>
-            <div class="entry-actions">
-              <button id="createIssueBtn">创建 Issue</button>
-              <button id="createCeoIssueBtn" class="secondary">发给 CEO</button>
-            </div>
+          <div class="k">操作</div>
+          <div class="detail-stack" style="margin-top:12px;">
+            <button id="openCreateIssueBtn" class="panel-link">
+              <span>创建 Issue</span>
+              <span>＋</span>
+            </button>
+            <button id="openHumanQueueBtn" class="panel-link">
+              <span>查看待确认</span>
+              <span id="humanQueueCountMini">0</span>
+            </button>
           </div>
+        </div>
+
+        <div class="card rail-card">
+          <div class="k">运行态摘要</div>
+          <div id="runtimeSummary" class="card-sub"></div>
+          <div id="summary" class="compact-stat-grid"></div>
         </div>
 
         <div class="card rail-card">
@@ -482,39 +495,14 @@
         </div>
 
         <div class="card rail-card">
-          <div class="k">运行态摘要</div>
-          <div id="runtimeSummary" class="card-sub"></div>
-          <div id="summary" class="summary summary-compact"></div>
-        </div>
-
-        <div class="card rail-card">
-          <div class="k">治理建议</div>
+          <div class="k">项目 / 角色</div>
           <div class="detail-stack">
-            <div class="detail-item">
-              <div class="detail-head"><span>建议默认入口</span><span>PM</span></div>
-              <div class="detail-sub">大多数需求、变更、任务建议默认先交给 PM，由 PM 拆解、澄清、再流转给 Dev / QA / Ops。</div>
-            </div>
-            <div class="detail-item">
-              <div class="detail-head"><span>什么时候直接找 CEO</span><span>CEO</span></div>
-              <div class="detail-sub">当问题涉及方向拍板、优先级冲突、预算/资源、跨项目协调、是否继续推进等治理问题时，直接走 CEO 入口更合适。</div>
-            </div>
-            <div class="detail-item">
-              <div class="detail-head"><span>Human Queue</span><span>直接补信息</span></div>
-              <div class="detail-sub">PM / QA / Ops 在执行中如果只是缺信息、缺确认、缺输入，建议直接通过 Human Queue 找你，不必所有事情都先绕 CEO。</div>
-            </div>
+            <button class="panel-link" id="toggleProjectMetaBtn"><span>项目说明</span><span>展开</span></button>
+            <div id="projectMeta" class="card-sub" style="display:none;"></div>
+            <button class="panel-link" id="toggleRoleMetaBtn"><span>固定角色</span><span>展开</span></button>
+            <div id="roleMeta" class="chips-wrap" style="display:none;"></div>
+            <div id="instanceMeta" class="card-sub" style="display:none;"></div>
           </div>
-        </div>
-
-        <div class="card rail-card">
-          <div class="k">项目说明</div>
-          <div id="projectMeta" class="card-sub"></div>
-        </div>
-
-        <div class="card rail-card">
-          <div class="k">固定角色</div>
-          <div id="roleMeta" class="chips-wrap"></div>
-          <div class="k" style="margin-top:16px;">角色实例说明</div>
-          <div id="instanceMeta" class="card-sub"></div>
         </div>
       </aside>
 
@@ -602,6 +590,52 @@
     </div>
   </div>
 
+  <div id="createIssueModal" class="modal-backdrop">
+    <div class="modal" style="width:min(720px, 100%);">
+      <div class="modal-top">
+        <div>
+          <h2>创建 Issue</h2>
+          <div class="muted">填写标题、描述、验收标准和入口角色</div>
+        </div>
+        <button id="closeCreateIssueModalBtn" class="secondary">关闭</button>
+      </div>
+      <div class="entry-form">
+        <input id="newIssueTitle" placeholder="输入 issue 标题" />
+        <textarea id="newIssueDesc" placeholder="描述要做什么、背景是什么"></textarea>
+        <textarea id="newIssueAcceptance" placeholder="验收标准（可选）"></textarea>
+        <div class="filters" style="margin-bottom:0; grid-template-columns: repeat(3, minmax(0, 1fr));">
+          <div class="filter-group">
+            <label for="newIssueProject">项目</label>
+            <select id="newIssueProject">
+              <option value="agent-team-core">agent-team-core</option>
+              <option value="agent-team-labs">agent-team-labs</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="newIssuePriority">优先级</label>
+            <select id="newIssuePriority">
+              <option value="p1">p1</option>
+              <option value="p2" selected>p2</option>
+              <option value="p3">p3</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="newIssueRoute">入口</label>
+            <select id="newIssueRoute">
+              <option value="pm" selected>交给 PM</option>
+              <option value="ceo">直接给 CEO</option>
+            </select>
+          </div>
+        </div>
+        <textarea id="newIssueInstruction" placeholder="可选：给首个处理角色的额外说明，例如先确认预算、先补方案、先做最小验证"></textarea>
+        <div class="entry-actions">
+          <button id="createIssueBtn">创建 Issue</button>
+          <button id="createCeoIssueBtn" class="secondary">发给 CEO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="modalBackdrop" class="modal-backdrop">
     <div class="modal">
       <div class="modal-top">
@@ -628,8 +662,8 @@
     const pageSize = 8;
     const lanePageSize = 4;
     const lanePages = {};
-    const FLOW_ROLES = ['pm', 'dev', 'qa', 'ops', 'ceo'];
-    const FLOW_AGENTS = ['agent-team-pm', 'agent-team-dev', 'agent-team-qa', 'agent-team-ops', 'agent-team-ceo'];
+    const FLOW_ROLES = ['ceo', 'pm', 'dev', 'qa', 'ops'];
+    const FLOW_AGENTS = ['agent-team-ceo', 'agent-team-pm', 'agent-team-dev', 'agent-team-qa', 'agent-team-ops'];
     const AGENT_LABELS = {
       'agent-team-pm': 'PM',
       'agent-team-dev': 'Dev',
@@ -745,6 +779,7 @@
     function renderHumanQueuePanel() {
       const root = document.getElementById('humanQueuePanel');
       const items = humanQueueData.items || [];
+      document.getElementById('humanQueueCountMini').textContent = String(items.length);
       if (!items.length) {
         root.innerHTML = '<div class="queue-empty">当前没有待你确认的事项。后续 PM / QA / Ops / CEO 把 issue 推进到 Human Queue 后，这里会直接出现。</div>';
         return;
@@ -791,6 +826,7 @@
       });
       if (out.ok) {
         showToast(`已创建 Issue #${out.result.issue_no}，当前交给 ${out.result.route_role.toUpperCase()}`);
+        closeCreateIssueModal();
         document.getElementById('newIssueTitle').value = '';
         document.getElementById('newIssueDesc').value = '';
         document.getElementById('newIssueAcceptance').value = '';
@@ -1253,8 +1289,12 @@
       document.getElementById('modalBackdrop').classList.add('show');
     }
 
-    function closeIssueModal() {
-      document.getElementById('modalBackdrop').classList.remove('show');
+    function openCreateIssueModal() {
+      document.getElementById('createIssueModal').classList.add('show');
+    }
+
+    function closeCreateIssueModal() {
+      document.getElementById('createIssueModal').classList.remove('show');
     }
 
     window.closeIssue = async function(issueId) {
@@ -1317,6 +1357,8 @@
 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
     document.getElementById('reloadBtn').addEventListener('click', loadData);
+    document.getElementById('openCreateIssueBtn').addEventListener('click', openCreateIssueModal);
+    document.getElementById('openHumanQueueBtn').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     document.getElementById('createIssueBtn').addEventListener('click', () => createIssue(document.getElementById('newIssueRoute').value || 'pm'));
     document.getElementById('createCeoIssueBtn').addEventListener('click', () => createIssue('ceo'));
     document.getElementById('runBtn').addEventListener('click', async () => {
@@ -1328,7 +1370,20 @@
       showToast(out.ok ? '总流程已暂停' : `暂停失败: ${out.error || 'unknown error'}`, !out.ok);
     });
     document.getElementById('closeModalBtn').addEventListener('click', closeIssueModal);
+    document.getElementById('closeCreateIssueModalBtn').addEventListener('click', closeCreateIssueModal);
     document.getElementById('modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') closeIssueModal(); });
+    document.getElementById('createIssueModal').addEventListener('click', (e) => { if (e.target.id === 'createIssueModal') closeCreateIssueModal(); });
+    document.getElementById('toggleProjectMetaBtn').addEventListener('click', () => {
+      const el = document.getElementById('projectMeta');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    });
+    document.getElementById('toggleRoleMetaBtn').addEventListener('click', () => {
+      const roleEl = document.getElementById('roleMeta');
+      const instEl = document.getElementById('instanceMeta');
+      const show = roleEl.style.display === 'none';
+      roleEl.style.display = show ? 'flex' : 'none';
+      instEl.style.display = show ? 'block' : 'none';
+    });
     document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('agentFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('statusFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });

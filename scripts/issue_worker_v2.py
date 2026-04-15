@@ -8,6 +8,7 @@ import sys
 import time
 import traceback
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -188,7 +189,188 @@ def extract_expected_marker(payload: dict[str, Any]) -> str | None:
     return None
 
 
-def has_recent_runtime_activity(*, session_key: str, since_ms: int, lookback_seconds: int = 300) -> tuple[bool, dict[str, Any]]:
+def extract_text(value: Any) -> str:
+    if value is None:
+        return ''
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        return ''.join(extract_text(item) for item in value)
+    if isinstance(value, dict):
+        if isinstance(value.get('text'), str):
+            return value['text']
+        if 'content' in value:
+            return extract_text(value.get('content'))
+        if 'message' in value:
+            return extract_text(value.get('message'))
+        return ''
+    return str(value)
+
+
+def parse_timestamp_ms(value: Any) -> int | None:
+    if isinstance(value, (int, float)):
+        return int(value)
+    if isinstance(value, str) and value.strip():
+        raw = value.strip()
+        try:
+            if raw.endswith('Z'):
+                raw = raw[:-1] + '+00:00'
+            return int(datetime.fromisoformat(raw).timestamp() * 1000)
+        except Exception:
+            return None
+    return None
+
+
+def parse_event_timestamp_ms(event: dict[str, Any]) -> int | None:
+    ts = parse_timestamp_ms(event.get('timestamp'))
+    if ts is not None:
+        return ts
+    data = event.get('data') if isinstance(event.get('data'), dict) else {}
+    ts = parse_timestamp_ms(data.get('timestamp'))
+    if ts is not None:
+        return ts
+    message = event.get('message') if isinstance(event.get('message'), dict) else {}
+    return parse_timestamp_ms(message.get('timestamp'))
+
+
+def resolve_session_record(session_key: str) -> dict[str, Any]:
+    parts = session_key.split(':')
+    if len(parts) < 2 or parts[0] != 'agent':
+        return {}
+    agent_id = parts[1]
+    sessions_path = Path('/root/.openclaw/agents') / agent_id / 'sessions' / 'sessions.json'
+    if not sessions_path.exists():
+        return {}
+    try:
+        data = json.loads(sessions_path.read_text(encoding='utf-8'))
+    except Exception:
+        return {}
+    entry = data.get(session_key)
+    return entry if isinstance(entry, dict) else {}
+
+
+def load_recent_session_events(session_file: str, *, max_lines: int = 400) -> list[dict[str, Any]]:
+    path = Path(session_file)
+    if not path.exists():
+        return []
+    data = b''
+    lines: list[bytes] = []
+    with path.open('rb') as f:
+        f.seek(0, 2)
+        remaining = f.tell()
+        while remaining > 0 and len(lines) <= max_lines:
+            chunk = min(16384, remaining)
+            remaining -= chunk
+            f.seek(remaining)
+            data = f.read(chunk) + data
+            lines = data.splitlines()
+    out: list[dict[str, Any]] = []
+    for raw in lines[-max_lines:]:
+        try:
+            item = json.loads(raw.decode('utf-8', errors='replace'))
+        except Exception:
+            continue
+        if isinstance(item, dict):
+            out.append(item)
+    return out
+
+
+def has_recent_runtime_activity(*, session_key: str, since_ms: int, lookback_seconds: int = 300, marker: str | None = None, dispatch_ref: str | None = None) -> tuple[bool, dict[str, Any]]:
+    info: dict[str, Any] = {
+        'session_key': session_key,
+        'since_ms': since_ms,
+        'lookback_seconds': lookback_seconds,
+        'marker': marker,
+        'dispatch_ref': dispatch_ref,
+    }
+    now_ms_local = int(time.time() * 1000)
+    threshold_ms = now_ms_local - lookback_seconds * 1000
+    session_record = resolve_session_record(session_key)
+    if session_record:
+        info['session_id'] = session_record.get('sessionId')
+        info['session_file'] = session_record.get('sessionFile')
+        info['session_updated_at'] = session_record.get('updatedAt')
+    session_file = session_record.get('sessionFile') if isinstance(session_record.get('sessionFile'), str) else ''
+
+    if session_file:
+        events = load_recent_session_events(session_file)
+        anchor_ts = None
+        anchor_source = None
+        for event in events:
+            ts = parse_event_timestamp_ms(event)
+            if ts is None or ts < since_ms:
+                continue
+            data = event.get('data') if isinstance(event.get('data'), dict) else {}
+            msg = event.get('message') if isinstance(event.get('message'), dict) else {}
+            role = msg.get('role')
+            text = extract_text(msg.get('content'))
+            if dispatch_ref and isinstance(data.get('runId'), str) and data.get('runId') == dispatch_ref:
+                if anchor_ts is None or ts < anchor_ts:
+                    anchor_ts = ts
+                    anchor_source = 'runId'
+            if marker and event.get('type') == 'message' and role == 'user' and marker in text:
+                if anchor_ts is None or ts < anchor_ts:
+                    anchor_ts = ts
+                    anchor_source = 'marker'
+
+        newest_ts = None
+        newest_kind = None
+        newest_text = None
+        activity_count = 0
+        related_run_event_count = 0
+        superseded_by_new_user = False
+        for event in events:
+            ts = parse_event_timestamp_ms(event)
+            if ts is None or ts < since_ms or ts < threshold_ms:
+                continue
+            if anchor_ts is not None and ts < anchor_ts:
+                continue
+            event_type = str(event.get('type') or '')
+            data = event.get('data') if isinstance(event.get('data'), dict) else {}
+            msg = event.get('message') if isinstance(event.get('message'), dict) else {}
+            role = str(msg.get('role') or '')
+            text = extract_text(msg.get('content'))
+            custom_type = str(event.get('customType') or '')
+            if anchor_ts is not None and event_type == 'message' and role == 'user' and (not marker or marker not in text):
+                superseded_by_new_user = True
+                break
+            relevant = False
+            kind = None
+            snippet = ''
+            if dispatch_ref and isinstance(data.get('runId'), str) and data.get('runId') == dispatch_ref:
+                relevant = True
+                kind = f'custom:{custom_type or event_type}'
+                snippet = extract_text(data)[:200]
+                related_run_event_count += 1
+            elif event_type == 'message' and role in {'assistant', 'toolResult'}:
+                relevant = True
+                kind = f'message:{role}'
+                snippet = text[:200]
+            elif event_type == 'custom' and custom_type in {'openclaw:prompt-error', 'openclaw:bootstrap-context:full'}:
+                relevant = True
+                kind = f'custom:{custom_type}'
+                snippet = extract_text(data)[:200]
+            if not relevant:
+                continue
+            activity_count += 1
+            if newest_ts is None or ts > newest_ts:
+                newest_ts = ts
+                newest_kind = kind
+                newest_text = snippet
+
+        info.update({
+            'source': 'session_file',
+            'anchor_ts': anchor_ts,
+            'anchor_source': anchor_source,
+            'newest_ts': newest_ts,
+            'newest_kind': newest_kind,
+            'newest_text': newest_text,
+            'activity_count': activity_count,
+            'related_run_event_count': related_run_event_count,
+            'superseded_by_new_user': superseded_by_new_user,
+        })
+        return bool(newest_ts is not None) and not superseded_by_new_user, info
+
     try:
         cmd = [
             'openclaw', 'gateway', 'call', 'sessions.get',
@@ -198,14 +380,27 @@ def has_recent_runtime_activity(*, session_key: str, since_ms: int, lookback_sec
         ]
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         if res.returncode != 0:
-            return False, {'check_error': res.stderr.strip() or res.stdout.strip()}
+            return False, {**info, 'check_error': res.stderr.strip() or res.stdout.strip()}
         data = json.loads(res.stdout)
         messages = data.get('messages') or []
-        now_ms_local = int(time.time() * 1000)
-        threshold_ms = now_ms_local - lookback_seconds * 1000
+        anchor_ts = None
+        for message in messages:
+            ts = message.get('timestamp')
+            if not isinstance(ts, (int, float)):
+                continue
+            ts = int(ts)
+            if ts < since_ms:
+                continue
+            role = message.get('role')
+            text = extract_text(message.get('content'))
+            if marker and role == 'user' and marker in text:
+                if anchor_ts is None or ts < anchor_ts:
+                    anchor_ts = ts
         newest_ts = None
         newest_role = None
         newest_text = None
+        activity_count = 0
+        superseded_by_new_user = False
         for message in messages:
             ts = message.get('timestamp')
             if not isinstance(ts, (int, float)):
@@ -213,21 +408,32 @@ def has_recent_runtime_activity(*, session_key: str, since_ms: int, lookback_sec
             ts = int(ts)
             if ts < since_ms or ts < threshold_ms:
                 continue
+            if anchor_ts is not None and ts < anchor_ts:
+                continue
             role = message.get('role')
+            text = extract_text(message.get('content'))
+            if anchor_ts is not None and role == 'user' and (not marker or marker not in text):
+                superseded_by_new_user = True
+                break
             if role not in {'assistant', 'tool'}:
                 continue
+            activity_count += 1
             if newest_ts is None or ts > newest_ts:
                 newest_ts = ts
                 newest_role = role
-                newest_text = extract_text(message)[:200] if isinstance(message, dict) else None
-        return bool(newest_ts is not None), {
+                newest_text = text[:200]
+        info.update({
+            'source': 'gateway_sessions_get',
+            'anchor_ts': anchor_ts,
             'newest_ts': newest_ts,
             'newest_role': newest_role,
             'newest_text': newest_text,
-            'lookback_seconds': lookback_seconds,
-        }
+            'activity_count': activity_count,
+            'superseded_by_new_user': superseded_by_new_user,
+        })
+        return bool(newest_ts is not None) and not superseded_by_new_user, info
     except Exception as e:
-        return False, {'check_error': str(e)}
+        return False, {**info, 'check_error': str(e)}
 
 
 def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, Any], *, session_key: str) -> dict[str, Any]:
@@ -746,6 +952,8 @@ def main() -> int:
                         active, activity_info = has_recent_runtime_activity(
                             session_key=session_key,
                             since_ms=int(attempt.get('created_at_ms') or 0),
+                            marker=expected_marker or expected_text,
+                            dispatch_ref=attempt.get('dispatch_ref'),
                         ) if session_key else (False, {'check_error': 'missing session_key'})
                         item['recent_activity'] = activity_info
                         if active:

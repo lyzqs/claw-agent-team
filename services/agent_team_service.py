@@ -791,17 +791,18 @@ class AgentTeamService:
             'payload': payload or {},
         }
         if state == 'final':
+            fail_summary = 'system_chat_final_missing_business_completion'
             self.db.conn.execute(
-                'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
-                ('succeeded', ts, 'System observer saw final chat event', json.dumps(system_payload, ensure_ascii=False), 'system_chat_final', ts, attempt['id']),
+                'UPDATE issue_attempts SET status = ?, failure_code = ?, failure_summary = ?, ended_at_ms = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
+                ('cancelled', 'missing_business_completion', fail_summary, ts, json.dumps(system_payload, ensure_ascii=False), 'system_chat_final', ts, attempt['id']),
             )
             self.db.conn.execute(
-                'UPDATE issues SET status = ?, updated_at_ms = ? WHERE id = ?',
-                ('review', ts, attempt['issue_id']),
+                'UPDATE issues SET status = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
+                ('ready', fail_summary, ts, attempt['issue_id']),
             )
-            action_type = 'execution_succeeded'
-            summary = 'Execution succeeded via system chat event'
-            checkpoint_summary = 'System observer saw final chat event'
+            action_type = 'execution_cancelled'
+            summary = 'Execution ended without terminal callback or JSON completion'
+            checkpoint_summary = 'System observer saw final chat event without business completion'
         elif state == 'error':
             fail_summary = error_message or 'system_chat_error'
             self.db.conn.execute(

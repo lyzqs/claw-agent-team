@@ -97,7 +97,7 @@ def latest_success_handoff(svc: AgentTeamService, issue_id: str, exclude_attempt
 
 def latest_attempt_context(svc: AgentTeamService, issue_id: str) -> dict[str, Any]:
     row = svc.db.get_one(
-        '''SELECT attempt_no, status, failure_summary, result_summary, input_snapshot_json, output_snapshot_json
+        '''SELECT attempt_no, status, failure_summary, result_summary, input_snapshot_json, output_snapshot_json, completion_mode
            FROM issue_attempts
            WHERE issue_id = ?
            ORDER BY attempt_no DESC
@@ -113,6 +113,7 @@ def latest_attempt_context(svc: AgentTeamService, issue_id: str) -> dict[str, An
         'status': row['status'],
         'failure_summary': row['failure_summary'],
         'result_summary': row['result_summary'],
+        'completion_mode': row['completion_mode'],
         'attempt_role': input_snapshot.get('attempt_role'),
         'worker_instruction': input_snapshot.get('worker_instruction'),
         'wait_payload': wait_payload,
@@ -187,6 +188,48 @@ def extract_expected_marker(payload: dict[str, Any]) -> str | None:
     return None
 
 
+def has_recent_runtime_activity(*, session_key: str, since_ms: int, lookback_seconds: int = 300) -> tuple[bool, dict[str, Any]]:
+    try:
+        cmd = [
+            'openclaw', 'gateway', 'call', 'sessions.get',
+            '--json',
+            '--timeout', '20000',
+            '--params', json.dumps({'sessionKey': session_key, 'limit': 50}, ensure_ascii=False),
+        ]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if res.returncode != 0:
+            return False, {'check_error': res.stderr.strip() or res.stdout.strip()}
+        data = json.loads(res.stdout)
+        messages = data.get('messages') or []
+        now_ms_local = int(time.time() * 1000)
+        threshold_ms = now_ms_local - lookback_seconds * 1000
+        newest_ts = None
+        newest_role = None
+        newest_text = None
+        for message in messages:
+            ts = message.get('timestamp')
+            if not isinstance(ts, (int, float)):
+                continue
+            ts = int(ts)
+            if ts < since_ms or ts < threshold_ms:
+                continue
+            role = message.get('role')
+            if role not in {'assistant', 'tool'}:
+                continue
+            if newest_ts is None or ts > newest_ts:
+                newest_ts = ts
+                newest_role = role
+                newest_text = extract_text(message)[:200] if isinstance(message, dict) else None
+        return bool(newest_ts is not None), {
+            'newest_ts': newest_ts,
+            'newest_role': newest_role,
+            'newest_text': newest_text,
+            'lookback_seconds': lookback_seconds,
+        }
+    except Exception as e:
+        return False, {'check_error': str(e)}
+
+
 def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, Any], *, session_key: str) -> dict[str, Any]:
     metadata = parse_json(issue.get('metadata_json'))
     role = issue.get('role') or 'agent'
@@ -248,7 +291,18 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             f"- previous attempt_no: {retry_context.get('attempt_no') or ''}\n"
             f"- previous status: {retry_context.get('status') or ''}\n"
             f"- previous failure_summary: {retry_context.get('failure_summary') or ''}\n"
-            "- 尽量延续已有工作，不要把它当成全新 issue\n\n"
+            + (f"- previous completion_mode: {retry_context.get('completion_mode')}\n" if retry_context.get('completion_mode') else '')
+            + "- 尽量延续已有工作，不要把它当成全新 issue\n\n"
+        )
+
+    recovery_summary = ''
+    if retry_context and retry_context.get('completion_mode') == 'system_chat_final':
+        recovery_summary = (
+            "补偿提示：\n"
+            "- 系统观察到上一轮 run 已结束，但没有收到 terminal callback，也没有观察到最终 JSON / marker。\n"
+            "- 本轮请基于上一轮已完成的工作做一次显式收口。\n"
+            "- 如果任务已完成，请立即补发 terminal callback，并返回最终 JSON。\n"
+            "- 如果任务未完成，请明确说明阻塞原因，并给出 suggested_next_role。\n\n"
         )
 
     existing_artifacts = metadata.get('artifacts') if isinstance(metadata.get('artifacts'), dict) else {}
@@ -290,6 +344,7 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         f"你现在以 Agent Team 的 {role_label} 角色工作。Issue #{issue['issue_no']}。\n\n"
         f"{prior_summary}"
         f"{retry_summary}"
+        f"{recovery_summary}"
         f"{artifact_summary}"
         f"角色边界：{role_boundary_rules.get(role, '请只做当前角色边界内的工作。')}\n\n"
         f"任务：\n{base_instruction}\n\n"
@@ -687,6 +742,17 @@ def main() -> int:
                 elif out.get('observe_timeout'):
                     item['observe_timeout'] = out['observe_timeout']
                     if age_seconds >= STALE_ATTEMPT_SECONDS:
+                        session_key = payload.get('session_key') if isinstance(payload.get('session_key'), str) else ''
+                        active, activity_info = has_recent_runtime_activity(
+                            session_key=session_key,
+                            since_ms=int(attempt.get('created_at_ms') or 0),
+                        ) if session_key else (False, {'check_error': 'missing session_key'})
+                        item['recent_activity'] = activity_info
+                        if active:
+                            item['stale_deferred'] = True
+                            report['observed'].append(item)
+                            append_action({'at': report['ran_at'], 'kind': 'defer_stale', 'issue_id': attempt['issue_id'], 'issue_no': attempt['issue_no'], 'attempt_id': attempt['attempt_id'], 'dispatch_ref': attempt['dispatch_ref'], 'activity': activity_info})
+                            continue
                         try:
                             cancel_out = svc.cancel_execution(
                                 dispatch_ref=attempt['dispatch_ref'],

@@ -543,6 +543,46 @@ def main() -> int:
                     'issue_status_after': gate_out.get('status'),
                     'artifact': reusable_artifact,
                 }
+                handoff_payload = gate_out.get('handoff_payload') if isinstance(gate_out.get('handoff_payload'), dict) else {}
+                next_role = handoff_payload.get('suggested_next_role') if isinstance(handoff_payload.get('suggested_next_role'), str) else None
+                item['next_role_decision'] = next_role
+                if next_role == 'close':
+                    closed = svc.close_issue(issue_id=issue['issue_id'], resolution='completed')
+                    close_item = {
+                        'kind': 'close',
+                        'issue_id': issue['issue_id'],
+                        'issue_no': issue['issue_no'],
+                        'from_role': issue.get('role'),
+                        'resolution': closed.get('resolution'),
+                        'summary': 'auto closed after artifact gate',
+                    }
+                    item['close'] = close_item
+                    item['issue_status_after'] = 'closed'
+                    append_action({'at': report['ran_at'], **close_item})
+                elif next_role and next_role != 'close':
+                    target_employee_key = pick_target_employee_key(svc, project_key=issue.get('project_key') or 'shared', role=next_role)
+                    if target_employee_key:
+                        route_out = svc.handoff_issue(
+                            issue_id=issue['issue_id'],
+                            to_employee_key=target_employee_key,
+                            note=f'auto route after artifact gate from {issue.get("role") or "unknown"}',
+                            issue_type='normal',
+                            risk_level='normal',
+                        )
+                        route_item = {
+                            'kind': 'route',
+                            'issue_id': issue['issue_id'],
+                            'issue_no': issue['issue_no'],
+                            'from_role': issue.get('role'),
+                            'to_role': next_role,
+                            'target_employee_key': target_employee_key,
+                            'routing_reason': route_out.get('routing_reason'),
+                        }
+                        item['route'] = route_item
+                        item['issue_status_after'] = route_out.get('status', item['issue_status_after'])
+                        append_action({'at': report['ran_at'], **route_item})
+                    else:
+                        item['route_error'] = f'missing employee for role={next_role} project={issue.get("project_key") or "shared"}'
                 report['skipped'].append(item)
                 append_action({'at': report['ran_at'], **item})
                 continue

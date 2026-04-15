@@ -963,6 +963,7 @@
           <div>Session</div><div><code>${wrap.current_agent_session || ''}</code></div>
           <div>当前 Attempt</div><div>${latest ? `#${latest.attempt_no}` : '暂无'}</div>
           <div>Blocker</div><div>${issue.blocker_summary || ''}</div>
+          <div>Resume Role</div><div>${issue.metadata_json ? (() => { try { const m = JSON.parse(issue.metadata_json); return m.resume_role || '—'; } catch { return '—'; } })() : '—'}</div>
           <div>Required Input</div><div>${issue.required_human_input || ''}</div>
           <div>Description</div><div>${issue.description_md || ''}</div>
         </div>
@@ -1008,6 +1009,8 @@
             <div>Assigned</div><div><code>${issue.assigned_employee_id || ''}</code></div>
             <div>当前 Attempt</div><div>${latest ? `#${latest.attempt_no}` : '暂无'}</div>
             <div>Blocker</div><div>${issue.blocker_summary || ''}</div>
+            <div>Resume Role</div><div>${issue.metadata_json ? (() => { try { const m = JSON.parse(issue.metadata_json); return m.resume_role || '—'; } catch { return '—'; } })() : '—'}</div>
+            <div>Wait Strategy</div><div>${issue.metadata_json ? (() => { try { const m = JSON.parse(issue.metadata_json); return m.parent_wait_strategy || '—'; } catch { return '—'; } })() : '—'}</div>
             <div>Required Input</div><div>${issue.required_human_input || ''}</div>
             <div>Description</div><div>${issue.description_md || ''}</div>
             <div>Acceptance</div><div>${issue.acceptance_criteria_md || ''}</div>

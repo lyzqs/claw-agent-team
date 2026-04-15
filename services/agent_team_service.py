@@ -938,7 +938,7 @@ class AgentTeamService:
 
     def close_issue(self, *, issue_id: str, resolution: str = 'completed') -> dict[str, Any]:
         ts = now_ms()
-        issue = self.db.get_one('SELECT assigned_employee_id FROM issues WHERE id = ?', (issue_id,))
+        issue = self.db.get_one('SELECT assigned_employee_id, metadata_json FROM issues WHERE id = ?', (issue_id,))
         open_children = self.db.conn.execute(
             '''SELECT COUNT(*)
                FROM issue_relations ir
@@ -947,9 +947,13 @@ class AgentTeamService:
             (issue_id,),
         ).fetchone()[0]
         if int(open_children or 0) > 0:
+            metadata = merge_json_object(issue['metadata_json'], {})
+            metadata.setdefault('orchestration_parent', True)
+            metadata.setdefault('parent_wait_strategy', 'wait_children_then_review')
+            metadata.setdefault('resume_role', 'ceo')
             self.db.conn.execute(
-                'UPDATE issues SET status = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
-                ('waiting_children', f'waiting for {int(open_children)} child issue(s) to close', ts, issue_id),
+                'UPDATE issues SET status = ?, blocker_summary = ?, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
+                ('waiting_children', f'waiting for {int(open_children)} child issue(s) to close', json.dumps(metadata, ensure_ascii=False), ts, issue_id),
             )
             record_issue_activity(
                 self.db.conn,
@@ -958,7 +962,7 @@ class AgentTeamService:
                 action_type='issue_waiting_children',
                 summary='Issue moved to waiting_children instead of closing',
                 actor_employee_id=issue['assigned_employee_id'],
-                details={'resolution': resolution, 'open_child_count': int(open_children)},
+                details={'resolution': resolution, 'open_child_count': int(open_children), 'resume_role': metadata.get('resume_role'), 'parent_wait_strategy': metadata.get('parent_wait_strategy')},
             )
             self.db.commit()
             return {
@@ -1287,7 +1291,7 @@ class AgentTeamService:
                     dependency_released.append({'issue_id': row['id'], 'new_status': 'ready'})
 
         waiting_children_rows = self.db.fetch_all(
-            '''SELECT i.id, i.assigned_employee_id
+            '''SELECT i.id, i.assigned_employee_id, i.metadata_json
                FROM issues i
                WHERE i.status = 'waiting_children' '''
         )
@@ -1300,6 +1304,8 @@ class AgentTeamService:
                 (row['id'],),
             ).fetchone()[0]
             if int(open_children or 0) == 0:
+                metadata = merge_json_object(row['metadata_json'], {})
+                resume_role = metadata.get('resume_role') or 'ceo'
                 self.db.conn.execute(
                     'UPDATE issues SET status = ?, blocker_summary = NULL, updated_at_ms = ? WHERE id = ?',
                     ('review', ts, row['id']),
@@ -1311,9 +1317,9 @@ class AgentTeamService:
                     action_type='child_issues_completed',
                     summary='All child issues completed; parent returned to review',
                     actor_employee_id=row['assigned_employee_id'],
-                    details={'new_status': 'review'},
+                    details={'new_status': 'review', 'resume_role': resume_role, 'parent_wait_strategy': metadata.get('parent_wait_strategy')},
                 )
-                parent_progressed.append({'issue_id': row['id'], 'new_status': 'review'})
+                parent_progressed.append({'issue_id': row['id'], 'new_status': 'review', 'resume_role': resume_role})
 
         self.db.commit()
         return {
@@ -1371,6 +1377,9 @@ class AgentTeamService:
                 'created_from_role': created_by_role,
                 'proposal_key': proposal_key,
             })
+            issue_metadata = merge_json_object(attempt['metadata_json'], {})
+            issue_metadata.setdefault('resume_role', created_by_role or 'ceo')
+            issue_metadata.setdefault('parent_wait_strategy', 'wait_children_then_review')
             source_type = str(proposal.get('source_type') or 'system')
             created = self.create_issue(
                 project_key=str(proposal.get('project_key') or attempt['project_key']),
@@ -1411,6 +1420,12 @@ class AgentTeamService:
             self.db.conn.execute(
                 'INSERT INTO issue_relations (id, from_issue_id, to_issue_id, relation_type, created_by_employee_id, created_at_ms) VALUES (?, ?, ?, ?, ?, ?)',
                 (uid('rel'), attempt['issue_id'], created['issue_id'], relation_type, attempt['assigned_employee_id'], now_ms()),
+            )
+            if relation_type == 'parent_of':
+                issue_metadata['orchestration_parent'] = True
+            self.db.conn.execute(
+                'UPDATE issues SET metadata_json = ?, updated_at_ms = ? WHERE id = ?',
+                (json.dumps(issue_metadata, ensure_ascii=False), now_ms(), attempt['issue_id']),
             )
             item = {
                 'proposal_key': proposal_key,

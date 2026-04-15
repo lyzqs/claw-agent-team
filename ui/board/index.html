@@ -979,13 +979,17 @@
       const projects = boardData.project_view || [];
       const fixedRoles = FLOW_ROLES;
       const fixedAgents = orderedAgentIds((boardData.agent_workload || []).map(x => x.agent_id));
-      const metrics = [
-        ['项目数', projects.length],
-        ['固定角色', fixedRoles.length],
-        ['角色实例', employees.length],
-        ['固定 Agent', fixedAgents.length],
-      ];
-      document.getElementById('summary').innerHTML = metrics.map(([k, v]) => `<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+      const openCount = issuesData.filter(x => x.issue.status !== 'closed').length;
+      const closedCount = issuesData.filter(x => x.issue.status === 'closed').length;
+      const humanCount = (humanQueueData.items || []).length;
+      const runningCount = issuesData.filter(x => ['dispatching', 'running', 'review', 'waiting_recovery_completion'].includes(x.issue.status)).length;
+
+      document.getElementById('summary').innerHTML = `
+        <div class="compact-stat" id="statProjects"><div class="k">项目数</div><div class="num">${projects.length}</div></div>
+        <div class="compact-stat" id="statRoles"><div class="k">固定角色</div><div class="num">${fixedRoles.length}</div></div>
+        <div class="compact-stat" id="statInstances"><div class="k">角色实例</div><div class="num">${employees.length}</div></div>
+        <div class="compact-stat" id="statAgents"><div class="k">固定 Agent</div><div class="num">${fixedAgents.length}</div></div>
+      `;
       const chip = document.getElementById('workflowChip');
       chip.textContent = workflowControl.mode === 'paused' ? '总流程已暂停' : '总流程运行中';
       chip.className = `chip ${workflowControl.mode === 'paused' ? 'tag-paused' : 'tag-running'}`;
@@ -1002,11 +1006,15 @@
             return `<div class="detail-item"><div class="detail-head"><span>${displayAgentName(agentId)} / ${agentId}</span><span>${boundEmployees.length} 个实例</span></div><div class="detail-sub">${boundEmployees.length ? boundEmployees.map(e => `${e.employee_key}${e.project_key ? ` (${e.project_key})` : ''}`).join('、') : '暂无实例'}</div></div>`;
           }).join('')}</div>`
         : '暂无实例';
-      const openCount = issuesData.filter(x => x.issue.status !== 'closed').length;
-      const closedCount = issuesData.filter(x => x.issue.status === 'closed').length;
-      const humanCount = (humanQueueData.items || []).length;
-      const runningCount = issuesData.filter(x => ['dispatching', 'running', 'review', 'waiting_recovery_completion'].includes(x.issue.status)).length;
-      document.getElementById('runtimeSummary').innerHTML = `<div class="detail-stack"><div class="detail-item"><div class="detail-head"><span>当前系统态势</span><span>${workflowControl.mode === 'paused' ? 'paused' : 'running'}</span></div><div class="detail-sub">open/non-closed：${openCount}，running/review/recovery：${runningCount}，waiting_human：${humanCount}，closed：${closedCount}</div></div></div>`;
+      document.getElementById('runtimeSummary').innerHTML = `
+        <div class="detail-stack">
+          <div class="detail-item"><div class="detail-head"><span>当前系统态势</span><span>${workflowControl.mode === 'paused' ? 'paused' : 'running'}</span></div><div class="detail-sub">open/non-closed：${openCount}，running/review/recovery：${runningCount}，waiting_human：${humanCount}，closed：${closedCount}</div></div>
+        </div>`;
+
+      document.getElementById('statProjects').onclick = () => openInfoModal('项目说明', document.getElementById('projectMeta').innerHTML || '暂无项目');
+      document.getElementById('statRoles').onclick = () => openInfoModal('固定角色', document.getElementById('roleMeta').outerHTML || '暂无角色');
+      document.getElementById('statInstances').onclick = () => openInfoModal('角色实例说明', document.getElementById('instanceMeta').innerHTML || '暂无实例');
+      document.getElementById('statAgents').onclick = () => openInfoModal('运行态摘要', document.getElementById('runtimeSummary').innerHTML || '暂无摘要');
     }
 
     function getAllIssuesEnriched() {
@@ -1114,18 +1122,12 @@
 
       document.getElementById('storyboard').style.setProperty('--lane-count', String(Math.max(1, lanes.length)));
       document.getElementById('storyboard').innerHTML = lanes.map(lane => {
-        const p = paginateLane(lane.key, lane.items);
         return `
           <div class="lane">
             <div class="lane-title"><h3>${lane.title}</h3><span class="lane-count">${lane.items.length}</span></div>
             <div class="lane-sub">${lane.subtitle}</div>
-            <div class="lane-controls">
-              <button class="secondary lane-prev" data-lane="${lane.key}" ${p.page <= 1 ? 'disabled' : ''}>上一页</button>
-              <span>${p.page} / ${p.totalPages}</span>
-              <button class="secondary lane-next" data-lane="${lane.key}" ${p.page >= p.totalPages ? 'disabled' : ''}>下一页</button>
-            </div>
             <div class="lane-body">
-              ${p.slice.length ? p.slice.map(issueCard).join('') : '<div class="lane-empty">当前为空</div>'}
+              ${lane.items.length ? lane.items.map(issueCard).join('') : '<div class="lane-empty">当前为空</div>'}
             </div>
           </div>
         `;
@@ -1133,8 +1135,6 @@
 
       document.querySelectorAll('.issue-card').forEach(el => el.addEventListener('click', () => openIssueModal(el.dataset.issueId)));
       document.querySelectorAll('.issue-open-btn').forEach(el => el.addEventListener('click', (ev) => { ev.stopPropagation(); openIssueModal(el.dataset.issueId); }));
-      document.querySelectorAll('.lane-prev').forEach(btn => btn.addEventListener('click', () => { lanePages[btn.dataset.lane] = Math.max(1, (lanePages[btn.dataset.lane] || 1) - 1); renderStoryboard(); }));
-      document.querySelectorAll('.lane-next').forEach(btn => btn.addEventListener('click', () => { lanePages[btn.dataset.lane] = (lanePages[btn.dataset.lane] || 1) + 1; renderStoryboard(); }));
     }
 
     function renderIssueList() {
@@ -1289,6 +1289,17 @@
       document.getElementById('modalBackdrop').classList.add('show');
     }
 
+    function closeIssueModal() {
+      document.getElementById('modalBackdrop').classList.remove('show');
+    }
+
+    function openInfoModal(title, html) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalSubtitle').textContent = '控制台详情';
+      document.getElementById('modalBody').innerHTML = `<div class="modal-section">${html}</div>`;
+      document.getElementById('modalBackdrop').classList.add('show');
+    }
+
     function openCreateIssueModal() {
       document.getElementById('createIssueModal').classList.add('show');
     }
@@ -1374,15 +1385,10 @@
     document.getElementById('modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') closeIssueModal(); });
     document.getElementById('createIssueModal').addEventListener('click', (e) => { if (e.target.id === 'createIssueModal') closeCreateIssueModal(); });
     document.getElementById('toggleProjectMetaBtn').addEventListener('click', () => {
-      const el = document.getElementById('projectMeta');
-      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      openInfoModal('项目说明', document.getElementById('projectMeta').innerHTML || '暂无项目');
     });
     document.getElementById('toggleRoleMetaBtn').addEventListener('click', () => {
-      const roleEl = document.getElementById('roleMeta');
-      const instEl = document.getElementById('instanceMeta');
-      const show = roleEl.style.display === 'none';
-      roleEl.style.display = show ? 'flex' : 'none';
-      instEl.style.display = show ? 'block' : 'none';
+      openInfoModal('固定角色 / 实例说明', `${document.getElementById('roleMeta').outerHTML}${document.getElementById('instanceMeta').innerHTML}` || '暂无角色');
     });
     document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('agentFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });

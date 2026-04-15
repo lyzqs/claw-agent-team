@@ -1,6 +1,6 @@
 ---
 name: agent-team-issue-authoring
-description: Stable issue authoring skill for Agent Team. Use when an agent needs to decide whether to create a new issue, follow-up issue, blocker issue, governance issue, or system/watchdog issue in the Agent Team ledger, and when it must produce a clean structured issue-creation proposal instead of burying work in chat text.
+description: Stable issue authoring skill for Agent Team. Use when an agent needs to decide whether to create a new issue, follow-up issue, blocker issue, governance issue, or system/watchdog issue in the Agent Team ledger, and when it must use the single official derived-issue creation path instead of burying work in chat text or writing directly through multiple paths.
 ---
 
 # Agent Team Issue Authoring
@@ -73,41 +73,77 @@ In those cases use:
 
 ---
 
-## Required output format from the agent
+## Required action path from the agent
 
-When an agent thinks a new issue is needed, it should **not directly improvise free-form text**.
-Instead, it should output a single structured proposal object.
+When an agent thinks a new issue is needed, it must use **one single official creation path**.
 
-Use this JSON shape:
+### Official rule
+- Do **not** put `create_issue_proposal` or `create_issue_proposals` inside the final terminal JSON.
+- Do **not** directly improvise free-form issue creation requests in chat text.
+- Do **not** use multiple different creation paths.
 
-```json
-{
-  "create_issue": true,
-  "source_type": "agent",
-  "project_key": "agent-team-core",
-  "owner_employee_key": "shared.ceo",
-  "route_role": "pm",
-  "title": "Short issue title",
-  "description_md": "Clear problem statement and context.",
-  "acceptance_criteria_md": "What must be true to consider this done.",
-  "priority": "p2",
-  "issue_kind": "followup|blocker|governance|system",
-  "reason": "Why this deserves a separate issue instead of a retry/handoff/human queue.",
-  "dispatch_instruction": "Optional first-role instruction.",
-  "metadata": {
-    "created_by_agent": "agent-team-dev",
-    "created_from_issue_id": "issue_xxx",
-    "created_from_attempt_no": 3,
-    "created_because": "qa_found_real_defect"
-  }
-}
+Instead:
+1. decide whether a separate issue is warranted
+2. prepare one or more structured proposal objects
+3. call the single official helper entry:
+
+```bash
+python3 /root/.openclaw/workspace-agent-team/scripts/attempt_callback_helper.py create-issues \
+  --attempt-id <attempt_id> \
+  --callback-token <callback_token> \
+  --created-by-role <pm|dev|qa|ops|ceo> \
+  --proposals-json '<JSON array>'
 ```
 
-If a new issue is **not** needed, the agent should not emit this object.
+This helper is the **only** write path that agents should use for creating derived issues.
+
+---
+
+## Proposal format
+
+Use a JSON array. Even if only one issue is needed, still pass an array with one object.
+
+```json
+[
+  {
+    "proposal_key": "qa-defect-login-timeout",
+    "source_type": "agent",
+    "project_key": "agent-team-core",
+    "owner_employee_key": "shared.ceo",
+    "route_role": "dev",
+    "title": "Fix login timeout regression",
+    "description_md": "Clear problem statement and context.",
+    "acceptance_criteria_md": "What must be true to consider this done.",
+    "priority": "p2",
+    "issue_kind": "followup|blocker|governance|system",
+    "relation_type": "parent_of|blocked_by|related_to",
+    "reason": "Why this deserves a separate issue instead of a retry/handoff/human queue.",
+    "metadata": {
+      "created_by_agent": "agent-team-qa",
+      "created_from_issue_id": "issue_xxx",
+      "created_from_attempt_no": 3,
+      "created_because": "qa_found_real_defect"
+    }
+  }
+]
+```
+
+If a new issue is **not** needed, the agent should not call the helper.
 
 ---
 
 ## Field rules
+
+### `proposal_key`
+Required for deduplication.
+
+It should be stable for the same intended derived issue inside the same source attempt.
+Examples:
+- `ceo-split-api-followup`
+- `qa-defect-provider-timeout`
+- `ops-rollout-followup-prod-alerting`
+
+If the agent retries the same derived-issue creation, it should reuse the same `proposal_key`.
 
 ### `source_type`
 Use these values consistently:
@@ -225,13 +261,14 @@ CEO may create:
 
 ## Agent-to-system behavior
 
-Important: the agent should usually **propose** issue creation, not directly create it by hidden side effects.
+Important: the agent should usually **propose** issue creation, and then call the single official helper.
 
 Recommended control pattern:
-1. agent emits structured `create_issue` proposal
-2. orchestrator validates it
-3. system/API performs actual `create_issue`
-4. activity log records origin and linkage
+1. agent decides a separate issue is needed
+2. agent builds one or more structured proposals
+3. agent calls `attempt_callback_helper.py create-issues`
+4. system/API performs actual `create_issue + triage + relation`
+5. activity log records origin and linkage
 
 This keeps issue creation auditable and prevents noisy issue spam.
 
@@ -268,59 +305,6 @@ Only if 4 is yes should a new issue be proposed.
 
 ---
 
-## Good examples
-
-### Example: QA finds a separate defect
-
-```json
-{
-  "create_issue": true,
-  "source_type": "agent",
-  "project_key": "agent-team-core",
-  "owner_employee_key": "shared.ceo",
-  "route_role": "dev",
-  "title": "Fix mismatch in provider-error ledger writeback",
-  "description_md": "QA verified the canonical provider-error routing path, but found the resulting ledger writeback does not match the expected failure summary. This is separate from the original routing verification issue and should be tracked as its own defect.",
-  "acceptance_criteria_md": "A provider-error attempt writes the expected failure code and failure summary into the ledger, and QA can verify the corrected path.",
-  "priority": "p1",
-  "issue_kind": "blocker",
-  "reason": "This is a separate defect and should not be hidden inside the verification issue.",
-  "dispatch_instruction": "Reproduce the mismatch and correct the ledger writeback path.",
-  "metadata": {
-    "created_by_agent": "agent-team-qa",
-    "created_from_issue_id": "issue_xyz",
-    "created_from_attempt_no": 4,
-    "created_because": "qa_found_real_defect"
-  }
-}
-```
-
-### Example: CEO governance escalation
-
-```json
-{
-  "create_issue": true,
-  "source_type": "agent",
-  "project_key": "agent-team-core",
-  "owner_employee_key": "shared.ceo",
-  "route_role": "ceo",
-  "title": "Decide whether PM may bypass CEO for low-risk user clarifications",
-  "description_md": "During Agent Team productization, a governance ambiguity was found: it is unclear when PM/QA/Ops may directly ask the user for clarification versus escalating through CEO. This is a governance question, not a delivery issue.",
-  "acceptance_criteria_md": "A clear policy exists for governance vs direct clarification routing, and it is reflected in UI and worker behavior.",
-  "priority": "p2",
-  "issue_kind": "governance",
-  "reason": "This requires a policy decision, not just another execution attempt.",
-  "dispatch_instruction": "Make a policy decision and record the allowed routing rule.",
-  "metadata": {
-    "created_by_agent": "agent-team-pm",
-    "created_from_issue_id": "issue_abc",
-    "created_because": "governance_ambiguity"
-  }
-}
-```
-
----
-
 ## Anti-patterns
 
 Avoid these:
@@ -331,9 +315,11 @@ Avoid these:
 - Creating delivery issues when Human Queue is the correct answer
 - Omitting linkage metadata
 - Sending everything directly to CEO by default
+- Mixing final terminal JSON with derived-issue creation side effects
+- Using more than one official issue-creation write path
 
 ---
 
 ## Recommended next implementation step
 
-If the runtime supports it, add an orchestrator-side handler for agent issue proposals so agents emit structured proposals and the system performs the actual create/triage path.
+Keep a single official write path for derived issues. Skills should guide the agent’s judgment and proposal structure, while the helper/API performs the actual creation in a centralized, auditable, idempotent way.

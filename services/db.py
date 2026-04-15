@@ -54,6 +54,8 @@ def ensure_attempt_callback_schema(conn: sqlite3.Connection) -> None:
         alter_statements.append("ALTER TABLE issue_attempts ADD COLUMN runtime_session_id TEXT")
     if 'runtime_session_file' not in columns:
         alter_statements.append("ALTER TABLE issue_attempts ADD COLUMN runtime_session_file TEXT")
+    if 'derived_issues_json' not in columns:
+        alter_statements.append("ALTER TABLE issue_attempts ADD COLUMN derived_issues_json TEXT")
     for sql in alter_statements:
         conn.execute(sql)
 

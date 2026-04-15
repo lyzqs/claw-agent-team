@@ -64,6 +64,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument('--payload-json', required=True)
     s.add_argument('--idempotency-key', default=None)
 
+    s = sub.add_parser('create-derived-issues')
+    s.add_argument('--attempt-id', required=True)
+    s.add_argument('--created-by-role', default=None)
+    s.add_argument('--proposals-json', required=True)
+
     s = sub.add_parser('cancel-execution')
     s.add_argument('--dispatch-ref', required=True)
     s.add_argument('--reason', default='cancelled_by_cli')
@@ -139,6 +144,14 @@ def main() -> int:
                     phase=args.phase,
                     payload=json.loads(args.payload_json),
                     idempotency_key=args.idempotency_key,
+                )
+            )
+        elif args.cmd == 'create-derived-issues':
+            print_json(
+                svc.create_derived_issues(
+                    attempt_id=args.attempt_id,
+                    proposals=json.loads(args.proposals_json),
+                    created_by_role=args.created_by_role,
                 )
             )
         elif args.cmd == 'cancel-execution':

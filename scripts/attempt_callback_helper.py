@@ -74,7 +74,11 @@ def build_parser() -> argparse.ArgumentParser:
     terminal.add_argument('--needs-human', action='store_true')
     terminal.add_argument('--artifacts-json', default='')
     terminal.add_argument('--blocking-findings-json', default='')
-    terminal.add_argument('--create-issue-proposal-json', default='')
+
+    create_issues = sub.add_parser('create-issues', help='create one or more derived issues from a dispatched attempt')
+    add_common(create_issues)
+    create_issues.add_argument('--proposals-json', required=True, help='JSON array of issue proposal objects')
+    create_issues.add_argument('--created-by-role', default='')
 
     return p
 
@@ -92,7 +96,6 @@ def build_payload(args: argparse.Namespace) -> tuple[str, dict]:
         }
 
     if args.mode == 'terminal':
-        proposal = parse_json_object(args.create_issue_proposal_json, default=None) if args.create_issue_proposal_json else None
         return 'terminal_handoff', {
             'marker': args.marker,
             'status': args.status,
@@ -103,7 +106,6 @@ def build_payload(args: argparse.Namespace) -> tuple[str, dict]:
             'reason': args.reason,
             'risk_level': args.risk_level,
             'needs_human': bool(args.needs_human),
-            'create_issue_proposal': proposal,
         }
 
     raise SystemExit(f'unsupported mode: {args.mode}')
@@ -111,6 +113,17 @@ def build_payload(args: argparse.Namespace) -> tuple[str, dict]:
 
 def main() -> int:
     args = build_parser().parse_args()
+    if args.mode == 'create-issues':
+        proposals = parse_json_list(args.proposals_json)
+        out = run_cli([
+            'create-derived-issues',
+            '--attempt-id', args.attempt_id,
+            '--proposals-json', json.dumps(proposals, ensure_ascii=False),
+            *(['--created-by-role', args.created_by_role] if args.created_by_role else []),
+        ])
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+        return 0
+
     phase, payload = build_payload(args)
     out = run_cli([
         'record-attempt-callback',

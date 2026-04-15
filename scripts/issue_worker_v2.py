@@ -71,8 +71,6 @@ def normalize_handoff_payload(payload: dict[str, Any], *, marker: str, fallback_
     out['artifacts'] = artifacts if isinstance(artifacts, list) else []
     findings = out.get('blocking_findings')
     out['blocking_findings'] = findings if isinstance(findings, list) else []
-    proposal = out.get('create_issue_proposal')
-    out['create_issue_proposal'] = proposal if isinstance(proposal, dict) else None
     return out
 
 
@@ -562,10 +560,11 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         "3. 即使已有中间产出，也必须做本角色的一轮显式判断，不要静默跳过。\n"
         "4. 如果验收已满足，请明确给出关闭或继续流转建议。\n"
         "5. 如果创建了飞书文档等外部产物，请先记录 artifact callback。\n"
-        "6. 最终回复必须是单个 JSON 对象，不要带 markdown、代码块或额外说明。\n\n"
+        "6. 如需创建新的独立 issue，只能使用 skill `agent-team-issue-authoring`，并通过唯一入口 `python3 /root/.openclaw/workspace-agent-team/scripts/attempt_callback_helper.py create-issues --attempt-id <attempt_id> --callback-token <callback_token> --created-by-role <role> --proposals-json \"[...]\"`。不要在最终 JSON 中夹带 issue proposal。\n"
+        "7. 最终回复必须是单个 JSON 对象，不要带 markdown、代码块或额外说明。\n\n"
         "最终 JSON 只需要包含这些字段：\n"
         f"marker={marker}\n"
-        "status, summary, artifacts, blocking_findings, suggested_next_role, reason, risk_level, needs_human, create_issue_proposal\n\n"
+        "status, summary, artifacts, blocking_findings, suggested_next_role, reason, risk_level, needs_human\n\n"
         "系统会在消息末尾追加本轮可直接执行的 callback 命令，请按追加后的具体命令调用。"
     )
 
@@ -688,46 +687,6 @@ def pick_target_employee_key(svc: AgentTeamService, *, project_key: str, role: s
     ).fetchone()
     return row[0] if row else None
 
-
-
-def create_issue_from_proposal(svc: AgentTeamService, *, proposal: dict[str, Any], fallback_project_key: str, fallback_owner_employee_key: str, current_issue_id: str, current_attempt_no: int | None, created_by_role: str | None) -> dict[str, Any]:
-    project_key = proposal.get('project_key') or fallback_project_key
-    owner_employee_key = proposal.get('owner_employee_key') or fallback_owner_employee_key
-    route_role = proposal.get('route_role') or 'pm'
-    relation_type = proposal.get('relation_type') or 'related_to'
-    source_type = proposal.get('source_type') or 'system'
-    metadata = dict(proposal.get('metadata') or {}) if isinstance(proposal.get('metadata'), dict) else {}
-    metadata.update({
-        'logical_source_type': 'agent',
-        'created_from_issue_id': current_issue_id,
-        'created_from_attempt_no': current_attempt_no,
-        'created_from_role': created_by_role,
-    })
-    created = svc.create_issue(
-        project_key=project_key,
-        owner_employee_key=owner_employee_key,
-        title=proposal['title'],
-        description_md=proposal.get('description_md', ''),
-        acceptance_criteria_md=proposal.get('acceptance_criteria_md', ''),
-        priority=proposal.get('priority', 'p2'),
-        source_type=source_type if source_type in {'user', 'system', 'detector', 'watchdog', 'human'} else 'system',
-        metadata=metadata,
-    )
-    assign_employee_key = pick_target_employee_key(svc, project_key=project_key, role=route_role)
-    triaged = svc.triage_issue(issue_id=created['issue_id'], assign_employee_key=assign_employee_key)
-    creator_row = svc.db.conn.execute('SELECT assigned_employee_id FROM issues WHERE id = ?', (current_issue_id,)).fetchone()
-    svc.db.conn.execute(
-        'INSERT INTO issue_relations (id, from_issue_id, to_issue_id, relation_type, created_by_employee_id, created_at_ms) VALUES (?, ?, ?, ?, ?, ?)',
-        (f"rel_{uuid.uuid4().hex[:12]}", current_issue_id, created['issue_id'], relation_type, creator_row[0] if creator_row else None, int(time.time() * 1000)),
-    )
-    svc.db.commit()
-    return {
-        'created': created,
-        'triaged': triaged,
-        'assign_employee_key': assign_employee_key,
-        'route_role': route_role,
-        'relation_type': relation_type,
-    }
 
 
 def decide_next_role(*, current_role: str | None, metadata: dict[str, Any]) -> str | None:
@@ -897,21 +856,6 @@ def main() -> int:
                     if isinstance(wait_payload.get('risk_level'), str) and wait_payload.get('risk_level').strip():
                         metadata['risk_level'] = wait_payload.get('risk_level').strip()
                     item['agent_suggestion'] = wait_payload
-                    if wait_payload.get('create_issue_proposal'):
-                        try:
-                            created_issue = create_issue_from_proposal(
-                                svc,
-                                proposal=wait_payload['create_issue_proposal'],
-                                fallback_project_key=issue_ctx['project_key'],
-                                fallback_owner_employee_key=issue_ctx.get('assigned_employee_key') or 'shared.ceo',
-                                current_issue_id=attempt['issue_id'],
-                                current_attempt_no=attempt.get('attempt_no'),
-                                created_by_role=attempt.get('role'),
-                            )
-                            item['created_issue'] = created_issue
-                            append_action({'at': report['ran_at'], 'kind': 'create_issue', 'source_issue_id': attempt['issue_id'], 'source_issue_no': attempt['issue_no'], 'created_issue_no': created_issue['created']['issue_no'], 'route_role': created_issue['route_role']})
-                        except Exception as e:
-                            item['create_issue_error'] = str(e)
                     next_role = decide_next_role(current_role=attempt.get('role'), metadata=metadata)
                     item['next_role_decision'] = next_role
                     if next_role == 'close':

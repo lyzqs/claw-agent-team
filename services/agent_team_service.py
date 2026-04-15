@@ -558,7 +558,8 @@ class AgentTeamService:
             normalized_payload.setdefault('status', 'done')
             normalized_payload.setdefault('risk_level', 'normal')
             normalized_payload.setdefault('needs_human', False)
-            normalized_payload.setdefault('create_issue_proposal', None)
+            normalized_payload.pop('create_issue_proposal', None)
+            normalized_payload.pop('create_issue_proposals', None)
             normalized_payload.setdefault('summary', normalized_payload.get('reason') or 'Observed terminal callback')
             ts = now_ms()
             summary = str(normalized_payload.get('summary') or normalized_payload.get('reason') or 'Observed terminal callback')
@@ -911,7 +912,6 @@ class AgentTeamService:
             'reason': 'existing artifact satisfies acceptance; dispatch skipped',
             'risk_level': str(metadata.get('risk_level') or 'normal'),
             'needs_human': False,
-            'create_issue_proposal': None,
         }
         metadata['prior_handoff'] = handoff_payload
         metadata['suggested_next_role'] = handoff_payload['suggested_next_role']
@@ -1175,6 +1175,134 @@ class AgentTeamService:
             'human_queue': [dict(r) for r in human_queue],
             'employee_view': [dict(r) for r in employees],
             'agent_workload': self.get_agent_workload()['items'],
+        }
+
+    def create_derived_issues(
+        self,
+        *,
+        attempt_id: str,
+        proposals: list[dict[str, Any]],
+        created_by_role: str | None = None,
+    ) -> dict[str, Any]:
+        attempt = self.db.get_one(
+            '''SELECT ia.id, ia.issue_id, ia.attempt_no, ia.assigned_employee_id, ia.derived_issues_json,
+                      i.metadata_json, p.project_key, ei.employee_key AS assigned_employee_key
+               FROM issue_attempts ia
+               JOIN issues i ON i.id = ia.issue_id
+               JOIN projects p ON p.id = i.project_id
+               LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id
+               WHERE ia.id = ?''',
+            (attempt_id,),
+        )
+        existing = merge_json_object(attempt['derived_issues_json'], {})
+        existing_items = existing.get('items') if isinstance(existing.get('items'), list) else []
+        existing_by_key = {
+            str(item.get('proposal_key')): item
+            for item in existing_items
+            if isinstance(item, dict) and isinstance(item.get('proposal_key'), str) and item.get('proposal_key').strip()
+        }
+
+        created_items: list[dict[str, Any]] = []
+        skipped_items: list[dict[str, Any]] = []
+        fallback_owner = attempt.get('assigned_employee_key') or 'shared.ceo'
+
+        for idx, proposal in enumerate(proposals, start=1):
+            if not isinstance(proposal, dict):
+                skipped_items.append({'index': idx, 'reason': 'proposal_not_object'})
+                continue
+            title = str(proposal.get('title') or '').strip()
+            if not title:
+                skipped_items.append({'index': idx, 'reason': 'missing_title'})
+                continue
+            proposal_key = str(proposal.get('proposal_key') or f'auto:{title}:{proposal.get("route_role") or "pm"}:{proposal.get("relation_type") or "related_to"}').strip()
+            if proposal_key in existing_by_key:
+                skipped_items.append({'index': idx, 'proposal_key': proposal_key, 'reason': 'duplicate_proposal_key', 'existing': existing_by_key[proposal_key]})
+                continue
+
+            metadata = dict(proposal.get('metadata') or {}) if isinstance(proposal.get('metadata'), dict) else {}
+            metadata.update({
+                'logical_source_type': 'agent',
+                'created_from_issue_id': attempt['issue_id'],
+                'created_from_attempt_no': attempt['attempt_no'],
+                'created_from_role': created_by_role,
+                'proposal_key': proposal_key,
+            })
+            source_type = str(proposal.get('source_type') or 'system')
+            created = self.create_issue(
+                project_key=str(proposal.get('project_key') or attempt['project_key']),
+                owner_employee_key=str(proposal.get('owner_employee_key') or fallback_owner),
+                title=title,
+                description_md=str(proposal.get('description_md') or ''),
+                acceptance_criteria_md=str(proposal.get('acceptance_criteria_md') or ''),
+                priority=str(proposal.get('priority') or 'p2'),
+                source_type=source_type if source_type in {'user', 'system', 'detector', 'watchdog', 'human'} else 'system',
+                metadata=metadata,
+            )
+            route_role = str(proposal.get('route_role') or 'pm')
+            assign_employee_key = None
+            if route_role == 'ceo':
+                row = self.db.conn.execute(
+                    '''SELECT ei.employee_key
+                       FROM employee_instances ei
+                       JOIN role_templates rt ON rt.id = ei.role_template_id
+                       WHERE rt.template_key = 'ceo'
+                       ORDER BY ei.employee_key ASC
+                       LIMIT 1'''
+                ).fetchone()
+                assign_employee_key = row[0] if row else None
+            else:
+                row = self.db.conn.execute(
+                    '''SELECT ei.employee_key
+                       FROM employee_instances ei
+                       JOIN role_templates rt ON rt.id = ei.role_template_id
+                       LEFT JOIN projects p ON p.id = ei.project_id
+                       WHERE rt.template_key = ? AND p.project_key = ?
+                       ORDER BY ei.employee_key ASC
+                       LIMIT 1''',
+                    (route_role, str(proposal.get('project_key') or attempt['project_key'])),
+                ).fetchone()
+                assign_employee_key = row[0] if row else None
+            triaged = self.triage_issue(issue_id=created['issue_id'], assign_employee_key=assign_employee_key) if assign_employee_key else None
+            relation_type = str(proposal.get('relation_type') or 'related_to')
+            self.db.conn.execute(
+                'INSERT INTO issue_relations (id, from_issue_id, to_issue_id, relation_type, created_by_employee_id, created_at_ms) VALUES (?, ?, ?, ?, ?, ?)',
+                (uid('rel'), attempt['issue_id'], created['issue_id'], relation_type, attempt['assigned_employee_id'], now_ms()),
+            )
+            item = {
+                'proposal_key': proposal_key,
+                'title': title,
+                'route_role': route_role,
+                'relation_type': relation_type,
+                'issue_id': created['issue_id'],
+                'issue_no': created['issue_no'],
+                'triaged_to': assign_employee_key,
+            }
+            created_items.append({'created': created, 'triaged': triaged, 'record': item})
+            existing_by_key[proposal_key] = item
+            existing_items.append(item)
+
+        ts = now_ms()
+        self.db.conn.execute(
+            'UPDATE issue_attempts SET derived_issues_json = ?, updated_at_ms = ? WHERE id = ?',
+            (json.dumps({'items': existing_items}, ensure_ascii=False), ts, attempt_id),
+        )
+        if created_items or skipped_items:
+            record_issue_activity(
+                self.db.conn,
+                now_ms=ts,
+                issue_id=attempt['issue_id'],
+                attempt_id=attempt_id,
+                action_type='derived_issues_processed',
+                summary=f'Derived issues processed: created={len(created_items)} skipped={len(skipped_items)}',
+                actor_employee_id=attempt['assigned_employee_id'],
+                details={'created': created_items, 'skipped': skipped_items},
+            )
+        self.db.commit()
+        return {
+            'attempt_id': attempt_id,
+            'source_issue_id': attempt['issue_id'],
+            'created': created_items,
+            'skipped': skipped_items,
         }
 
     def _record_checkpoint(

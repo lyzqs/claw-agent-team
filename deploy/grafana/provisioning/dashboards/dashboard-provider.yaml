@@ -11,6 +11,16 @@ providers:
     options:
       path: /var/lib/grafana/dashboards/agent-team-grafana/host-system
 
+  - name: agent-team-grafana-agent-team
+    orgId: 1
+    folder: AT | 20 Project | Agent-Team
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/agent-team-grafana/agent-team
+
   - name: agent-team-grafana-newapi
     orgId: 1
     folder: AT | 21 Project | NewAPI

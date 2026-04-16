@@ -23,6 +23,45 @@ EXPECTED_DASHBOARDS = {
             "topk(10",
         ],
     },
+    "agent-team-runtime-overview.json": {
+        "uid": "at-agent-team-runtime-overview",
+        "snippets": [
+            "agent_team_issues_total",
+            "agent_team_agent_queue_total",
+            "agent_team_human_queue_total",
+            "agent_team_attempt_running_total",
+            "agent_team_attempt_success_total",
+            "agent_team_attempt_failure_total",
+            "agent_team_role_backlog_total",
+            "agent_team_project_backlog_total",
+        ],
+    },
+    "agent-team-workflow-flow-health.json": {
+        "uid": "at-agent-team-workflow-flow-health",
+        "snippets": [
+            "agent_team_waiting_children_total",
+            "agent_team_waiting_recovery_total",
+            "agent_team_attempt_retry_total",
+            "agent_team_stale_dispatch_total",
+            "agent_team_callback_completion_modes_total",
+            "agent_team_reconcile_events_total",
+            "agent_team_human_roundtrip_total",
+            "agent_team_attempt_failure_total",
+        ],
+    },
+    "agent-team-ops-recovery-queue.json": {
+        "uid": "at-agent-team-ops-recovery-queue",
+        "snippets": [
+            "agent_team_queue_isolation_health",
+            "agent_team_worker_heartbeat_age_seconds",
+            "agent_team_process_cpu_percent",
+            "agent_team_process_memory_bytes",
+            "agent_team_session_registry_entries_total",
+            "agent_team_stale_dispatch_total",
+            "agent_team_agent_queue_total",
+            "agent_team_human_queue_total",
+        ],
+    },
     "arena-business-overview.json": {
         "uid": "at-arena-business-overview",
         "snippets": [
@@ -196,6 +235,7 @@ def main() -> None:
     for unit_path in [
         BUNDLE_ROOT / "systemd" / "process-exporter.service",
         BUNDLE_ROOT / "systemd" / "agent-team-prometheus.service",
+        BUNDLE_ROOT / "systemd" / "agent-team-metrics-exporter.service",
         BUNDLE_ROOT / "systemd" / "arena-metrics-exporter.service",
         BUNDLE_ROOT / "systemd" / "newapi-metrics-exporter.service",
         BUNDLE_ROOT / "systemd" / "uptime-kuma-metrics-exporter.service",
@@ -207,7 +247,7 @@ def main() -> None:
 
     prometheus_yaml = load_yaml(BUNDLE_ROOT / "prometheus" / "prometheus.yml")
     jobs = {item["job_name"] for item in prometheus_yaml.get("scrape_configs", [])}
-    for required_job in {"newapi-exporter", "arena-exporter", "uptime-kuma-exporter"}:
+    for required_job in {"agent-team-exporter", "newapi-exporter", "arena-exporter", "uptime-kuma-exporter"}:
         if required_job not in jobs:
             raise ValueError(f"prometheus scrape config missing {required_job} job")
 
@@ -219,7 +259,7 @@ def main() -> None:
 
     providers_yaml = load_yaml(BUNDLE_ROOT / "provisioning" / "dashboards" / "dashboard-provider.yaml")
     folders = {item["folder"] for item in providers_yaml.get("providers", [])}
-    for folder in {"AT | 10 Platform | Host-System", "AT | 21 Project | NewAPI", "AT | 22 Project | Arena", "AT | 30 Ops | Uptime-Kuma"}:
+    for folder in {"AT | 10 Platform | Host-System", "AT | 20 Project | Agent-Team", "AT | 21 Project | NewAPI", "AT | 22 Project | Arena", "AT | 30 Ops | Uptime-Kuma"}:
         if folder not in folders:
             raise ValueError(f"dashboard provider missing folder: {folder}")
 

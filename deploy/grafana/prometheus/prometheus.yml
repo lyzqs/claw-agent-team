@@ -18,6 +18,11 @@ scrape_configs:
       - targets:
           - 127.0.0.1:9256
 
+  - job_name: agent-team-exporter
+    static_configs:
+      - targets:
+          - 127.0.0.1:19130
+
   - job_name: newapi-exporter
     static_configs:
       - targets:

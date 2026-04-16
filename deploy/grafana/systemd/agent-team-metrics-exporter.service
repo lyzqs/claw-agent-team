@@ -1,0 +1,15 @@
+[Unit]
+Description=Agent Team metrics exporter for Prometheus
+After=network.target agent-team-ui.service agent-team-worker.timer
+Wants=agent-team-ui.service agent-team-worker.timer
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.openclaw/workspace-agent-team
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/agent_team_metrics_exporter.py --db-path /root/.openclaw/workspace-agent-team/state/agent_team.db --ui-api-url http://127.0.0.1:8032/api/workflow-control --listen-host 127.0.0.1 --listen-port 19130 --env local --system agent-team --service agent-team --job agent-team-exporter
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

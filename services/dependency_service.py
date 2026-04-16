@@ -91,6 +91,11 @@ class DependencyService:
                     details={'new_status': 'review', 'resume_role': resume_role, 'parent_wait_strategy': metadata.get('parent_wait_strategy')},
                 )
                 parent_progressed.append({'issue_id': row['id'], 'new_status': 'review', 'resume_role': resume_role})
+            else:
+                self.db.conn.execute(
+                    'UPDATE issues SET blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
+                    (f'waiting for {int(open_children)} child issue(s) to close', ts, row['id']),
+                )
 
         self.db.commit()
         return {

@@ -691,8 +691,8 @@ class AgentTeamService:
         metadata['prior_handoff'] = normalized_handoff
         metadata['suggested_next_role'] = normalized_handoff.get('suggested_next_role') or to_role
         self.db.conn.execute(
-            'UPDATE issues SET status = ?, assigned_employee_id = ?, blocker_summary = ?, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
-            ('review', employee['id'], note or None, json.dumps(metadata, ensure_ascii=False), ts, issue_id),
+            'UPDATE issues SET status = ?, assigned_employee_id = ?, blocker_summary = NULL, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
+            ('review', employee['id'], json.dumps(metadata, ensure_ascii=False), ts, issue_id),
         )
         record_issue_activity(
             self.db.conn,

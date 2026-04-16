@@ -1026,6 +1026,11 @@ def main() -> int:
 
         ready_items = fetch_ready_candidates(svc)
         dispatched_this_run = 0
+        occupied_agent_ids = {
+            str(item.get('agent_id') or '').strip()
+            for item in ready_items
+            if item.get('agent_has_active_issue') and str(item.get('agent_id') or '').strip()
+        }
         for issue in ready_items:
             if dispatched_this_run >= MAX_DISPATCH_PER_RUN:
                 break
@@ -1037,7 +1042,8 @@ def main() -> int:
                     'reason': 'blocked_by_open_dependency',
                 })
                 continue
-            if issue.get('agent_has_active_issue'):
+            current_agent_id = str(issue.get('agent_id') or '').strip()
+            if issue.get('agent_has_active_issue') or (current_agent_id and current_agent_id in occupied_agent_ids):
                 report['skipped'].append({
                     'kind': 'dispatch',
                     'issue_id': issue['issue_id'],
@@ -1217,6 +1223,8 @@ def main() -> int:
                 'artifact_hint': bool(extract_reusable_artifact_for_issue(issue)),
             }
             report['dispatched'].append(item)
+            if current_agent_id:
+                occupied_agent_ids.add(current_agent_id)
             append_action({'at': report['ran_at'], **item})
             dispatched_this_run += 1
 

@@ -10,6 +10,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 ROOT = Path('/root/.openclaw/workspace-agent-team')
+STATE_DIR = ROOT / 'state'
+WORKER_REPORT = STATE_DIR / 'worker_report.json'
 sys.path.insert(0, str(ROOT))
 from services.agent_team_service import AgentTeamService  # noqa: E402
 from services.config import current_db_path, current_db_source, runtime_path_snapshot  # noqa: E402
@@ -96,6 +98,13 @@ class Handler(BaseHTTPRequestHandler):
                     source=current_db_source(),
                 )
                 out['workflow_control'] = load_control()
+                if WORKER_REPORT.exists():
+                    try:
+                        out['worker_report'] = json.loads(WORKER_REPORT.read_text(encoding='utf-8'))
+                    except Exception:
+                        out['worker_report'] = None
+                else:
+                    out['worker_report'] = None
                 out['db'] = {
                     'path': str(current_db_path()),
                     'source': current_db_source(),

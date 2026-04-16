@@ -55,6 +55,26 @@ def append_unique_artifact(existing: list[Any], artifact: Any) -> list[Any]:
     return items
 
 
+def is_retryable_system_error(message: str | None) -> bool:
+    text = str(message or '').strip().lower()
+    if not text:
+        return False
+    retryable_tokens = [
+        '503',
+        'overloaded',
+        'temporarily unavailable',
+        'timeout',
+        'timed out',
+        'rate limit',
+        'too many requests',
+        'econnreset',
+        'socket hang up',
+        'gateway timeout',
+        'service unavailable',
+    ]
+    return any(token in text for token in retryable_tokens)
+
+
 def resolve_session_snapshot(session_key: str) -> dict[str, Any]:
     parts = session_key.split(':')
     if len(parts) < 2 or parts[0] != 'agent':
@@ -718,13 +738,14 @@ class DispatchService:
             checkpoint_summary = 'System observer saw final chat event without business completion'
         elif state == 'error':
             fail_summary = error_message or 'system_chat_error'
+            retryable = is_retryable_system_error(fail_summary)
             self.db.conn.execute(
                 'UPDATE issue_attempts SET status = ?, failure_code = ?, failure_summary = ?, ended_at_ms = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
                 ('failed', 'system_chat_error', fail_summary, ts, json.dumps(system_payload, ensure_ascii=False), 'system_chat_error', ts, attempt['id']),
             )
             self.db.conn.execute(
                 'UPDATE issues SET status = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
-                ('review', fail_summary, ts, attempt['issue_id']),
+                ('ready' if retryable else 'review', fail_summary, ts, attempt['issue_id']),
             )
             action_type = 'execution_failed'
             summary = 'Execution failed via system chat event'

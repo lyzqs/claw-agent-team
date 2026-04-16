@@ -8,15 +8,6 @@
       "closed_issues": 35,
       "agent_queue_issues": 0,
       "human_queue_issues": 1
-    },
-    {
-      "project_key": "agent-team-labs",
-      "name": "Agent Team Labs",
-      "status": "active",
-      "total_issues": 1,
-      "closed_issues": 1,
-      "agent_queue_issues": 0,
-      "human_queue_issues": 0
     }
   ],
   "agent_queue": [],
@@ -43,16 +34,6 @@
       "status": "active",
       "agent_id": "agent-team-dev",
       "session_key": "agent:agent-team-dev:employee:agent-team-core.dev"
-    },
-    {
-      "employee_key": "agent-team-core.dev.hire1",
-      "display_name": "Agent Team Core Dev Hire 1",
-      "employment_scope": "project",
-      "project_key": "agent-team-core",
-      "role": "dev",
-      "status": "active",
-      "agent_id": "agent-team-dev",
-      "session_key": "agent:agent-team-dev:employee:agent-team-core.dev.hire1"
     },
     {
       "employee_key": "agent-team-core.ops",
@@ -83,46 +64,6 @@
       "status": "active",
       "agent_id": "agent-team-qa",
       "session_key": "agent:agent-team-qa:employee:agent-team-core.qa"
-    },
-    {
-      "employee_key": "agent-team-labs.dev",
-      "display_name": "Agent Team Labs Dev",
-      "employment_scope": "project",
-      "project_key": "agent-team-labs",
-      "role": "dev",
-      "status": "active",
-      "agent_id": "agent-team-dev",
-      "session_key": "agent:agent-team-dev:employee:agent-team-labs.dev"
-    },
-    {
-      "employee_key": "agent-team-labs.ops",
-      "display_name": "Agent Team Labs Ops",
-      "employment_scope": "project",
-      "project_key": "agent-team-labs",
-      "role": "ops",
-      "status": "active",
-      "agent_id": "agent-team-ops",
-      "session_key": "agent:agent-team-ops:employee:agent-team-labs.ops"
-    },
-    {
-      "employee_key": "agent-team-labs.pm",
-      "display_name": "Agent Team Labs PM",
-      "employment_scope": "project",
-      "project_key": "agent-team-labs",
-      "role": "pm",
-      "status": "active",
-      "agent_id": "agent-team-pm",
-      "session_key": "agent:agent-team-pm:employee:agent-team-labs.pm"
-    },
-    {
-      "employee_key": "agent-team-labs.qa",
-      "display_name": "Agent Team Labs QA",
-      "employment_scope": "project",
-      "project_key": "agent-team-labs",
-      "role": "qa",
-      "status": "active",
-      "agent_id": "agent-team-qa",
-      "session_key": "agent:agent-team-qa:employee:agent-team-labs.qa"
     },
     {
       "employee_key": "shared.ceo",
@@ -250,14 +191,6 @@
           "title": "Run unified execution_adapter success demo",
           "status": "closed",
           "priority": "p1",
-          "has_open_dependencies": false
-        },
-        {
-          "issue_id": "issue_1d6aa03d10e1",
-          "issue_no": 1,
-          "title": "Project B isolation proof task",
-          "status": "closed",
-          "priority": "p2",
           "has_open_dependencies": false
         },
         {

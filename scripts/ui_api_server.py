@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 ROOT = Path('/root/.openclaw/workspace-agent-team')
 sys.path.insert(0, str(ROOT))
 from services.agent_team_service import AgentTeamService  # noqa: E402
+from services.config import current_db_path, current_db_source, runtime_path_snapshot  # noqa: E402
 from services.workflow_control import load_control, set_mode  # noqa: E402
 
 EXPORT_BOARD = str(ROOT / 'scripts' / 'export_board_snapshot.py')
@@ -92,9 +93,14 @@ class Handler(BaseHTTPRequestHandler):
                 generated_at = now_iso()
                 out = svc.get_ui_snapshot(
                     generated_at=generated_at,
-                    source='agent-team.db',
+                    source=current_db_source(),
                 )
                 out['workflow_control'] = load_control()
+                out['db'] = {
+                    'path': str(current_db_path()),
+                    'source': current_db_source(),
+                    'config': runtime_path_snapshot(),
+                }
                 self._json(200, {'ok': True, 'result': out})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})

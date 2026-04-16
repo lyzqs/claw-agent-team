@@ -4,9 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-ROOT = Path('/root/.openclaw/workspace-agent-team')
-STATE_DIR = ROOT / 'state'
-STATE_DIR.mkdir(parents=True, exist_ok=True)
+from services.config import ROOT, STATE_DIR
+
 CONTROL_PATH = STATE_DIR / 'workflow_control.json'
 
 DEFAULT = {

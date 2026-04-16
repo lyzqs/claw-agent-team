@@ -4,8 +4,9 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-PROTO_ROOT = Path('/root/.openclaw/workspace/agent-team-prototype')
-DB_PATH = PROTO_ROOT / 'agent_team.db'
+from .config import current_db_path
+
+DB_PATH = current_db_path()
 
 
 class AgentTeamServiceError(RuntimeError):

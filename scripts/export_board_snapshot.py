@@ -3,11 +3,14 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path('/root/.openclaw/workspace-agent-team')
+THIS_FILE = Path(__file__).resolve()
+ROOT = THIS_FILE.parents[1]
 sys.path.insert(0, str(ROOT))
+
+from services.config import ROOT as CONFIG_ROOT  # noqa: E402
 from services.agent_team_service import AgentTeamService  # noqa: E402
 
-OUT = ROOT / 'ui' / 'board' / 'data.json'
+OUT = CONFIG_ROOT / 'ui' / 'board' / 'data.json'
 OUT.parent.mkdir(parents=True, exist_ok=True)
 
 

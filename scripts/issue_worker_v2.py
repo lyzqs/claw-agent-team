@@ -467,13 +467,13 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     flow_id = f"flow_{uuid.uuid4().hex[:12]}"
     callback_token = f"cbtok_{uuid.uuid4().hex[:12]}"
 
-    base_instruction = None
     role_worker_instruction = metadata.get(f'worker_instruction_{role}')
     role_dispatch_instruction = metadata.get(f'dispatch_instruction_{role}')
     current_worker_instruction = metadata.get('worker_instruction')
     current_dispatch_instruction = metadata.get('dispatch_instruction')
     last_attempt_role = last_attempt_payload.get('attempt_role') if isinstance(last_attempt_payload.get('attempt_role'), str) else None
     reuse_last_instruction = last_attempt_role == role
+    explicit_instruction = None
     for candidate in (
         role_dispatch_instruction,
         role_worker_instruction,
@@ -484,28 +484,31 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         last_attempt_payload.get('prompt') if (not current_dispatch_instruction and reuse_last_instruction) else None,
     ):
         if isinstance(candidate, str) and candidate.strip():
-            base_instruction = candidate.strip()
+            explicit_instruction = candidate.strip()
             break
 
-    if not base_instruction:
-        description = issue.get('description_md') or 'No description.'
-        acceptance = issue.get('acceptance_criteria_md') or 'No explicit acceptance criteria.'
-        blocker = issue.get('blocker_summary') or 'None.'
-        required_input = issue.get('required_human_input') or 'None.'
-        project_name = str(issue.get('project_name') or issue.get('project_key') or '未知项目')
-        project_description = str(issue.get('project_description') or metadata.get('project_context_md') or '').strip()
-        base_instruction = (
-            f"请以 {role_label} 角色处理这个 issue。\n"
-            f"项目：{project_name} ({issue.get('project_key') or ''})\n"
-            + (f"项目背景：{project_description}\n" if project_description else '')
-            + f"标题：{issue['title']}\n"
-            + f"描述：{description}\n"
-            + f"验收标准：{acceptance}\n"
-            + f"当前阻塞：{blocker}\n"
-            + f"当前缺失的人类输入：{required_input}\n"
-            + "真实代码、脚本、文档、验证请使用规范实现仓库 /root/.openclaw/workspace-agent-team（角色工作区里可用 ./repo 快捷入口）。\n"
-            + "只做当前角色最小必要且正确的工作，不要越过本角色职责边界。"
-        )
+    description = issue.get('description_md') or 'No description.'
+    acceptance = issue.get('acceptance_criteria_md') or 'No explicit acceptance criteria.'
+    blocker = issue.get('blocker_summary') or 'None.'
+    required_input = issue.get('required_human_input') or 'None.'
+    project_name = str(issue.get('project_name') or issue.get('project_key') or '未知项目')
+    project_description = str(issue.get('project_description') or metadata.get('project_context_md') or '').strip()
+    issue_context_block = (
+        f"请以 {role_label} 角色处理这个 issue。\n"
+        f"项目：{project_name} ({issue.get('project_key') or ''})\n"
+        + (f"项目背景：{project_description}\n" if project_description else '')
+        + f"标题：{issue['title']}\n"
+        + f"描述：{description}\n"
+        + f"验收标准：{acceptance}\n"
+        + f"当前阻塞：{blocker}\n"
+        + f"当前缺失的人类输入：{required_input}\n"
+    )
+    base_instruction = (
+        issue_context_block
+        + (f"附加要求：{explicit_instruction}\n" if explicit_instruction else '')
+        + "真实代码、脚本、文档、验证请使用规范实现仓库 /root/.openclaw/workspace-agent-team（角色工作区里可用 ./repo 快捷入口）。\n"
+        + "只做当前角色最小必要且正确的工作，不要越过本角色职责边界。"
+    )
 
     prior_handoff = metadata.get('prior_handoff') if isinstance(metadata.get('prior_handoff'), dict) else {}
     prior_summary = ''

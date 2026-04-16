@@ -77,6 +77,16 @@ cd /root/.openclaw/workspace-agent-team
 sudo ./deploy/grafana/install_local_grafana_stack.sh   --public-host grafana.example.com   --grafana-admin-password '请替换成强密码'
 ```
 
+如果目标机器的 `127.0.0.1:3000` 已被其他服务占用，可以改用其他本地端口，例如：
+
+```bash
+cd /root/.openclaw/workspace-agent-team
+sudo ./deploy/grafana/install_local_grafana_stack.sh \
+  --public-host grafana.example.com \
+  --grafana-http-port 3300 \
+  --grafana-admin-password '请替换成强密码'
+```
+
 脚本会：
 
 1. 安装 Grafana / Prometheus / node exporter / nginx。
@@ -85,7 +95,7 @@ sudo ./deploy/grafana/install_local_grafana_stack.sh   --public-host grafana.exa
 4. 启动并校验：
    - `process-exporter` on `127.0.0.1:9256`
    - `agent-team-prometheus` on `127.0.0.1:19090`
-   - `grafana-server` on `127.0.0.1:3000`
+   - `grafana-server` on `127.0.0.1:3000`（或 `--grafana-http-port` 指定的端口）
    - `nginx` on `:80`
 
 ## 最小验证
@@ -100,7 +110,7 @@ python3 scripts/validate_grafana_bundle.py
 ```bash
 curl -fsS http://127.0.0.1:9256/metrics | head
 curl -fsS http://127.0.0.1:19090/-/ready
-curl -fsS http://127.0.0.1:3000/api/health
+curl -fsS http://127.0.0.1:3000/api/health   # 如有端口覆盖，替换成对应端口
 curl -fsS -H 'Host: grafana.example.com' http://127.0.0.1/
 ```
 

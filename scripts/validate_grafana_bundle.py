@@ -65,7 +65,11 @@ def validate_dashboard(path: Path) -> dict:
 
 
 def validate_nginx_template(path: Path) -> dict:
-    rendered = path.read_text().replace("__PUBLIC_HOST__", "grafana.example.test")
+    rendered = (
+        path.read_text()
+        .replace("__PUBLIC_HOST__", "grafana.example.test")
+        .replace("__GRAFANA_HTTP_PORT__", "3300")
+    )
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_root = Path(temp_dir)
         site_conf = temp_root / "site.conf"
@@ -117,6 +121,10 @@ def main() -> None:
         if "ExecStart=" not in text:
             raise ValueError(f"systemd unit missing ExecStart: {unit_path}")
         report["systemd_units"][str(unit_path.relative_to(REPO_ROOT))] = {"execstart": "ok"}
+
+    grafana_override = (BUNDLE_ROOT / "grafana" / "grafana-server.override.conf.template").read_text()
+    if "__GRAFANA_HTTP_PORT__" not in grafana_override:
+        raise ValueError("grafana override template missing __GRAFANA_HTTP_PORT__ placeholder")
 
     print(json.dumps(report, ensure_ascii=False, indent=2))
 

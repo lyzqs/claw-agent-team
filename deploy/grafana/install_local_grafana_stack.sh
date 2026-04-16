@@ -7,6 +7,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PUBLIC_HOST=""
 GRAFANA_ADMIN_USER="admin"
 GRAFANA_ADMIN_PASSWORD=""
+GRAFANA_HTTP_PORT="3000"
 PROCESS_EXPORTER_VERSION="${PROCESS_EXPORTER_VERSION:-0.8.7}"
 
 usage() {
@@ -14,10 +15,12 @@ usage() {
 Usage:
   sudo ./deploy/grafana/install_local_grafana_stack.sh \
     --public-host grafana.example.com \
+    --grafana-http-port 3300 \
     --grafana-admin-password '<strong-password>'
 
 Options:
   --public-host               Public HTTP host served by nginx.
+  --grafana-http-port         Local Grafana listen port (default: 3000).
   --grafana-admin-user        Grafana admin username (default: admin).
   --grafana-admin-password    Grafana admin password, required.
 
@@ -30,6 +33,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --public-host)
       PUBLIC_HOST="${2:-}"
+      shift 2
+      ;;
+    --grafana-http-port)
+      GRAFANA_HTTP_PORT="${2:-}"
       shift 2
       ;;
     --grafana-admin-user)
@@ -63,6 +70,11 @@ if [[ -z "${PUBLIC_HOST}" || -z "${GRAFANA_ADMIN_PASSWORD}" ]]; then
   exit 1
 fi
 
+if [[ ! "${GRAFANA_HTTP_PORT}" =~ ^[0-9]+$ ]]; then
+  echo "--grafana-http-port must be a numeric TCP port." >&2
+  exit 1
+fi
+
 if [[ ! -d "${REPO_ROOT}/deploy/grafana" ]]; then
   echo "Could not locate deploy/grafana under repo root: ${REPO_ROOT}" >&2
   exit 1
@@ -77,6 +89,22 @@ require_cmd() {
     echo "Missing required command: $1" >&2
     exit 1
   }
+}
+
+wait_for_http() {
+  local attempts="$1"
+  local delay_seconds="$2"
+  shift 2
+
+  local attempt
+  for attempt in $(seq 1 "$attempts"); do
+    if curl -fsS "$@" >/dev/null; then
+      return 0
+    fi
+    sleep "$delay_seconds"
+  done
+
+  curl -fsS "$@" >/dev/null
 }
 
 detect_arch() {
@@ -137,7 +165,7 @@ render_template() {
   local template_path="$1"
   local destination_path="$2"
 
-  python3 - "$template_path" "$destination_path" "$PUBLIC_HOST" "$GRAFANA_ADMIN_USER" "$GRAFANA_ADMIN_PASSWORD" <<'PY2'
+  python3 - "$template_path" "$destination_path" "$PUBLIC_HOST" "$GRAFANA_ADMIN_USER" "$GRAFANA_ADMIN_PASSWORD" "$GRAFANA_HTTP_PORT" <<'PY2'
 from pathlib import Path
 import sys
 
@@ -145,6 +173,7 @@ template = Path(sys.argv[1]).read_text()
 template = template.replace("__PUBLIC_HOST__", sys.argv[3])
 template = template.replace("__GRAFANA_ADMIN_USER__", sys.argv[4])
 template = template.replace("__GRAFANA_ADMIN_PASSWORD__", sys.argv[5])
+template = template.replace("__GRAFANA_HTTP_PORT__", sys.argv[6])
 Path(sys.argv[2]).write_text(template)
 PY2
 }
@@ -194,10 +223,10 @@ restart_services() {
 
 run_health_checks() {
   log "Running local health checks"
-  curl -fsS http://127.0.0.1:9256/metrics >/dev/null
-  curl -fsS http://127.0.0.1:19090/-/ready >/dev/null
-  curl -fsS http://127.0.0.1:3000/api/health >/dev/null
-  curl -fsS -H "Host: ${PUBLIC_HOST}" http://127.0.0.1/ >/dev/null
+  wait_for_http 10 2 http://127.0.0.1:9256/metrics
+  wait_for_http 10 2 http://127.0.0.1:19090/-/ready
+  wait_for_http 30 2 "http://127.0.0.1:${GRAFANA_HTTP_PORT}/api/health"
+  wait_for_http 15 2 -H "Host: ${PUBLIC_HOST}" http://127.0.0.1/
 }
 
 main() {

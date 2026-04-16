@@ -505,6 +505,70 @@ class AgentTeamService:
             'initialized_sessions': role_sessions,
         }
 
+    def delete_project(
+        self,
+        *,
+        project_key: str,
+        delete_openclaw_sessions: bool = False,
+    ) -> dict[str, Any]:
+        if delete_openclaw_sessions:
+            raise ValidationError('delete_project never deletes OpenClaw sessions in this workflow')
+        if str(project_key or '').strip() == 'agent-team-core':
+            raise ValidationError('agent-team-core is the canonical base project and cannot be deleted from the UI')
+
+        project = self.db.get_one(
+            'SELECT id, project_key, name, description, metadata_json FROM projects WHERE project_key = ?',
+            (project_key,),
+        )
+        employee_rows = self.db.fetch_all(
+            '''SELECT ei.id, ei.employee_key, rt.template_key AS role
+               FROM employee_instances ei
+               JOIN role_templates rt ON rt.id = ei.role_template_id
+               WHERE ei.project_id = ?
+               ORDER BY ei.employee_key''',
+            (project['id'],),
+        )
+        employee_ids = [str(row['id']) for row in employee_rows]
+        employee_keys = [str(row['employee_key']) for row in employee_rows]
+        runtime_rows = self.db.fetch_all(
+            'SELECT id, binding_key, session_key, agent_id FROM runtime_bindings WHERE employee_id IN (%s) ORDER BY binding_key' % ','.join('?' for _ in employee_ids),
+            tuple(employee_ids),
+        ) if employee_ids else []
+
+        ts = now_ms()
+        registry = load_session_registry()
+        deleted_registry_keys: list[str] = []
+        for role in PROJECT_ROLE_ORDER:
+            registry_key = f'{ROLE_AGENT_IDS[role]}|{project_key}'
+            if registry_key in registry:
+                deleted_registry_keys.append(registry_key)
+                del registry[registry_key]
+
+        try:
+            if employee_ids:
+                placeholders = ','.join('?' for _ in employee_ids)
+                self.db.conn.execute(f'DELETE FROM issue_activities WHERE actor_employee_id IN ({placeholders})', tuple(employee_ids))
+                self.db.conn.execute(f'DELETE FROM issue_checkpoints WHERE created_by_employee_id IN ({placeholders})', tuple(employee_ids))
+                self.db.conn.execute(f'DELETE FROM issue_relations WHERE created_by_employee_id IN ({placeholders})', tuple(employee_ids))
+                self.db.conn.execute(f'DELETE FROM employee_instances WHERE id IN ({placeholders})', tuple(employee_ids))
+            self.db.conn.execute('DELETE FROM projects WHERE id = ?', (project['id'],))
+            save_session_registry(registry)
+            self.db.commit()
+        except Exception:
+            self.db.conn.rollback()
+            raise
+
+        return {
+            'project_key': project['project_key'],
+            'name': project['name'],
+            'deleted_at_ms': ts,
+            'deleted_employees': employee_keys,
+            'deleted_runtime_bindings': [str(row['binding_key']) for row in runtime_rows],
+            'preserved_session_keys': [str(row['session_key']) for row in runtime_rows if row['session_key']],
+            'deleted_session_registry_keys': deleted_registry_keys,
+            'openclaw_sessions_deleted': False,
+        }
+
     def create_issue(
         self,
         *,

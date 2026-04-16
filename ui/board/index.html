@@ -125,6 +125,7 @@
       grid-template-columns: 280px minmax(0, 1fr);
       gap:12px;
       align-items:start;
+      min-height: 0;
     }
     .control-rail {
       position: sticky;
@@ -133,6 +134,8 @@
       flex-direction:column;
       gap:10px;
       padding-right:0;
+      max-height: calc(100vh - 96px);
+      overflow: hidden;
     }
     .workspace-main { min-width:0; display:flex; flex-direction:column; gap:12px; min-height: calc(100vh - 92px); }
     .card {
@@ -318,6 +321,7 @@
       border-radius: 16px;
       min-height: 0;
       padding: 6px;
+      overflow: hidden;
       box-shadow: var(--shadow-soft);
       display:flex;
       flex-direction:column;
@@ -501,6 +505,10 @@
               <span>新增项目</span>
               <span>＋</span>
             </button>
+            <button id="openDeleteProjectBtn" class="panel-link">
+              <span>删除项目</span>
+              <span>－</span>
+            </button>
             <button id="openHumanQueueBtn" class="panel-link">
               <span>查看待确认</span>
               <span id="humanQueueCountMini">0</span>
@@ -674,6 +682,28 @@
         <div class="entry-note">默认行为：自动创建四个项目角色实例，绑定到固定 5 个 Agent 中对应角色，并在 OpenClaw 中初始化该项目的 PM / Dev / QA / Ops session。CEO 保持共享，不新增 CEO 项目实例。</div>
         <div class="entry-actions">
           <button id="createProjectBtn">创建项目</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="deleteProjectModal" class="modal-backdrop">
+    <div class="modal" style="width:min(720px, 100%);">
+      <div class="modal-top">
+        <div>
+          <h2>删除项目</h2>
+          <div class="muted">只删除项目和对应项目实例，不删除 OpenClaw session</div>
+        </div>
+        <button id="closeDeleteProjectModalBtn" class="secondary">关闭</button>
+      </div>
+      <div class="entry-form">
+        <div class="filter-group">
+          <label for="deleteProjectSelect">选择项目</label>
+          <select id="deleteProjectSelect"></select>
+        </div>
+        <div class="entry-note">删除后会移除该项目、该项目下的 PM / Dev / QA / Ops 实例和对应运行时绑定，但不会删除 OpenClaw 里的 session 文件与 session 记录。</div>
+        <div class="entry-actions">
+          <button id="deleteProjectBtn" class="danger">确认删除项目</button>
         </div>
       </div>
     </div>
@@ -987,6 +1017,27 @@
       }
     }
 
+    async function deleteProject() {
+      const projectKey = document.getElementById('deleteProjectSelect').value;
+      if (!projectKey) {
+        showToast('没有可删除项目', true);
+        return;
+      }
+      if (!confirm(`确认删除项目 ${projectKey}？\n\n只会删除项目和对应项目实例，不会删除 OpenClaw session。`)) {
+        return;
+      }
+      const out = await apiPost('/api/delete-project', {
+        project_key: projectKey,
+      });
+      if (out.ok) {
+        showToast(`已删除项目：${projectKey}`);
+        closeDeleteProjectModal();
+        await loadData();
+      } else {
+        showToast(`删除项目失败: ${out.error || 'unknown error'}`, true);
+      }
+    }
+
     function issueAgentMap(issueId) {
       return (boardData?.agent_workload || []).find(a => a.issues.some(i => i.issue_id === issueId));
     }
@@ -1149,18 +1200,41 @@
     }
 
     function renderProjectSelectOptions() {
-      const select = document.getElementById('newIssueProject');
-      if (!select) return;
+      const issueSelect = document.getElementById('newIssueProject');
+      const deleteSelect = document.getElementById('deleteProjectSelect');
       const projects = (boardData?.project_view || []).map(p => p.project_key).filter(Boolean);
-      const previous = select.value;
-      select.innerHTML = projects.length
-        ? projects.map(key => `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`).join('')
-        : '<option value="">暂无项目</option>';
-      if (projects.includes(previous)) {
-        select.value = previous;
-      } else if (projects.length) {
-        select.value = projects[0];
+      if (issueSelect) {
+        const previous = issueSelect.value;
+        issueSelect.innerHTML = projects.length
+          ? projects.map(key => `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`).join('')
+          : '<option value="">暂无项目</option>';
+        if (projects.includes(previous)) {
+          issueSelect.value = previous;
+        } else if (projects.length) {
+          issueSelect.value = projects[0];
+        }
       }
+      if (deleteSelect) {
+        const previousDelete = deleteSelect.value;
+        const deletable = projects.filter(key => key !== 'agent-team-core');
+        deleteSelect.innerHTML = deletable.length
+          ? deletable.map(key => `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`).join('')
+          : '<option value="">没有可删除项目</option>';
+        if (deletable.includes(previousDelete)) {
+          deleteSelect.value = previousDelete;
+        } else if (deletable.length) {
+          deleteSelect.value = deletable[0];
+        }
+      }
+    }
+
+    function openDeleteProjectModal() {
+      renderProjectSelectOptions();
+      document.getElementById('deleteProjectModal').classList.add('show');
+    }
+
+    function closeDeleteProjectModal() {
+      document.getElementById('deleteProjectModal').classList.remove('show');
     }
 
     function renderSummary() {
@@ -1174,10 +1248,10 @@
       const runningCount = issuesData.filter(x => ['dispatching', 'running', 'review', 'waiting_recovery_completion'].includes(x.issue.status)).length;
 
       document.getElementById('summary').innerHTML = `
-        <div class="compact-stat" id="statProjects"><div class="k">项目数</div><div class="num">${projects.length}</div></div>
-        <div class="compact-stat" id="statRoles"><div class="k">固定角色</div><div class="num">${fixedRoles.length}</div></div>
-        <div class="compact-stat" id="statInstances"><div class="k">角色实例</div><div class="num">${employees.length}</div></div>
-        <div class="compact-stat" id="statAgents"><div class="k">固定 Agent</div><div class="num">${fixedAgents.length}</div></div>
+        <div class="compact-stat" id="statProjects"><div class="k">项目</div><div class="num">${projects.length}</div></div>
+        <div class="compact-stat" id="statRoles"><div class="k">角色</div><div class="num">${fixedRoles.length}</div></div>
+        <div class="compact-stat" id="statInstances"><div class="k">实例</div><div class="num">${employees.length}</div></div>
+        <div class="compact-stat" id="statAgents"><div class="k">Agent</div><div class="num">${fixedAgents.length}</div></div>
       `;
       const chip = document.getElementById('workflowChip');
       chip.textContent = workflowControl.mode === 'paused' ? '总流程已暂停' : '总流程运行中';
@@ -1186,7 +1260,7 @@
       const snapshotSource = snapshotMeta.fallback ? 'fallback-json' : (snapshotMeta.source || 'api');
       snapshotChip.textContent = `快照 ${snapshotMeta.schema_version || 'unknown'} · ${snapshotSource} · ${formatIsoText(snapshotMeta.generated_at)}`;
       document.getElementById('projectMeta').innerHTML = projects.length
-        ? `<div class="detail-stack">${projects.map(p => `<div class="detail-item"><div class="detail-head"><span>${escapeHtml(p.name)}</span><span>${escapeHtml(p.project_key)}</span></div><div class="detail-sub">${p.description ? `${escapeHtml(p.description)}<br/>` : ''}总 Issue ${p.total_issues}，已关闭 ${p.closed_issues}，Agent 队列 ${p.agent_queue_issues}，人工队列 ${p.human_queue_issues}</div></div>`).join('')}</div>`
+        ? `<div class="detail-stack">${projects.map(p => `<div class="detail-item"><div class="detail-head"><span>${escapeHtml(p.name)}</span><span>${escapeHtml(p.project_key)}</span></div><div class="detail-sub">${p.description ? `${escapeHtml(p.description)}<br/>` : ''}总 Issue ${p.total_issues}，已关闭 ${p.closed_issues}</div><div class="entry-actions" style="margin-top:10px;">${p.project_key !== 'agent-team-core' ? `<button class="danger" onclick="window.quickDeleteProject('${escapeHtml(p.project_key)}')">删除项目</button>` : ''}</div></div>`).join('')}</div>`
         : '暂无项目';
       document.getElementById('roleMeta').innerHTML = fixedAgents.map(agentId => {
         const boundEmployees = employees.filter(e => e.agent_id === agentId);
@@ -1200,11 +1274,8 @@
         : '暂无实例';
       document.getElementById('runtimeSummary').innerHTML = `
         <div class="detail-stack">
-          <div class="detail-item"><div class="detail-head"><span>当前系统态势</span><span>${workflowControl.mode === 'paused' ? 'paused' : 'running'}</span></div><div class="detail-sub">open/non-closed：${openCount}，running/review/recovery：${runningCount}，waiting_human：${humanCount}，closed：${closedCount}</div></div>
-        </div>
-        <div style="margin-top:12px;">
-          <div class="k">最近一轮 worker</div>
-          <div class="card-sub" style="margin-top:8px;">${summarizeWorkerReport(workerReport)}</div>
+          <div class="detail-item"><div class="detail-head"><span>当前系统态势</span><span>${workflowControl.mode === 'paused' ? 'paused' : 'running'}</span></div><div class="detail-sub">未关闭 ${openCount}，处理中 ${runningCount}，待确认 ${humanCount}，已关闭 ${closedCount}</div></div>
+          <div class="detail-item"><div class="detail-head"><span>最近 worker</span><span>${workerReport?.mode || 'unknown'}</span></div><div class="detail-sub">${workerReport?.ran_at ? formatIsoText(workerReport.ran_at) : '暂无'} · dispatch ${Array.isArray(workerReport?.dispatched) ? workerReport.dispatched.length : 0} · skip ${Array.isArray(workerReport?.skipped) ? workerReport.skipped.length : 0} · error ${Array.isArray(workerReport?.errors) ? workerReport.errors.length : 0}</div></div>
         </div>`;
 
       document.getElementById('statProjects').onclick = () => openInfoModal('项目说明', document.getElementById('projectMeta').innerHTML || '暂无项目');
@@ -1264,6 +1335,7 @@
         <div class="issue-card ${statusClass}" data-issue-id="${issue.id}">
           <div class="issue-title">#${issue.issue_no} ${issue.title}</div>
           <div class="issue-meta">
+            <span>${issue.project_key || 'unknown project'}</span>
             <span>${issue.status}</span>
             <span>${issue.priority}</span>
             <span>${displayAgentName(agent)}</span>
@@ -1396,8 +1468,9 @@
       const latest = attempts.length ? attempts[attempts.length - 1] : null;
       root.innerHTML = `
         <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
-        <div style="margin-top:8px;"><span class="pill">${issue.status}</span><span class="pill">${issue.priority}</span><span class="pill">${wrap.current_agent_label}</span><span class="pill">${wrap.current_agent_id}</span></div>
+        <div style="margin-top:8px;"><span class="pill">${issue.project_key || 'unknown project'}</span><span class="pill">${issue.status}</span><span class="pill">${issue.priority}</span><span class="pill">${wrap.current_agent_label}</span><span class="pill">${wrap.current_agent_id}</span></div>
         <div class="kv">
+          <div>所属项目</div><div>${issue.project_key || ''}</div>
           <div>当前 Agent</div><div>${wrap.current_agent_label} · <code>${wrap.current_agent_id}</code></div>
           <div>当前角色</div><div>${wrap.current_agent_role || ''}</div>
           <div>Session</div><div><code>${wrap.current_agent_session || ''}</code></div>
@@ -1439,10 +1512,11 @@
       const timeline = latest ? (wrap.timelines?.[latest.id] || []) : [];
       const activities = Array.isArray(wrap.activities) ? wrap.activities : [];
       document.getElementById('modalTitle').textContent = `#${issue.issue_no} ${issue.title}`;
-      document.getElementById('modalSubtitle').textContent = `${wrap.current_agent_label} · ${wrap.current_agent_id} · ${issue.status}`;
+      document.getElementById('modalSubtitle').textContent = `${issue.project_key || 'unknown project'} · ${wrap.current_agent_label} · ${wrap.current_agent_id} · ${issue.status}`;
       document.getElementById('modalBody').innerHTML = `
         <div class="modal-section">
           <div class="kv">
+            <div>所属项目</div><div>${issue.project_key || ''}</div>
             <div>当前 Agent</div><div>${wrap.current_agent_label} · <code>${wrap.current_agent_id}</code></div>
             <div>当前角色</div><div>${wrap.current_agent_role || ''}</div>
             <div>Session</div><div><code>${wrap.current_agent_session || ''}</code></div>
@@ -1613,6 +1687,13 @@
     window.resolveQueueItem = async function(issueId, resolution) {
       openHumanActionModal(issueId, resolution);
     }
+    window.quickDeleteProject = async function(projectKey) {
+      if (!projectKey) return;
+      if (!confirm(`确认删除项目 ${projectKey}？\n\n只会删除项目和项目实例，不会删除 OpenClaw session。`)) return;
+      const out = await apiPost('/api/delete-project', { project_key: projectKey });
+      showToast(out.ok ? `已删除项目：${projectKey}` : `删除项目失败: ${out.error || 'unknown error'}`, !out.ok);
+      if (out.ok) await loadData();
+    };
 
     async function loadData() {
       try {
@@ -1654,10 +1735,12 @@
     document.getElementById('reloadBtn').addEventListener('click', loadData);
     document.getElementById('openCreateIssueBtn').addEventListener('click', openCreateIssueModal);
     document.getElementById('openCreateProjectBtn').addEventListener('click', openCreateProjectModal);
+    document.getElementById('openDeleteProjectBtn').addEventListener('click', openDeleteProjectModal);
     document.getElementById('openHumanQueueBtn').addEventListener('click', () => openInfoModal('待你确认', document.getElementById('humanQueuePanel').innerHTML || '当前没有待确认事项'));
     document.getElementById('createIssueBtn').addEventListener('click', () => createIssue(document.getElementById('newIssueRoute').value || 'pm'));
     document.getElementById('createCeoIssueBtn').addEventListener('click', () => createIssue('ceo'));
     document.getElementById('createProjectBtn').addEventListener('click', createProject);
+    document.getElementById('deleteProjectBtn').addEventListener('click', deleteProject);
     document.getElementById('runBtn').addEventListener('click', async () => {
       const out = await toggleWorkflow('running');
       showToast(out.ok ? '总流程已恢复' : `恢复失败: ${out.error || 'unknown error'}`, !out.ok);
@@ -1669,6 +1752,7 @@
     document.getElementById('closeModalBtn').addEventListener('click', closeIssueModal);
     document.getElementById('closeCreateIssueModalBtn').addEventListener('click', closeCreateIssueModal);
     document.getElementById('closeCreateProjectModalBtn').addEventListener('click', closeCreateProjectModal);
+    document.getElementById('closeDeleteProjectModalBtn').addEventListener('click', closeDeleteProjectModal);
     document.getElementById('closeHumanActionModalBtn').addEventListener('click', closeHumanActionModal);
     document.getElementById('humanActionCancelBtn').addEventListener('click', closeHumanActionModal);
     document.getElementById('humanActionSubmitBtn').addEventListener('click', submitHumanActionModal);
@@ -1676,6 +1760,7 @@
     document.getElementById('modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') closeIssueModal(); });
     document.getElementById('createIssueModal').addEventListener('click', (e) => { if (e.target.id === 'createIssueModal') closeCreateIssueModal(); });
     document.getElementById('createProjectModal').addEventListener('click', (e) => { if (e.target.id === 'createProjectModal') closeCreateProjectModal(); });
+    document.getElementById('deleteProjectModal').addEventListener('click', (e) => { if (e.target.id === 'deleteProjectModal') closeDeleteProjectModal(); });
     document.getElementById('toggleProjectMetaBtn').addEventListener('click', () => {
       openInfoModal('项目说明', document.getElementById('projectMeta').innerHTML || '暂无项目');
     });

@@ -37,6 +37,51 @@
     "role": "ceo",
     "project_key": "shared",
     "generation": 1,
-    "status": "active"
+    "status": "active",
+    "updated_at_ms": 1776337253832
+  },
+  "agent-team-pm|agent-team-demo": {
+    "logical_key": "agent:agent-team-pm:project:agent-team-demo",
+    "current_session_key": "agent:agent-team-pm:project:agent-team-demo",
+    "role": "pm",
+    "project_key": "agent-team-demo",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776337253832,
+    "session_id": "21524372-3720-41df-8d4e-2dbfb86c9ab0",
+    "session_file": "/root/.openclaw/agents/agent-team-pm/sessions/21524372-3720-41df-8d4e-2dbfb86c9ab0.jsonl"
+  },
+  "agent-team-dev|agent-team-demo": {
+    "logical_key": "agent:agent-team-dev:project:agent-team-demo",
+    "current_session_key": "agent:agent-team-dev:project:agent-team-demo",
+    "role": "dev",
+    "project_key": "agent-team-demo",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776337253832,
+    "session_id": "810a5bb9-6439-4eb2-b32d-90aec2d6c63b",
+    "session_file": "/root/.openclaw/agents/agent-team-dev/sessions/810a5bb9-6439-4eb2-b32d-90aec2d6c63b.jsonl"
+  },
+  "agent-team-qa|agent-team-demo": {
+    "logical_key": "agent:agent-team-qa:project:agent-team-demo",
+    "current_session_key": "agent:agent-team-qa:project:agent-team-demo",
+    "role": "qa",
+    "project_key": "agent-team-demo",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776337253832,
+    "session_id": "6ef0f433-9b06-4379-bef8-4e8efc505ce0",
+    "session_file": "/root/.openclaw/agents/agent-team-qa/sessions/6ef0f433-9b06-4379-bef8-4e8efc505ce0.jsonl"
+  },
+  "agent-team-ops|agent-team-demo": {
+    "logical_key": "agent:agent-team-ops:project:agent-team-demo",
+    "current_session_key": "agent:agent-team-ops:project:agent-team-demo",
+    "role": "ops",
+    "project_key": "agent-team-demo",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776337253832,
+    "session_id": "e5290801-0f90-4770-ae4e-2ab6028f39a5",
+    "session_file": "/root/.openclaw/agents/agent-team-ops/sessions/e5290801-0f90-4770-ae4e-2ab6028f39a5.jsonl"
   }
 }

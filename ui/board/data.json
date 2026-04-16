@@ -3,14 +3,39 @@
     {
       "project_key": "agent-team-core",
       "name": "Agent Team Core",
+      "description": "Phase 1 single-project sample org for agent-team validation",
       "status": "active",
+      "metadata_json": null,
       "total_issues": 36,
       "closed_issues": 36,
       "agent_queue_issues": 0,
       "human_queue_issues": 0
     }
   ],
-  "agent_queue": [],
+  "agent_queue": [
+    {
+      "id": "issue_5ded875a2016",
+      "project_id": "proj_26dab475a761",
+      "issue_no": 2,
+      "title": "验证项目背景强制注入到 PM prompt",
+      "priority": "p2",
+      "status": "review",
+      "assigned_employee_id": "emp_b1ab5fb24521",
+      "active_attempt_no": 1,
+      "updated_at_ms": 1776338200991
+    },
+    {
+      "id": "issue_0b9b311f02c9",
+      "project_id": "proj_26dab475a761",
+      "issue_no": 1,
+      "title": "验证新增项目后的首个 PM issue",
+      "priority": "p2",
+      "status": "review",
+      "assigned_employee_id": "emp_b1ab5fb24521",
+      "active_attempt_no": 1,
+      "updated_at_ms": 1776338038150
+    }
+  ],
   "human_queue": [],
   "employee_view": [
     {
@@ -21,7 +46,8 @@
       "role": "dev",
       "status": "active",
       "agent_id": "agent-team-dev",
-      "session_key": "agent:agent-team-dev:employee:agent-team-core.dev"
+      "session_key": "agent:agent-team-dev:employee:agent-team-core.dev",
+      "binding_key": "agent-team-core.dev.primary"
     },
     {
       "employee_key": "agent-team-core.ops",
@@ -31,7 +57,8 @@
       "role": "ops",
       "status": "active",
       "agent_id": "agent-team-ops",
-      "session_key": "agent:agent-team-ops:employee:agent-team-core.ops"
+      "session_key": "agent:agent-team-ops:employee:agent-team-core.ops",
+      "binding_key": "agent-team-core.ops.primary"
     },
     {
       "employee_key": "agent-team-core.pm",
@@ -41,7 +68,8 @@
       "role": "pm",
       "status": "active",
       "agent_id": "agent-team-pm",
-      "session_key": "agent:agent-team-pm:employee:agent-team-core.pm"
+      "session_key": "agent:agent-team-pm:employee:agent-team-core.pm",
+      "binding_key": "agent-team-core.pm.primary"
     },
     {
       "employee_key": "agent-team-core.qa",
@@ -51,7 +79,8 @@
       "role": "qa",
       "status": "active",
       "agent_id": "agent-team-qa",
-      "session_key": "agent:agent-team-qa:employee:agent-team-core.qa"
+      "session_key": "agent:agent-team-qa:employee:agent-team-core.qa",
+      "binding_key": "agent-team-core.qa.primary"
     },
     {
       "employee_key": "shared.ceo",
@@ -61,10 +90,38 @@
       "role": "ceo",
       "status": "active",
       "agent_id": "agent-team-ceo",
-      "session_key": "agent:agent-team-ceo:main"
+      "session_key": "agent:agent-team-ceo:main",
+      "binding_key": "shared.ceo.primary"
     }
   ],
   "agent_workload": [
+    {
+      "agent_id": "unassigned",
+      "session_key": null,
+      "binding_key": null,
+      "role": null,
+      "employee_key": null,
+      "display_name": null,
+      "active_issue_count": 0,
+      "issues": [
+        {
+          "issue_id": "issue_0b9b311f02c9",
+          "issue_no": 1,
+          "title": "验证新增项目后的首个 PM issue",
+          "status": "review",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_5ded875a2016",
+          "issue_no": 2,
+          "title": "验证项目背景强制注入到 PM prompt",
+          "status": "review",
+          "priority": "p2",
+          "has_open_dependencies": false
+        }
+      ]
+    },
     {
       "agent_id": "agent-team-ceo",
       "session_key": "agent:agent-team-ceo:main",

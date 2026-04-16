@@ -158,6 +158,11 @@ class Handler(BaseHTTPRequestHandler):
                     created_by_employee_key=payload.get('created_by_employee_key', 'shared.ceo'),
                     initialize_sessions=bool(payload.get('initialize_sessions', True)),
                 )
+            elif parsed.path == '/api/delete-project':
+                out = svc.delete_project(
+                    project_key=payload.get('project_key', ''),
+                    delete_openclaw_sessions=False,
+                )
             elif parsed.path == '/api/create-issue':
                 project_key = payload.get('project_key', 'agent-team-core')
                 route_mode = payload.get('route_mode', 'pm')

@@ -490,6 +490,17 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             f"- suggested_next_role: {prior_handoff.get('suggested_next_role') or ''}\n\n"
         )
 
+    human_context = metadata.get('human_context') if isinstance(metadata.get('human_context'), dict) else {}
+    human_summary = ''
+    if human_context:
+        human_summary = (
+            "人工最新反馈（必须显式处理，不要忽略）：\n"
+            f"- resolution: {human_context.get('resolution') or ''}\n"
+            f"- note: {human_context.get('note') or ''}\n"
+            f"- next_role: {human_context.get('next_role') or ''}\n"
+            f"- next_employee_key: {human_context.get('next_employee_key') or ''}\n\n"
+        )
+
     retry_context = metadata.get('retry_context') if isinstance(metadata.get('retry_context'), dict) else {}
     retry_summary = ''
     if retry_context and retry_context.get('attempt_role') == role:
@@ -550,6 +561,7 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     prompt = (
         f"你现在以 Agent Team 的 {role_label} 角色工作。Issue #{issue['issue_no']}。\n\n"
         f"{prior_summary}"
+        f"{human_summary}"
         f"{retry_summary}"
         f"{recovery_summary}"
         f"{artifact_summary}"

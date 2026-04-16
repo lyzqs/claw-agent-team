@@ -657,6 +657,40 @@
     </div>
   </div>
 
+  <div id="humanActionModal" class="modal-backdrop">
+    <div class="modal" style="width:min(760px, 100%);">
+      <div class="modal-top">
+        <div>
+          <h2 id="humanActionTitle">处理待确认事项</h2>
+          <div id="humanActionSubtitle" class="muted">补充内容、确认流转，并进行二次确认</div>
+        </div>
+        <button id="closeHumanActionModalBtn" class="secondary">关闭</button>
+      </div>
+      <div class="modal-section">
+        <div id="humanActionIssueSummary" class="card-sub"></div>
+        <div class="filter-group" style="margin-top:12px;">
+          <label for="humanActionNote">备注 / 补充内容</label>
+          <textarea id="humanActionNote" placeholder="输入要告诉 Agent 或系统的内容"></textarea>
+        </div>
+        <div class="filter-group" id="humanActionRouteWrap" style="margin-top:12px; display:none;">
+          <label for="humanActionRoute">批准后流转</label>
+          <select id="humanActionRoute">
+            <option value="">默认回原处理角色</option>
+            <option value="pm">流转给 PM</option>
+            <option value="dev">流转给 Dev</option>
+            <option value="qa">流转给 QA</option>
+            <option value="ops">流转给 Ops</option>
+            <option value="ceo">流转给 CEO</option>
+          </select>
+        </div>
+        <div class="entry-actions" style="margin-top:16px;">
+          <button id="humanActionSubmitBtn">确认提交</button>
+          <button id="humanActionCancelBtn" class="secondary">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="modalBackdrop" class="modal-backdrop">
     <div class="modal">
       <div class="modal-top">
@@ -702,6 +736,8 @@
       'agent-team-ceo': '决策兜底',
       'unassigned': '待分配',
     };
+
+    let humanActionState = { issueId: null, resolution: '', issueNo: '', title: '' };
 
     function showToast(msg, isError=false) {
       const el = document.getElementById('toast');
@@ -1347,6 +1383,86 @@
       document.getElementById('modalBackdrop').classList.add('show');
     }
 
+    function closeHumanActionModal() {
+      document.getElementById('humanActionModal').classList.remove('show');
+      humanActionState = { issueId: null, resolution: '', issueNo: '', title: '' };
+      document.getElementById('humanActionNote').value = '';
+      document.getElementById('humanActionRoute').value = '';
+    }
+
+    function openHumanActionModal(issueId, resolution) {
+      const item = (humanQueueData.items || []).find(x => x.id === issueId);
+      if (!item) {
+        showToast('未找到待确认事项', true);
+        return;
+      }
+      humanActionState = { issueId, resolution, issueNo: item.issue_no, title: item.title || '' };
+      const titleMap = {
+        approve: '批准 / 已确认',
+        needs_info: '继续补信息',
+        reject: '拒绝 / 驳回',
+      };
+      const notePlaceholderMap = {
+        approve: '可选：输入给 Agent 的确认备注，例如“已确认，按方案执行”',
+        needs_info: '请输入补充给 Agent 的信息，后续会继续派发给当前角色',
+        reject: '请输入驳回原因，这会记录为 issue 的最终拒绝依据',
+      };
+      document.getElementById('humanActionTitle').textContent = `${titleMap[resolution] || '处理待确认事项'} · #${item.issue_no}`;
+      document.getElementById('humanActionSubtitle').textContent = item.required_human_input || item.blocker_summary || '请填写这次人工处理的结论';
+      document.getElementById('humanActionIssueSummary').innerHTML = `
+        <div><strong>#${item.issue_no} ${item.title}</strong></div>
+        <div style="margin-top:8px;"><span class="pill">${item.status}</span><span class="pill">${item.priority || 'p2'}</span><span class="pill">${item.project_key || ''}</span></div>
+        <div style="margin-top:10px;"><strong>当前阻塞：</strong>${item.blocker_summary || '—'}</div>
+        <div style="margin-top:6px;"><strong>需要你提供：</strong>${item.required_human_input || '—'}</div>
+      `;
+      const noteEl = document.getElementById('humanActionNote');
+      noteEl.placeholder = notePlaceholderMap[resolution] || '请输入备注';
+      noteEl.value = '';
+      const routeWrap = document.getElementById('humanActionRouteWrap');
+      const routeEl = document.getElementById('humanActionRoute');
+      if (resolution === 'approve') {
+        routeWrap.style.display = '';
+        const inlineSelect = document.querySelector(`.human-route-select[data-issue-id="${issueId}"]`);
+        routeEl.value = inlineSelect?.value || '';
+      } else {
+        routeWrap.style.display = 'none';
+        routeEl.value = '';
+      }
+      document.getElementById('humanActionModal').classList.add('show');
+      setTimeout(() => noteEl.focus(), 0);
+    }
+
+    async function submitHumanActionModal() {
+      const { issueId, resolution, issueNo } = humanActionState;
+      if (!issueId || !resolution) return;
+      const note = document.getElementById('humanActionNote').value.trim();
+      const nextRole = resolution === 'approve' ? (document.getElementById('humanActionRoute').value || '') : '';
+      if (resolution === 'reject' && !note) {
+        showToast('驳回时请填写原因', true);
+        return;
+      }
+      if (resolution === 'needs_info' && !note) {
+        showToast('请填写补充信息，再继续派发给 Agent', true);
+        return;
+      }
+      const actionText = {
+        approve: '批准 / 已确认',
+        needs_info: '继续补信息',
+        reject: '拒绝 / 驳回',
+      }[resolution] || resolution;
+      const confirmText = [
+        `确认要对 Issue #${issueNo} 执行“${actionText}”吗？`,
+        note ? `\n备注：${note}` : '',
+        nextRole ? `\n流转：${nextRole.toUpperCase()}` : '',
+      ].join('');
+      if (!confirm(confirmText)) return;
+      const out = await resolveHuman(issueId, resolution, note, '', nextRole);
+      if (out.ok) {
+        closeHumanActionModal();
+      }
+      showToast(out.ok ? '已处理待确认事项' : `处理失败: ${out.error || 'unknown error'}`, !out.ok);
+    }
+
     function closeIssueModal() {
       document.getElementById('modalBackdrop').classList.remove('show');
     }
@@ -1385,14 +1501,7 @@
       await doRetry(issueId, latest);
     }
     window.resolveQueueItem = async function(issueId, resolution) {
-      const note = resolution === 'needs_info' ? prompt('请补充需要用户继续提供的信息', '') || '' : '';
-      let nextRole = '';
-      if (resolution === 'approve') {
-        const select = document.querySelector(`.human-route-select[data-issue-id="${issueId}"]`);
-        nextRole = select?.value || '';
-      }
-      const out = await resolveHuman(issueId, resolution, note, '', nextRole);
-      showToast(out.ok ? '已处理待确认事项' : `处理失败: ${out.error || 'unknown error'}`, !out.ok);
+      openHumanActionModal(issueId, resolution);
     }
 
     async function loadData() {
@@ -1445,6 +1554,10 @@
     });
     document.getElementById('closeModalBtn').addEventListener('click', closeIssueModal);
     document.getElementById('closeCreateIssueModalBtn').addEventListener('click', closeCreateIssueModal);
+    document.getElementById('closeHumanActionModalBtn').addEventListener('click', closeHumanActionModal);
+    document.getElementById('humanActionCancelBtn').addEventListener('click', closeHumanActionModal);
+    document.getElementById('humanActionSubmitBtn').addEventListener('click', submitHumanActionModal);
+    document.getElementById('humanActionModal').addEventListener('click', (e) => { if (e.target.id === 'humanActionModal') closeHumanActionModal(); });
     document.getElementById('modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') closeIssueModal(); });
     document.getElementById('createIssueModal').addEventListener('click', (e) => { if (e.target.id === 'createIssueModal') closeCreateIssueModal(); });
     document.getElementById('toggleProjectMetaBtn').addEventListener('click', () => {

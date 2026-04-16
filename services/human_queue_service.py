@@ -123,6 +123,24 @@ class HumanQueueService:
         ).fetchone()
         return row[0] if row else None
 
+    def _merge_human_context(self, metadata: dict[str, Any], *, resolution: str, note: str, issue_id: str, next_role: str | None, next_employee_key: str | None) -> dict[str, Any]:
+        history = metadata.get('human_context_history') if isinstance(metadata.get('human_context_history'), list) else []
+        item = {
+            'resolution': resolution,
+            'note': note.strip(),
+            'issue_id': issue_id,
+            'next_role': (next_role or '').strip() or None,
+            'next_employee_key': (next_employee_key or '').strip() or None,
+            'updated_at_ms': now_ms(),
+        }
+        history.append(item)
+        metadata['human_context_history'] = history[-10:]
+        metadata['human_context'] = item
+        metadata['last_human_note'] = item['note']
+        metadata['needs_human'] = False
+        metadata['human_resolution'] = resolution
+        return metadata
+
     def enqueue_human(
         self,
         *,
@@ -173,6 +191,14 @@ class HumanQueueService:
             (issue_id,),
         )
         metadata = json.loads(issue_row['metadata_json']) if issue_row['metadata_json'] else {}
+        metadata = self._merge_human_context(
+            metadata,
+            resolution=resolution,
+            note=note,
+            issue_id=issue_id,
+            next_role=next_role,
+            next_employee_key=next_employee_key,
+        )
         route_target = next_employee_key
         if resolution == 'approve' and not route_target and isinstance(next_role, str) and next_role.strip():
             route_target = self._pick_employee_key(project_id=issue_row['project_id'], role=next_role.strip())
@@ -195,6 +221,13 @@ class HumanQueueService:
                 raise ValidationError(decision.reason)
             metadata['human_resolution_strategy'] = 'approved_and_routed'
             metadata['human_resolution_target'] = employee['employee_key']
+            metadata['prior_handoff'] = {
+                'summary': note.strip() or '人工已确认并指定下一步流转。',
+                'reason': note.strip() or 'human confirmed',
+                'suggested_next_role': to_role,
+                'needs_human': False,
+                'risk_level': str(metadata.get('risk_level') or 'normal'),
+            }
             self.db.conn.execute(
                 'UPDATE issues SET status = ?, assigned_employee_id = ?, blocker_summary = NULL, required_human_input = NULL, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
                 ('review', employee['id'], json.dumps(metadata, ensure_ascii=False), ts, issue_id),
@@ -226,21 +259,43 @@ class HumanQueueService:
                 'updated_at_ms': ts,
             }
 
+        current_assigned = issue_row['assigned_employee_id']
         if resolution == 'approve':
-            new_status = 'ready'
-            blocker = None
+            new_status = 'review'
+            blocker = note.strip() or 'Human confirmed. Continue with the next explicit agent judgment.'
             required = None
-            metadata['human_resolution_strategy'] = 'return_ready_auto'
+            metadata['human_resolution_strategy'] = 'approved_resume_review'
+            metadata['prior_handoff'] = {
+                'summary': note.strip() or '人工已确认，请基于人工确认结果继续推进。',
+                'reason': note.strip() or 'human confirmed',
+                'suggested_next_role': self._employee_role(current_assigned) if current_assigned else '',
+                'needs_human': False,
+                'risk_level': str(metadata.get('risk_level') or 'normal'),
+            }
         elif resolution == 'reject':
             new_status = 'failed'
             blocker = note or 'Rejected by human'
             required = None
             metadata['human_resolution_strategy'] = 'rejected'
+            metadata['prior_handoff'] = {
+                'summary': note.strip() or '人工已驳回当前 issue。',
+                'reason': note.strip() or 'human rejected',
+                'suggested_next_role': 'close',
+                'needs_human': False,
+                'risk_level': str(metadata.get('risk_level') or 'normal'),
+            }
         else:
-            new_status = 'waiting_human_info'
-            blocker = note or 'Human requested more information'
-            required = note or 'Provide additional information'
-            metadata['human_resolution_strategy'] = 'needs_info'
+            new_status = 'review'
+            blocker = note or 'Human provided more information'
+            required = None
+            metadata['human_resolution_strategy'] = 'needs_info_resume_review'
+            metadata['prior_handoff'] = {
+                'summary': note.strip() or '人工已补充信息，请基于补充内容继续推进。',
+                'reason': note.strip() or 'human provided additional information',
+                'suggested_next_role': self._employee_role(current_assigned) if current_assigned else '',
+                'needs_human': False,
+                'risk_level': str(metadata.get('risk_level') or 'normal'),
+            }
         self.db.conn.execute(
             'UPDATE issues SET status = ?, blocker_summary = ?, required_human_input = ?, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
             (new_status, blocker, required, json.dumps(metadata, ensure_ascii=False), ts, issue_id),

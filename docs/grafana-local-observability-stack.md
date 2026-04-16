@@ -57,7 +57,7 @@
 当前按 `{{.Comm}}` 分组，能直接看到按进程名聚合后的 Top CPU / Top 内存。
 
 ## 看板内容
-当前预置看板 `Local Host Resource & Top Processes` 包含：
+当前预置看板 `AT | Host-System | System | Overview` 包含：
 
 - 总 CPU 使用率
 - 内存使用率

@@ -23,7 +23,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus-local"
+        "uid": "prometheus-local-main"
       },
       "fieldConfig": {
         "defaults": {
@@ -78,7 +78,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus-local"
+            "uid": "prometheus-local-main"
           },
           "editorMode": "code",
           "expr": "100 - (avg(rate(node_cpu_seconds_total{job=\"node\", mode=\"idle\"}[5m])) * 100)",
@@ -93,7 +93,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus-local"
+        "uid": "prometheus-local-main"
       },
       "fieldConfig": {
         "defaults": {
@@ -148,7 +148,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus-local"
+            "uid": "prometheus-local-main"
           },
           "editorMode": "code",
           "expr": "(1 - (node_memory_MemAvailable_bytes{job=\"node\"} / node_memory_MemTotal_bytes{job=\"node\"})) * 100",
@@ -163,7 +163,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus-local"
+        "uid": "prometheus-local-main"
       },
       "fieldConfig": {
         "defaults": {
@@ -210,7 +210,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus-local"
+            "uid": "prometheus-local-main"
           },
           "editorMode": "code",
           "expr": "node_memory_MemTotal_bytes{job=\"node\"} - node_memory_MemAvailable_bytes{job=\"node\"}",
@@ -225,7 +225,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus-local"
+        "uid": "prometheus-local-main"
       },
       "fieldConfig": {
         "defaults": {
@@ -272,7 +272,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus-local"
+            "uid": "prometheus-local-main"
           },
           "editorMode": "code",
           "expr": "node_procs_running{job=\"node\"}",
@@ -287,7 +287,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus-local"
+        "uid": "prometheus-local-main"
       },
       "fieldConfig": {
         "defaults": {
@@ -332,7 +332,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus-local"
+            "uid": "prometheus-local-main"
           },
           "editorMode": "code",
           "expr": "100 - (avg(rate(node_cpu_seconds_total{job=\"node\", mode=\"idle\"}[5m])) * 100)",
@@ -347,7 +347,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus-local"
+        "uid": "prometheus-local-main"
       },
       "fieldConfig": {
         "defaults": {
@@ -392,7 +392,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus-local"
+            "uid": "prometheus-local-main"
           },
           "editorMode": "code",
           "expr": "(1 - (node_memory_MemAvailable_bytes{job=\"node\"} / node_memory_MemTotal_bytes{job=\"node\"})) * 100",
@@ -407,7 +407,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus-local"
+        "uid": "prometheus-local-main"
       },
       "fieldConfig": {
         "defaults": {
@@ -461,7 +461,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus-local"
+            "uid": "prometheus-local-main"
           },
           "editorMode": "code",
           "expr": "topk(10, sum by (groupname) (rate(namedprocess_namegroup_cpu_seconds_total{job=\"process-exporter\", groupname!=\"\"}[5m])) * 100)",
@@ -477,7 +477,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus-local"
+        "uid": "prometheus-local-main"
       },
       "fieldConfig": {
         "defaults": {
@@ -531,7 +531,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus-local"
+            "uid": "prometheus-local-main"
           },
           "editorMode": "code",
           "expr": "topk(10, sum by (groupname) (namedprocess_namegroup_memory_bytes{job=\"process-exporter\", memtype=\"resident\", groupname!=\"\"}))",
@@ -550,6 +550,7 @@
   "style": "dark",
   "tags": [
     "agent-team-grafana",
+    "host-system",
     "local-observability"
   ],
   "templating": {
@@ -561,7 +562,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Local Host Resource & Top Processes",
+  "title": "AT | Host-System | System | Overview",
   "uid": "agent-team-local-observe",
   "version": 1,
   "weekStart": ""

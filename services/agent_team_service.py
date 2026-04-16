@@ -1360,6 +1360,52 @@ class AgentTeamService:
             'agent_workload': self.get_agent_workload()['items'],
         }
 
+    def get_ui_snapshot(self, *, generated_at: str | None = None, source: str | None = None) -> dict[str, Any]:
+        issues = self.list_issues()['items']
+        issue_details = []
+        for item in issues:
+            detail = self.get_issue(issue_id=item['id'])
+            attempts = detail['attempts']
+            callbacks_by_attempt = detail.get('callbacks_by_attempt') or {}
+            timelines = {}
+            for attempt in attempts:
+                timelines[attempt['id']] = self.get_attempt_timeline(attempt_id=attempt['id'])['items']
+            outgoing = self.db.fetch_all(
+                '''SELECT ir.id, ir.relation_type, ir.created_at_ms, i.id AS related_issue_id, i.issue_no AS related_issue_no, i.title AS related_issue_title, i.status AS related_issue_status
+                   FROM issue_relations ir
+                   JOIN issues i ON i.id = ir.to_issue_id
+                   WHERE ir.from_issue_id = ?
+                   ORDER BY ir.created_at_ms DESC''',
+                (item['id'],),
+            )
+            incoming = self.db.fetch_all(
+                '''SELECT ir.id, ir.relation_type, ir.created_at_ms, i.id AS related_issue_id, i.issue_no AS related_issue_no, i.title AS related_issue_title, i.status AS related_issue_status
+                   FROM issue_relations ir
+                   JOIN issues i ON i.id = ir.from_issue_id
+                   WHERE ir.to_issue_id = ?
+                   ORDER BY ir.created_at_ms DESC''',
+                (item['id'],),
+            )
+            issue_details.append({
+                'issue': detail['issue'],
+                'attempts': attempts,
+                'callbacks_by_attempt': callbacks_by_attempt,
+                'timelines': timelines,
+                'activities': self.get_issue_activity(issue_id=item['id'])['items'],
+                'relations': {
+                    'outgoing': [dict(r) for r in outgoing],
+                    'incoming': [dict(r) for r in incoming],
+                },
+                'dependencies': detail.get('dependencies') or {'blocking': [], 'blocked_dependents': []},
+            })
+        return {
+            'schema_version': 'agent-team.ui-snapshot.v1',
+            'generated_at': generated_at,
+            'source': source,
+            'board': self.get_board_snapshot(),
+            'issues': issue_details,
+        }
+
     def reconcile_dependency_transitions(self) -> dict[str, Any]:
         ts = now_ms()
         dependency_released: list[dict[str, Any]] = []

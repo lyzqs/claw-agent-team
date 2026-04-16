@@ -27,10 +27,10 @@
       "issue_no": 36,
       "title": "人工审核测试",
       "priority": "p2",
-      "status": "waiting_human_approval",
-      "blocker_summary": "PM已完成显式判断：该 issue 已流转到人工确认，当前等待人工确认结果。",
-      "required_human_input": "该 issue 的验收要求是进入人工确认流程；当前由人工确认决定后续动作。",
-      "updated_at_ms": 1776271394474
+      "status": "waiting_human_info",
+      "blocker_summary": "已确认，请直接流转当前issue到关闭",
+      "required_human_input": "已确认，请直接流转当前issue到关闭",
+      "updated_at_ms": 1776305688350
     }
   ],
   "employee_view": [
@@ -422,7 +422,7 @@
           "issue_id": "issue_b6d4b678a31e",
           "issue_no": 36,
           "title": "人工审核测试",
-          "status": "waiting_human_approval",
+          "status": "waiting_human_info",
           "priority": "p2",
           "has_open_dependencies": false
         }

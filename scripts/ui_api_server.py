@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from datetime import datetime, UTC
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -22,6 +23,10 @@ MUTATING_WHEN_PAUSED_BLOCKED = {
     '/api/human/resolve',
     '/api/human/enqueue',
 }
+
+
+def now_iso() -> str:
+    return datetime.now(UTC).isoformat().replace('+00:00', 'Z')
 
 
 def refresh_exports() -> None:
@@ -75,6 +80,21 @@ class Handler(BaseHTTPRequestHandler):
             svc = AgentTeamService()
             try:
                 out = svc.get_human_queue()
+                self._json(200, {'ok': True, 'result': out})
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+            finally:
+                svc.close()
+            return
+        if parsed.path == '/api/board-snapshot':
+            svc = AgentTeamService()
+            try:
+                generated_at = now_iso()
+                out = svc.get_ui_snapshot(
+                    generated_at=generated_at,
+                    source='agent-team.db',
+                )
+                out['workflow_control'] = load_control()
                 self._json(200, {'ok': True, 'result': out})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})

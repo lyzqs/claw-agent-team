@@ -1347,22 +1347,30 @@
 
     async function loadData() {
       try {
-        const boardUrl = new URL(`/board/data.json?t=${Date.now()}`, window.location.origin).toString();
-        const issuesUrl = new URL(`/board/issues.json?t=${Date.now()}`, window.location.origin).toString();
-        const [boardRes, issuesRes, controlRes, humanRes] = await Promise.all([
-          fetch(boardUrl),
-          fetch(issuesUrl),
-          apiGet('/api/workflow-control'),
-          apiGet('/api/human-queue'),
-        ]);
-        if (!boardRes.ok) throw new Error(`board HTTP ${boardRes.status}`);
-        if (!issuesRes.ok) throw new Error(`issues HTTP ${issuesRes.status}`);
-        if (!controlRes.ok) throw new Error(controlRes.error || 'workflow control load failed');
-        if (!humanRes.ok) throw new Error(humanRes.error || 'human queue load failed');
-        boardData = await boardRes.json();
-        issuesData = await issuesRes.json();
-        workflowControl = controlRes.result;
-        humanQueueData = humanRes.result;
+        const snapshotRes = await apiGet(`/api/board-snapshot?t=${Date.now()}`);
+        if (snapshotRes.ok && snapshotRes.result) {
+          boardData = snapshotRes.result.board || {};
+          issuesData = snapshotRes.result.issues || [];
+          workflowControl = snapshotRes.result.workflow_control || { mode: 'running' };
+          humanQueueData = { items: boardData.human_queue || [], total: (boardData.human_queue || []).length };
+        } else {
+          const boardUrl = new URL(`/board/data.json?t=${Date.now()}`, window.location.origin).toString();
+          const issuesUrl = new URL(`/board/issues.json?t=${Date.now()}`, window.location.origin).toString();
+          const [boardRes, issuesRes, controlRes, humanRes] = await Promise.all([
+            fetch(boardUrl),
+            fetch(issuesUrl),
+            apiGet('/api/workflow-control'),
+            apiGet('/api/human-queue'),
+          ]);
+          if (!boardRes.ok) throw new Error(`board HTTP ${boardRes.status}`);
+          if (!issuesRes.ok) throw new Error(`issues HTTP ${issuesRes.status}`);
+          if (!controlRes.ok) throw new Error(controlRes.error || 'workflow control load failed');
+          if (!humanRes.ok) throw new Error(humanRes.error || 'human queue load failed');
+          boardData = await boardRes.json();
+          issuesData = await issuesRes.json();
+          workflowControl = controlRes.result;
+          humanQueueData = humanRes.result;
+        }
         renderSummary();
         renderHumanQueuePanel();
         renderAnalytics();

@@ -497,6 +497,10 @@
               <span>创建 Issue</span>
               <span>＋</span>
             </button>
+            <button id="openCreateProjectBtn" class="panel-link">
+              <span>新增项目</span>
+              <span>＋</span>
+            </button>
             <button id="openHumanQueueBtn" class="panel-link">
               <span>查看待确认</span>
               <span id="humanQueueCountMini">0</span>
@@ -627,10 +631,7 @@
         <div class="filters" style="margin-bottom:0; grid-template-columns: repeat(3, minmax(0, 1fr));">
           <div class="filter-group">
             <label for="newIssueProject">项目</label>
-            <select id="newIssueProject">
-              <option value="agent-team-core">agent-team-core</option>
-              <option value="agent-team-labs">agent-team-labs</option>
-            </select>
+            <select id="newIssueProject"></select>
           </div>
           <div class="filter-group">
             <label for="newIssuePriority">优先级</label>
@@ -652,6 +653,27 @@
         <div class="entry-actions">
           <button id="createIssueBtn">创建 Issue</button>
           <button id="createCeoIssueBtn" class="secondary">发给 CEO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="createProjectModal" class="modal-backdrop">
+    <div class="modal" style="width:min(760px, 100%);">
+      <div class="modal-top">
+        <div>
+          <h2>新增项目</h2>
+          <div class="muted">创建项目、自动生成 PM / Dev / QA / Ops 实例，并初始化 OpenClaw 项目 session</div>
+        </div>
+        <button id="closeCreateProjectModalBtn" class="secondary">关闭</button>
+      </div>
+      <div class="entry-form">
+        <input id="newProjectName" placeholder="项目名称，例如 Agent Team Labs" />
+        <input id="newProjectKey" placeholder="项目 Key，可留空自动生成，例如 agent-team-labs" />
+        <textarea id="newProjectDesc" placeholder="项目背景、目标、边界、上下文。会作为 PM / Dev / QA / Ops 的长期项目上下文初始化内容"></textarea>
+        <div class="entry-note">默认行为：自动创建四个项目角色实例，绑定到固定 5 个 Agent 中对应角色，并在 OpenClaw 中初始化该项目的 PM / Dev / QA / Ops session。CEO 保持共享，不新增 CEO 项目实例。</div>
+        <div class="entry-actions">
+          <button id="createProjectBtn">创建项目</button>
         </div>
       </div>
     </div>
@@ -779,6 +801,15 @@
 
     function displayAgentName(agentId) {
       return AGENT_LABELS[agentId] || agentId;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function orderedAgentIds(agentIds) {
@@ -918,6 +949,41 @@
         await loadData();
       } else {
         showToast(`创建失败: ${out.error || 'unknown error'}`, true);
+      }
+    }
+
+    function openCreateProjectModal() {
+      document.getElementById('createProjectModal').classList.add('show');
+    }
+
+    function closeCreateProjectModal() {
+      document.getElementById('createProjectModal').classList.remove('show');
+    }
+
+    async function createProject() {
+      const name = document.getElementById('newProjectName').value.trim();
+      const projectKey = document.getElementById('newProjectKey').value.trim();
+      const description = document.getElementById('newProjectDesc').value.trim();
+      if (!name) {
+        showToast('请先填写项目名称', true);
+        return;
+      }
+      const out = await apiPost('/api/create-project', {
+        name,
+        project_key: projectKey,
+        description,
+        initialize_sessions: true,
+      });
+      if (out.ok) {
+        const sessions = Object.keys(out.result.initialized_sessions || {}).join(' / ');
+        showToast(`项目已创建：${out.result.project_key}${sessions ? `，已初始化 ${sessions.toUpperCase()} session` : ''}`);
+        closeCreateProjectModal();
+        document.getElementById('newProjectName').value = '';
+        document.getElementById('newProjectKey').value = '';
+        document.getElementById('newProjectDesc').value = '';
+        await loadData();
+      } else {
+        showToast(`创建项目失败: ${out.error || 'unknown error'}`, true);
       }
     }
 
@@ -1082,6 +1148,21 @@
       `;
     }
 
+    function renderProjectSelectOptions() {
+      const select = document.getElementById('newIssueProject');
+      if (!select) return;
+      const projects = (boardData?.project_view || []).map(p => p.project_key).filter(Boolean);
+      const previous = select.value;
+      select.innerHTML = projects.length
+        ? projects.map(key => `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`).join('')
+        : '<option value="">暂无项目</option>';
+      if (projects.includes(previous)) {
+        select.value = previous;
+      } else if (projects.length) {
+        select.value = projects[0];
+      }
+    }
+
     function renderSummary() {
       const employees = boardData.employee_view || [];
       const projects = boardData.project_view || [];
@@ -1105,7 +1186,7 @@
       const snapshotSource = snapshotMeta.fallback ? 'fallback-json' : (snapshotMeta.source || 'api');
       snapshotChip.textContent = `快照 ${snapshotMeta.schema_version || 'unknown'} · ${snapshotSource} · ${formatIsoText(snapshotMeta.generated_at)}`;
       document.getElementById('projectMeta').innerHTML = projects.length
-        ? `<div class="detail-stack">${projects.map(p => `<div class="detail-item"><div class="detail-head"><span>${p.name}</span><span>${p.project_key}</span></div><div class="detail-sub">总 Issue ${p.total_issues}，已关闭 ${p.closed_issues}，Agent 队列 ${p.agent_queue_issues}，人工队列 ${p.human_queue_issues}</div></div>`).join('')}</div>`
+        ? `<div class="detail-stack">${projects.map(p => `<div class="detail-item"><div class="detail-head"><span>${escapeHtml(p.name)}</span><span>${escapeHtml(p.project_key)}</span></div><div class="detail-sub">${p.description ? `${escapeHtml(p.description)}<br/>` : ''}总 Issue ${p.total_issues}，已关闭 ${p.closed_issues}，Agent 队列 ${p.agent_queue_issues}，人工队列 ${p.human_queue_issues}</div></div>`).join('')}</div>`
         : '暂无项目';
       document.getElementById('roleMeta').innerHTML = fixedAgents.map(agentId => {
         const boundEmployees = employees.filter(e => e.agent_id === agentId);
@@ -1114,7 +1195,7 @@
       document.getElementById('instanceMeta').innerHTML = employees.length
         ? `<div class="detail-stack">${fixedAgents.map(agentId => {
             const boundEmployees = employees.filter(e => e.agent_id === agentId);
-            return `<div class="detail-item"><div class="detail-head"><span>${displayAgentName(agentId)} / ${agentId}</span><span>${boundEmployees.length} 个实例</span></div><div class="detail-sub">${boundEmployees.length ? boundEmployees.map(e => `${e.employee_key}${e.project_key ? ` (${e.project_key})` : ''}`).join('、') : '暂无实例'}</div></div>`;
+            return `<div class="detail-item"><div class="detail-head"><span>${displayAgentName(agentId)} / ${agentId}</span><span>${boundEmployees.length} 个实例</span></div><div class="detail-sub">${boundEmployees.length ? boundEmployees.map(e => `${escapeHtml(e.employee_key)}${e.project_key ? ` (${escapeHtml(e.project_key)})` : ''}${e.binding_key ? ` · ${escapeHtml(e.binding_key)}` : ''}`).join('、') : '暂无实例'}</div></div>`;
           }).join('')}</div>`
         : '暂无实例';
       document.getElementById('runtimeSummary').innerHTML = `
@@ -1551,6 +1632,7 @@
           fallback: false,
         };
         renderSummary();
+        renderProjectSelectOptions();
         renderHumanQueuePanel();
         renderAnalytics();
         renderFilters();
@@ -1571,9 +1653,11 @@
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
     document.getElementById('reloadBtn').addEventListener('click', loadData);
     document.getElementById('openCreateIssueBtn').addEventListener('click', openCreateIssueModal);
+    document.getElementById('openCreateProjectBtn').addEventListener('click', openCreateProjectModal);
     document.getElementById('openHumanQueueBtn').addEventListener('click', () => openInfoModal('待你确认', document.getElementById('humanQueuePanel').innerHTML || '当前没有待确认事项'));
     document.getElementById('createIssueBtn').addEventListener('click', () => createIssue(document.getElementById('newIssueRoute').value || 'pm'));
     document.getElementById('createCeoIssueBtn').addEventListener('click', () => createIssue('ceo'));
+    document.getElementById('createProjectBtn').addEventListener('click', createProject);
     document.getElementById('runBtn').addEventListener('click', async () => {
       const out = await toggleWorkflow('running');
       showToast(out.ok ? '总流程已恢复' : `恢复失败: ${out.error || 'unknown error'}`, !out.ok);
@@ -1584,12 +1668,14 @@
     });
     document.getElementById('closeModalBtn').addEventListener('click', closeIssueModal);
     document.getElementById('closeCreateIssueModalBtn').addEventListener('click', closeCreateIssueModal);
+    document.getElementById('closeCreateProjectModalBtn').addEventListener('click', closeCreateProjectModal);
     document.getElementById('closeHumanActionModalBtn').addEventListener('click', closeHumanActionModal);
     document.getElementById('humanActionCancelBtn').addEventListener('click', closeHumanActionModal);
     document.getElementById('humanActionSubmitBtn').addEventListener('click', submitHumanActionModal);
     document.getElementById('humanActionModal').addEventListener('click', (e) => { if (e.target.id === 'humanActionModal') closeHumanActionModal(); });
     document.getElementById('modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') closeIssueModal(); });
     document.getElementById('createIssueModal').addEventListener('click', (e) => { if (e.target.id === 'createIssueModal') closeCreateIssueModal(); });
+    document.getElementById('createProjectModal').addEventListener('click', (e) => { if (e.target.id === 'createProjectModal') closeCreateProjectModal(); });
     document.getElementById('toggleProjectMetaBtn').addEventListener('click', () => {
       openInfoModal('项目说明', document.getElementById('projectMeta').innerHTML || '暂无项目');
     });

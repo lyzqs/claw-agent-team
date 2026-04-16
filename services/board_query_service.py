@@ -152,7 +152,8 @@ class BoardQueryService:
                       rt.template_key AS role,
                       ei.status,
                       rb.agent_id,
-                      rb.session_key
+                      rb.session_key,
+                      rb.binding_key
                FROM employee_instances ei
                JOIN role_templates rt ON rt.id = ei.role_template_id
                LEFT JOIN projects p ON p.id = ei.project_id
@@ -160,7 +161,7 @@ class BoardQueryService:
                ORDER BY ei.employee_key'''
         )
         projects = self.db.fetch_all(
-            '''SELECT p.project_key, p.name, p.status,
+            '''SELECT p.project_key, p.name, p.description, p.status, p.metadata_json,
                       (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id) AS total_issues,
                       (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status = 'closed') AS closed_issues,
                       (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status IN ('ready','dispatching','running','blocked','review','waiting_recovery_completion','waiting_children')) AS agent_queue_issues,

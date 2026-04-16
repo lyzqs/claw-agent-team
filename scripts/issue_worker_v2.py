@@ -492,15 +492,19 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         acceptance = issue.get('acceptance_criteria_md') or 'No explicit acceptance criteria.'
         blocker = issue.get('blocker_summary') or 'None.'
         required_input = issue.get('required_human_input') or 'None.'
+        project_name = str(issue.get('project_name') or issue.get('project_key') or '未知项目')
+        project_description = str(issue.get('project_description') or metadata.get('project_context_md') or '').strip()
         base_instruction = (
             f"请以 {role_label} 角色处理这个 issue。\n"
-            f"标题：{issue['title']}\n"
-            f"描述：{description}\n"
-            f"验收标准：{acceptance}\n"
-            f"当前阻塞：{blocker}\n"
-            f"当前缺失的人类输入：{required_input}\n"
-            "真实代码、脚本、文档、验证请使用规范实现仓库 /root/.openclaw/workspace-agent-team（角色工作区里可用 ./repo 快捷入口）。\n"
-            "只做当前角色最小必要且正确的工作，不要越过本角色职责边界。"
+            f"项目：{project_name} ({issue.get('project_key') or ''})\n"
+            + (f"项目背景：{project_description}\n" if project_description else '')
+            + f"标题：{issue['title']}\n"
+            + f"描述：{description}\n"
+            + f"验收标准：{acceptance}\n"
+            + f"当前阻塞：{blocker}\n"
+            + f"当前缺失的人类输入：{required_input}\n"
+            + "真实代码、脚本、文档、验证请使用规范实现仓库 /root/.openclaw/workspace-agent-team（角色工作区里可用 ./repo 快捷入口）。\n"
+            + "只做当前角色最小必要且正确的工作，不要越过本角色职责边界。"
         )
 
     prior_handoff = metadata.get('prior_handoff') if isinstance(metadata.get('prior_handoff'), dict) else {}
@@ -637,6 +641,8 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
                   rb.session_key,
                   rb.agent_id,
                   p.project_key,
+                  p.name AS project_name,
+                  p.description AS project_description,
                   EXISTS (
                     SELECT 1
                     FROM issue_relations ir

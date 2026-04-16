@@ -150,7 +150,15 @@ class Handler(BaseHTTPRequestHandler):
 
         svc = AgentTeamService()
         try:
-            if parsed.path == '/api/create-issue':
+            if parsed.path == '/api/create-project':
+                out = svc.create_project(
+                    name=payload.get('name', ''),
+                    project_key=payload.get('project_key') or None,
+                    description=payload.get('description', ''),
+                    created_by_employee_key=payload.get('created_by_employee_key', 'shared.ceo'),
+                    initialize_sessions=bool(payload.get('initialize_sessions', True)),
+                )
+            elif parsed.path == '/api/create-issue':
                 project_key = payload.get('project_key', 'agent-team-core')
                 route_mode = payload.get('route_mode', 'pm')
                 route_role = 'ceo' if route_mode == 'ceo' else payload.get('assign_role', 'pm')

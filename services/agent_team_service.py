@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
+import subprocess
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,6 +16,98 @@ from .board_query_service import BoardQueryService
 from .dispatch_service import DispatchService
 from .dependency_service import DependencyService
 from .derived_issue_service import DerivedIssueService
+from .config import STATE_DIR
+
+
+PROJECT_ROLE_ORDER = ('pm', 'dev', 'qa', 'ops')
+ROLE_AGENT_IDS = {
+    'ceo': 'agent-team-ceo',
+    'pm': 'agent-team-pm',
+    'dev': 'agent-team-dev',
+    'qa': 'agent-team-qa',
+    'ops': 'agent-team-ops',
+}
+ROLE_DISPLAY_NAMES = {
+    'ceo': 'CEO',
+    'pm': 'PM',
+    'dev': 'Dev',
+    'qa': 'QA',
+    'ops': 'Ops',
+}
+ROLE_WORKSPACE_FALLBACKS = {
+    'ceo': '/root/.openclaw/workspace-agent-team-ceo',
+    'pm': '/root/.openclaw/workspace-agent-team-pm',
+    'dev': '/root/.openclaw/workspace-agent-team-dev',
+    'qa': '/root/.openclaw/workspace-agent-team-qa',
+    'ops': '/root/.openclaw/workspace-agent-team-ops',
+}
+ROLE_BOOTSTRAP_HINTS = {
+    'ceo': '你负责治理、升级、取舍和最终拍板，默认不要亲自下场做主体实现。',
+    'pm': '你负责需求梳理、任务拆分、流转设计和跨角色协调，默认不要越界去做主体实现。',
+    'dev': '你负责实现、技术方案和最小必要验证，默认不要替 PM 做需求定调，也不要替 QA 做最终验收。',
+    'qa': '你负责验证、验收、风险识别和质量把关，默认不要替 Dev 完成主体实现。',
+    'ops': '你负责部署、环境、运行态、观测和发布保障，默认不要替 PM 或 Dev 做需求和实现决策。',
+}
+SESSION_REGISTRY_PATH = STATE_DIR / 'session_registry.json'
+
+
+def slugify_project_key(value: str) -> str:
+    normalized = re.sub(r'[^a-z0-9]+', '-', str(value or '').strip().lower()).strip('-')
+    return re.sub(r'-{2,}', '-', normalized)
+
+
+def load_session_registry() -> dict[str, Any]:
+    if not SESSION_REGISTRY_PATH.exists():
+        return {}
+    try:
+        value = json.loads(SESSION_REGISTRY_PATH.read_text(encoding='utf-8'))
+    except Exception:
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def save_session_registry(payload: dict[str, Any]) -> None:
+    SESSION_REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SESSION_REGISTRY_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+
+
+def gateway_call(method: str, params: dict[str, Any], *, timeout_ms: int = 40000) -> dict[str, Any]:
+    cmd = [
+        'openclaw', 'gateway', 'call', method,
+        '--json',
+        '--timeout', str(timeout_ms),
+        '--params', json.dumps(params, ensure_ascii=False),
+    ]
+    res = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=max(30, timeout_ms // 1000 + 15),
+    )
+    if res.returncode != 0:
+        raise RuntimeError(res.stderr.strip() or res.stdout.strip() or f'gateway call failed: {method}')
+    raw = (res.stdout or '').strip()
+    if not raw:
+        return {}
+    value = json.loads(raw)
+    return value if isinstance(value, dict) else {}
+
+
+def build_project_bootstrap_message(*, role: str, project_name: str, project_key: str, description: str) -> str:
+    context = str(description or '').strip() or '暂无补充项目描述，后续请以本项目 issue 与补充上下文为准。'
+    role_name = ROLE_DISPLAY_NAMES.get(role, role.upper())
+    role_hint = ROLE_BOOTSTRAP_HINTS.get(role, '请只做当前角色边界内的工作。')
+    return (
+        '这是一条 Agent Team 项目会话初始化消息，不是开始处理 issue。\n'
+        f'项目名称：{project_name}\n'
+        f'项目 Key：{project_key}\n'
+        f'当前角色：{role_name}\n'
+        f'项目背景：{context}\n'
+        f'角色说明：{role_hint}\n'
+        '协作约束：固定 5 个角色 agent，不新增 agent 目录；CEO 保持共享；你当前是该项目的固定角色实例。\n'
+        '后续这个项目的 issue 会默认进入这个 session，请把以上内容当作项目长期上下文。\n'
+        '收到后只回复：PROJECT_CONTEXT_READY'
+    )
 
 
 def uid(prefix: str) -> str:
@@ -101,6 +195,315 @@ class AgentTeamService:
             (employee_id,),
         )
         return str(row['role'])
+
+    def _role_template_row(self, template_key: str):
+        return self.db.get_one('SELECT * FROM role_templates WHERE template_key = ?', (template_key,))
+
+    def _runtime_seed_for_role(self, role: str, role_template_row) -> dict[str, Any]:
+        row = self.db.conn.execute(
+            '''SELECT rb.agent_id, rb.model, rb.workspace_path, rb.tool_policy_json, rb.skills_profile_json, rb.metadata_json
+               FROM runtime_bindings rb
+               JOIN employee_instances ei ON ei.id = rb.employee_id
+               JOIN role_templates rt ON rt.id = ei.role_template_id
+               WHERE rt.template_key = ? AND rb.is_primary = 1
+               ORDER BY CASE rb.status WHEN 'active' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
+                        rb.updated_at_ms DESC,
+                        rb.created_at_ms DESC
+               LIMIT 1''',
+            (role,),
+        ).fetchone()
+        seed = dict(row) if row else {}
+        seed['agent_id'] = str(seed.get('agent_id') or ROLE_AGENT_IDS[role])
+        seed['workspace_path'] = str(seed.get('workspace_path') or ROLE_WORKSPACE_FALLBACKS[role])
+        seed['model'] = seed.get('model') or role_template_row['default_model']
+        seed['tool_policy_json'] = seed.get('tool_policy_json') or role_template_row['default_tool_policy_json']
+        seed['skills_profile_json'] = seed.get('skills_profile_json') or role_template_row['default_skill_profile_json']
+        return seed
+
+    def _ensure_openclaw_project_session(
+        self,
+        *,
+        project_key: str,
+        project_name: str,
+        description: str,
+        role: str,
+        agent_id: str,
+        model: str | None = None,
+    ) -> dict[str, Any]:
+        session_key = f'agent:{agent_id}:project:{project_key}'
+        params: dict[str, Any] = {
+            'key': session_key,
+            'agentId': agent_id,
+            'label': f'{project_name} · {ROLE_DISPLAY_NAMES.get(role, role.upper())}',
+            'message': build_project_bootstrap_message(
+                role=role,
+                project_name=project_name,
+                project_key=project_key,
+                description=description,
+            ),
+        }
+        if model:
+            params['model'] = model
+        payload = gateway_call('sessions.create', params, timeout_ms=60000)
+        entry = payload.get('entry') if isinstance(payload.get('entry'), dict) else {}
+        return {
+            'agent_id': agent_id,
+            'session_key': str(payload.get('key') or session_key),
+            'session_id': str(payload.get('sessionId') or entry.get('sessionId') or ''),
+            'session_file': str(entry.get('sessionFile') or ''),
+            'label': str(entry.get('label') or params['label']),
+            'run_started': bool(payload.get('runStarted')),
+            'run_error': payload.get('runError'),
+        }
+
+    def _upsert_project_session_registry(self, *, project_key: str, role_sessions: dict[str, dict[str, Any]]) -> None:
+        registry = load_session_registry()
+        ts = now_ms()
+        for role, session_meta in role_sessions.items():
+            agent_id = str(session_meta.get('agent_id') or ROLE_AGENT_IDS[role])
+            registry_key = f'{agent_id}|{project_key}'
+            existing = registry.get(registry_key) if isinstance(registry.get(registry_key), dict) else {}
+            next_entry = {
+                'logical_key': f'agent:{agent_id}:project:{project_key}',
+                'current_session_key': str(session_meta.get('session_key') or f'agent:{agent_id}:project:{project_key}'),
+                'role': role,
+                'project_key': project_key,
+                'generation': int(existing.get('generation') or 1),
+                'status': 'active',
+                'updated_at_ms': ts,
+            }
+            if session_meta.get('session_id'):
+                next_entry['session_id'] = session_meta['session_id']
+            if session_meta.get('session_file'):
+                next_entry['session_file'] = session_meta['session_file']
+            registry[registry_key] = next_entry
+
+        ceo_key = 'agent-team-ceo|shared'
+        existing_ceo = registry.get(ceo_key) if isinstance(registry.get(ceo_key), dict) else {}
+        registry[ceo_key] = {
+            'logical_key': str(existing_ceo.get('logical_key') or 'agent:agent-team-ceo:shared'),
+            'current_session_key': str(existing_ceo.get('current_session_key') or existing_ceo.get('logical_key') or 'agent:agent-team-ceo:shared'),
+            'role': 'ceo',
+            'project_key': 'shared',
+            'generation': int(existing_ceo.get('generation') or 1),
+            'status': str(existing_ceo.get('status') or 'active'),
+            'updated_at_ms': int(existing_ceo.get('updated_at_ms') or ts),
+        }
+        if existing_ceo.get('session_id'):
+            registry[ceo_key]['session_id'] = existing_ceo['session_id']
+        if existing_ceo.get('session_file'):
+            registry[ceo_key]['session_file'] = existing_ceo['session_file']
+        save_session_registry(registry)
+
+    def create_project(
+        self,
+        *,
+        name: str,
+        description: str = '',
+        project_key: str | None = None,
+        created_by_employee_key: str = 'shared.ceo',
+        initialize_sessions: bool = True,
+    ) -> dict[str, Any]:
+        project_name = str(name or '').strip()
+        if not project_name:
+            raise ValidationError('project name is required')
+        project_description = str(description or '').strip()
+        normalized_key = slugify_project_key(project_key or project_name)
+        if not normalized_key:
+            raise ValidationError('project_key is required when the project name cannot be converted into a stable key')
+        if self.db.conn.execute('SELECT 1 FROM projects WHERE project_key = ?', (normalized_key,)).fetchone():
+            raise ValidationError(f'project already exists: {normalized_key}')
+
+        creator = self.db.get_one(
+            'SELECT id, employee_key FROM employee_instances WHERE employee_key = ?',
+            (created_by_employee_key or 'shared.ceo',),
+        )
+        shared_ceo = self.db.get_one(
+            'SELECT id, employee_key FROM employee_instances WHERE employee_key = ?',
+            ('shared.ceo',),
+        )
+        role_templates = {role: self._role_template_row(role) for role in PROJECT_ROLE_ORDER}
+
+        runtime_blueprints: list[dict[str, Any]] = []
+        role_sessions: dict[str, dict[str, Any]] = {}
+        for role in PROJECT_ROLE_ORDER:
+            employee_key = f'{normalized_key}.{role}'
+            binding_key = f'{employee_key}.primary'
+            if self.db.conn.execute('SELECT 1 FROM employee_instances WHERE employee_key = ?', (employee_key,)).fetchone():
+                raise ValidationError(f'employee already exists: {employee_key}')
+            if self.db.conn.execute('SELECT 1 FROM runtime_bindings WHERE binding_key = ?', (binding_key,)).fetchone():
+                raise ValidationError(f'runtime binding already exists: {binding_key}')
+
+            seed = self._runtime_seed_for_role(role, role_templates[role])
+            session_meta = {
+                'agent_id': seed['agent_id'],
+                'session_key': f"agent:{seed['agent_id']}:project:{normalized_key}",
+                'session_id': '',
+                'session_file': '',
+                'label': f'{project_name} · {ROLE_DISPLAY_NAMES.get(role, role.upper())}',
+                'run_started': False,
+                'run_error': None,
+            }
+            if initialize_sessions:
+                try:
+                    session_meta = self._ensure_openclaw_project_session(
+                        project_key=normalized_key,
+                        project_name=project_name,
+                        description=project_description,
+                        role=role,
+                        agent_id=str(seed['agent_id']),
+                        model=str(seed['model']) if seed.get('model') else None,
+                    )
+                except Exception as exc:
+                    raise ValidationError(f'failed to initialize {role.upper()} session: {exc}') from exc
+            role_sessions[role] = session_meta
+            runtime_blueprints.append({
+                'role': role,
+                'employee_key': employee_key,
+                'display_name': f'{project_name} {ROLE_DISPLAY_NAMES[role]}',
+                'role_template_id': role_templates[role]['id'],
+                'binding_key': binding_key,
+                'agent_id': str(seed['agent_id']),
+                'session_key': str(session_meta['session_key']),
+                'workspace_path': str(seed['workspace_path']),
+                'model': seed.get('model'),
+                'tool_policy_json': seed.get('tool_policy_json'),
+                'skills_profile_json': seed.get('skills_profile_json'),
+                'seed_metadata_json': seed.get('metadata_json'),
+                'session_meta': session_meta,
+            })
+
+        ts = now_ms()
+        project_id = uid('proj')
+        project_metadata = {
+            'project_context_md': project_description,
+            'created_by_employee_key': creator['employee_key'],
+            'auto_created_roles': list(PROJECT_ROLE_ORDER),
+            'created_via': 'agent_team_service.create_project',
+            'initialized_session_keys': {role: meta['session_key'] for role, meta in role_sessions.items()},
+        }
+
+        employee_rows: list[dict[str, Any]] = []
+        runtime_rows: list[dict[str, Any]] = []
+        employee_ids: dict[str, str] = {}
+        try:
+            self.db.conn.execute(
+                '''INSERT INTO projects (
+                    id, project_key, name, description, status, metadata_json, created_at_ms, updated_at_ms
+                ) VALUES (?, ?, ?, ?, 'active', ?, ?, ?)''',
+                (
+                    project_id,
+                    normalized_key,
+                    project_name,
+                    project_description,
+                    json.dumps(project_metadata, ensure_ascii=False),
+                    ts,
+                    ts,
+                ),
+            )
+
+            for blueprint in runtime_blueprints:
+                role = blueprint['role']
+                employee_id = uid('emp')
+                manager_employee_id = shared_ceo['id'] if role == 'pm' else employee_ids['pm']
+                employee_metadata = {
+                    'project_key': normalized_key,
+                    'project_name': project_name,
+                    'project_context_md': project_description,
+                    'role': role,
+                    'auto_created': True,
+                }
+                self.db.conn.execute(
+                    '''INSERT INTO employee_instances (
+                        id, employee_key, display_name, employment_scope, project_id,
+                        role_template_id, manager_employee_id, status, notes, metadata_json,
+                        created_at_ms, updated_at_ms
+                    ) VALUES (?, ?, ?, 'project', ?, ?, ?, 'active', ?, ?, ?, ?)''',
+                    (
+                        employee_id,
+                        blueprint['employee_key'],
+                        blueprint['display_name'],
+                        project_id,
+                        blueprint['role_template_id'],
+                        manager_employee_id,
+                        'Auto-created during project provisioning',
+                        json.dumps(employee_metadata, ensure_ascii=False),
+                        ts,
+                        ts,
+                    ),
+                )
+                employee_ids[role] = employee_id
+                blueprint['employee_id'] = employee_id
+                employee_rows.append({
+                    'role': role,
+                    'employee_key': blueprint['employee_key'],
+                    'display_name': blueprint['display_name'],
+                    'manager_employee_id': manager_employee_id,
+                })
+
+            for blueprint in runtime_blueprints:
+                runtime_id = uid('rb')
+                session_meta = blueprint['session_meta']
+                runtime_metadata = merge_json_object(blueprint.get('seed_metadata_json'), {
+                    'project_key': normalized_key,
+                    'project_name': project_name,
+                    'project_context_md': project_description,
+                    'role': blueprint['role'],
+                    'auto_created': True,
+                    'session_id': session_meta.get('session_id') or None,
+                    'session_file': session_meta.get('session_file') or None,
+                    'session_label': session_meta.get('label') or None,
+                    'session_bootstrap_run_started': bool(session_meta.get('run_started')),
+                    'session_bootstrap_error': session_meta.get('run_error'),
+                })
+                self.db.conn.execute(
+                    '''INSERT INTO runtime_bindings (
+                        id, employee_id, runtime_type, binding_key, agent_id, session_key, model,
+                        workspace_path, memory_scope, tool_policy_json, skills_profile_json,
+                        status, is_primary, metadata_json, created_at_ms, updated_at_ms
+                    ) VALUES (?, ?, 'openclaw_session', ?, ?, ?, ?, ?, ?, ?, ?, 'active', 1, ?, ?, ?)''',
+                    (
+                        runtime_id,
+                        blueprint['employee_id'],
+                        blueprint['binding_key'],
+                        blueprint['agent_id'],
+                        blueprint['session_key'],
+                        blueprint.get('model'),
+                        blueprint['workspace_path'],
+                        f'project:{normalized_key}',
+                        blueprint.get('tool_policy_json'),
+                        blueprint.get('skills_profile_json'),
+                        json.dumps(runtime_metadata, ensure_ascii=False),
+                        ts,
+                        ts,
+                    ),
+                )
+                runtime_rows.append({
+                    'role': blueprint['role'],
+                    'binding_key': blueprint['binding_key'],
+                    'agent_id': blueprint['agent_id'],
+                    'session_key': blueprint['session_key'],
+                    'workspace_path': blueprint['workspace_path'],
+                })
+
+            self._upsert_project_session_registry(project_key=normalized_key, role_sessions=role_sessions)
+            self.db.commit()
+        except Exception:
+            self.db.conn.rollback()
+            raise
+
+        return {
+            'project_id': project_id,
+            'project_key': normalized_key,
+            'name': project_name,
+            'description': project_description,
+            'created_at_ms': ts,
+            'created_by_employee_key': creator['employee_key'],
+            'shared_ceo_employee_key': shared_ceo['employee_key'],
+            'employees': employee_rows,
+            'runtime_bindings': runtime_rows,
+            'initialized_sessions': role_sessions,
+        }
 
     def create_issue(
         self,

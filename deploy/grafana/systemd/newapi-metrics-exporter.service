@@ -1,0 +1,15 @@
+[Unit]
+Description=NewAPI metrics exporter for Prometheus
+After=network.target new-api.service
+Wants=new-api.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.openclaw/workspace-agent-team
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/newapi_metrics_exporter.py --db-path /root/new-api/one-api.db --target-base-url http://127.0.0.1:3000 --listen-host 127.0.0.1 --listen-port 19100 --env local --project agent-team-grafana --system newapi --service new-api --job newapi-exporter
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

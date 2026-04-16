@@ -26,6 +26,17 @@ def merge_json_object(raw: str | None, patch: dict[str, Any] | None) -> dict[str
     return base
 
 
+def proposal_dependencies(proposal: dict[str, Any]) -> list[str]:
+    deps = proposal.get('depends_on_proposal_keys')
+    if isinstance(deps, list):
+        return [str(x).strip() for x in deps if str(x or '').strip()]
+    metadata = proposal.get('metadata') if isinstance(proposal.get('metadata'), dict) else {}
+    deps = metadata.get('depends_on_proposal_keys')
+    if isinstance(deps, list):
+        return [str(x).strip() for x in deps if str(x or '').strip()]
+    return []
+
+
 class DerivedIssueService:
     def __init__(self, db, *, create_issue, triage_issue):
         self.db = db
@@ -60,6 +71,8 @@ class DerivedIssueService:
         created_items: list[dict[str, Any]] = []
         skipped_items: list[dict[str, Any]] = []
         fallback_owner = attempt['assigned_employee_key'] or 'shared.ceo'
+
+        created_by_key: dict[str, dict[str, Any]] = {}
 
         for idx, proposal in enumerate(proposals, start=1):
             if not isinstance(proposal, dict):
@@ -142,8 +155,35 @@ class DerivedIssueService:
                 'triaged_to': assign_employee_key,
             }
             created_items.append({'created': created, 'triaged': triaged, 'record': item})
+            created_by_key[proposal_key] = item
             existing_by_key[proposal_key] = item
             existing_items.append(item)
+
+        for idx, proposal in enumerate(proposals, start=1):
+            if not isinstance(proposal, dict):
+                continue
+            proposal_key = str(proposal.get('proposal_key') or f'auto:{str(proposal.get("title") or "").strip()}:{proposal.get("route_role") or "pm"}:{proposal.get("relation_type") or "related_to"}').strip()
+            current_item = created_by_key.get(proposal_key) or existing_by_key.get(proposal_key)
+            if not current_item:
+                continue
+            current_issue_id = current_item.get('issue_id')
+            for dep_key in proposal_dependencies(proposal):
+                dep_item = created_by_key.get(dep_key) or existing_by_key.get(dep_key)
+                dep_issue_id = dep_item.get('issue_id') if isinstance(dep_item, dict) else None
+                if not dep_issue_id or dep_issue_id == current_issue_id:
+                    continue
+                exists = self.db.conn.execute(
+                    '''SELECT 1 FROM issue_relations
+                       WHERE from_issue_id = ? AND to_issue_id = ? AND relation_type = 'blocked_by'
+                       LIMIT 1''',
+                    (current_issue_id, dep_issue_id),
+                ).fetchone()
+                if exists:
+                    continue
+                self.db.conn.execute(
+                    'INSERT INTO issue_relations (id, from_issue_id, to_issue_id, relation_type, created_by_employee_id, created_at_ms) VALUES (?, ?, ?, ?, ?, ?)',
+                    (uid('rel'), current_issue_id, dep_issue_id, 'blocked_by', attempt['assigned_employee_id'], now_ms()),
+                )
 
         ts = now_ms()
         self.db.conn.execute(

@@ -769,9 +769,11 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
                   ) AS has_open_dependencies,
                   EXISTS (
                     SELECT 1
-                    FROM issues i2
-                    JOIN issue_attempts ia2 ON ia2.issue_id = i2.id AND ia2.status IN ('dispatching','running')
-                    WHERE i2.assigned_employee_id = i.assigned_employee_id AND i2.id != i.id
+                    FROM issue_attempts ia2
+                    LEFT JOIN runtime_bindings rb2 ON rb2.id = ia2.runtime_binding_id
+                    WHERE ia2.status IN ('dispatching','running')
+                      AND rb2.agent_id = rb.agent_id
+                      AND ia2.issue_id != i.id
                   ) AS agent_has_active_issue
            FROM issues i
            LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id

@@ -10,21 +10,9 @@ from .human_queue_service import (
     WAITING_HUMAN_STATUS_BY_TYPE,
     derive_human_queue_request,
 )
-
-# Reuse the prototype adapter until a dedicated production adapter module is split out.
-import sys
-from pathlib import Path
-
-PROTO_ROOT = Path('/root/.openclaw/workspace/agent-team-prototype')
-if str(PROTO_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROTO_ROOT))
-
-from execution_adapter import (  # type: ignore  # noqa: E402
-    OpenClawExecutionAdapter,
-    RunAbortedObserved,
-    RunErrorObserved,
-    TimeoutObserved,
-)
+from runtime.base import RunAbortedObserved, RunErrorObserved, TimeoutObserved
+from runtime.openclaw_adapter import resolve_session_snapshot
+from runtime.registry import build_runtime_context, get_runtime_adapter
 
 
 def uid(prefix: str) -> str:
@@ -103,7 +91,7 @@ class DispatchService:
         dispatch_ref: str | None = None,
     ) -> dict[str, Any]:
         issue = self.db.get_one('SELECT id, assigned_employee_id FROM issues WHERE id = ?', (issue_id,))
-        binding = self.db.get_one('SELECT id, employee_id, binding_key, session_key FROM runtime_bindings WHERE binding_key = ?', (runtime_binding_key,))
+        binding = self.db.get_one('SELECT id, employee_id, binding_key, session_key, runtime_type, agent_id, metadata_json FROM runtime_bindings WHERE binding_key = ?', (runtime_binding_key,))
         if issue['assigned_employee_id'] and issue['assigned_employee_id'] != binding['employee_id']:
             raise ValidationError('runtime binding employee does not match assigned employee')
         prompt = payload.get('prompt')
@@ -134,7 +122,8 @@ class DispatchService:
         payload['attempt_no'] = attempt_no
         payload['prompt'] = f"{prompt.rstrip()}{callback_protocol}"
 
-        adapter = OpenClawExecutionAdapter(effective_session_key)
+        runtime_ctx = build_runtime_context(binding)
+        adapter = get_runtime_adapter(runtime_ctx)
         dispatch = adapter.dispatch(prompt=payload['prompt'], dispatch_id=dispatch_ref)
 
         real_dispatch_ref = dispatch['dispatch_ref']
@@ -451,7 +440,14 @@ class DispatchService:
             )
 
         if expected_text or expected_marker:
-            adapter = OpenClawExecutionAdapter(effective_session_key)
+            runtime_ctx = build_runtime_context({
+                'runtime_type': 'openclaw_session',
+                'binding_key': row['binding_key'] or 'derived-openclaw',
+                'session_key': effective_session_key,
+                'agent_id': None,
+                'metadata_json': '{}',
+            })
+            adapter = get_runtime_adapter(runtime_ctx)
             try:
                 if expected_marker:
                     wait_result = adapter.wait_for_json_marker(
@@ -538,13 +534,14 @@ class DispatchService:
 
     def cancel_execution(self, *, dispatch_ref: str, reason: str = 'cancelled_by_service') -> dict[str, Any]:
         attempt = self.db.get_one(
-            '''SELECT ia.id, ia.issue_id, ia.assigned_employee_id, rb.session_key
+            '''SELECT ia.id, ia.issue_id, ia.assigned_employee_id, rb.session_key, rb.runtime_type, rb.binding_key, rb.agent_id, rb.metadata_json
                FROM issue_attempts ia
                LEFT JOIN runtime_bindings rb ON rb.id = ia.runtime_binding_id
                WHERE ia.dispatch_ref = ?''',
             (dispatch_ref,),
         )
-        adapter = OpenClawExecutionAdapter(attempt['session_key'])
+        runtime_ctx = build_runtime_context(attempt)
+        adapter = get_runtime_adapter(runtime_ctx)
         abort_payload = adapter.abort(dispatch_ref)
         ts = now_ms()
         self.db.conn.execute(

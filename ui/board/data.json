@@ -5,24 +5,12 @@
       "name": "Agent Team Core",
       "status": "active",
       "total_issues": 36,
-      "closed_issues": 35,
-      "agent_queue_issues": 1,
+      "closed_issues": 36,
+      "agent_queue_issues": 0,
       "human_queue_issues": 0
     }
   ],
-  "agent_queue": [
-    {
-      "id": "issue_b6d4b678a31e",
-      "project_id": "proj_e1ff724206fd",
-      "issue_no": 36,
-      "title": "人工审核测试",
-      "priority": "p2",
-      "status": "review",
-      "assigned_employee_id": "emp_10799b0751c9",
-      "active_attempt_no": 13,
-      "updated_at_ms": 1776327562776
-    }
-  ],
+  "agent_queue": [],
   "human_queue": [],
   "employee_view": [
     {
@@ -355,7 +343,7 @@
           "issue_id": "issue_b6d4b678a31e",
           "issue_no": 36,
           "title": "人工审核测试",
-          "status": "review",
+          "status": "closed",
           "priority": "p2",
           "has_open_dependencies": false
         }

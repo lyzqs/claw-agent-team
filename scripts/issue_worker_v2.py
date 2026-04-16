@@ -97,7 +97,7 @@ def latest_success_handoff(svc: AgentTeamService, issue_id: str, exclude_attempt
 
 def latest_attempt_context(svc: AgentTeamService, issue_id: str) -> dict[str, Any]:
     row = svc.db.get_one(
-        '''SELECT attempt_no, status, failure_summary, result_summary, input_snapshot_json, output_snapshot_json, completion_mode
+        '''SELECT attempt_no, status, failure_summary, result_summary, input_snapshot_json, output_snapshot_json, completion_mode, updated_at_ms, ended_at_ms
            FROM issue_attempts
            WHERE issue_id = ?
            ORDER BY attempt_no DESC
@@ -108,16 +108,38 @@ def latest_attempt_context(svc: AgentTeamService, issue_id: str) -> dict[str, An
     output_snapshot = parse_json(row['output_snapshot_json'])
     wait_result = output_snapshot.get('wait_result') if isinstance(output_snapshot.get('wait_result'), dict) else {}
     wait_payload = wait_result.get('payload') if isinstance(wait_result.get('payload'), dict) else {}
+    payload = output_snapshot.get('payload') if isinstance(output_snapshot.get('payload'), dict) else {}
     return {
         'attempt_no': row['attempt_no'],
         'status': row['status'],
         'failure_summary': row['failure_summary'],
         'result_summary': row['result_summary'],
         'completion_mode': row['completion_mode'],
+        'updated_at_ms': row['updated_at_ms'],
+        'ended_at_ms': row['ended_at_ms'],
         'attempt_role': input_snapshot.get('attempt_role'),
         'worker_instruction': input_snapshot.get('worker_instruction'),
         'wait_payload': wait_payload,
+        'payload': payload,
     }
+
+
+def should_skip_same_role_redispatch(issue: dict[str, Any], last_attempt_ctx: dict[str, Any]) -> tuple[bool, str]:
+    if not last_attempt_ctx:
+        return False, ''
+    if str(issue.get('status') or '') != 'review':
+        return False, ''
+    if str(last_attempt_ctx.get('status') or '') != 'succeeded':
+        return False, ''
+    issue_role = str(issue.get('role') or '')
+    last_role = str(last_attempt_ctx.get('attempt_role') or '')
+    if not issue_role or issue_role != last_role:
+        return False, ''
+    issue_updated = int(issue.get('updated_at_ms') or 0)
+    last_updated = int(last_attempt_ctx.get('updated_at_ms') or 0)
+    if issue_updated > last_updated:
+        return False, ''
+    return True, 'same_role_succeeded_attempt_already_exists_without_new_issue_update'
 
 
 
@@ -842,8 +864,21 @@ def main() -> int:
             last_payload = parse_json(last_attempt_rows[0]['input_snapshot_json']) if last_attempt_rows else {}
             metadata = parse_json(issue.get('metadata_json'))
             metadata['prior_handoff'] = latest_success_handoff(svc, issue['issue_id'], exclude_attempt_id=last_attempt_id)
-            if last_attempt_id:
-                metadata['retry_context'] = latest_attempt_context(svc, issue['issue_id'])
+            last_attempt_ctx = latest_attempt_context(svc, issue['issue_id']) if last_attempt_id else {}
+            if last_attempt_ctx:
+                metadata['retry_context'] = last_attempt_ctx
+            skip_duplicate, duplicate_reason = should_skip_same_role_redispatch(issue, last_attempt_ctx)
+            if skip_duplicate:
+                report['skipped'].append({
+                    'kind': 'dispatch',
+                    'issue_id': issue['issue_id'],
+                    'issue_no': issue['issue_no'],
+                    'reason': duplicate_reason,
+                    'role': issue.get('role'),
+                    'last_attempt_no': last_attempt_ctx.get('attempt_no'),
+                })
+                append_action({'at': report['ran_at'], 'kind': 'skip_duplicate_dispatch', 'issue_id': issue['issue_id'], 'issue_no': issue['issue_no'], 'role': issue.get('role'), 'reason': duplicate_reason})
+                continue
             issue['metadata_json'] = json.dumps(metadata, ensure_ascii=False)
             payload = build_worker_payload(issue, last_payload, session_key=str(issue.get('session_key') or ''))
             out = svc.dispatch_execution(

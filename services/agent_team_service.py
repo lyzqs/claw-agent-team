@@ -692,7 +692,7 @@ class AgentTeamService:
         metadata['suggested_next_role'] = normalized_handoff.get('suggested_next_role') or to_role
         self.db.conn.execute(
             'UPDATE issues SET status = ?, assigned_employee_id = ?, blocker_summary = NULL, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
-            ('review', employee['id'], json.dumps(metadata, ensure_ascii=False), ts, issue_id),
+            ('ready', employee['id'], json.dumps(metadata, ensure_ascii=False), ts, issue_id),
         )
         record_issue_activity(
             self.db.conn,
@@ -706,7 +706,7 @@ class AgentTeamService:
         self.db.commit()
         return {
             'issue_id': issue_id,
-            'status': 'review',
+            'status': 'ready',
             'assigned_employee_key': employee['employee_key'],
             'from_role': from_role,
             'to_role': to_role,

@@ -230,7 +230,7 @@ class HumanQueueService:
             }
             self.db.conn.execute(
                 'UPDATE issues SET status = ?, assigned_employee_id = ?, blocker_summary = NULL, required_human_input = NULL, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
-                ('review', employee['id'], json.dumps(metadata, ensure_ascii=False), ts, issue_id),
+                ('ready', employee['id'], json.dumps(metadata, ensure_ascii=False), ts, issue_id),
             )
             record_issue_activity(
                 self.db.conn,
@@ -239,7 +239,7 @@ class HumanQueueService:
                 action_type='human_resolved',
                 summary='Human queue resolved: approve',
                 actor_employee_id=current_assigned,
-                details={'resolution': resolution, 'note': note, 'new_status': 'review', 'routed_to': employee['employee_key']},
+                details={'resolution': resolution, 'note': note, 'new_status': 'ready', 'routed_to': employee['employee_key']},
             )
             record_issue_activity(
                 self.db.conn,
@@ -253,7 +253,7 @@ class HumanQueueService:
             self.db.commit()
             return {
                 'issue_id': issue_id,
-                'status': 'review',
+                'status': 'ready',
                 'resolution': resolution,
                 'assigned_employee_key': employee['employee_key'],
                 'updated_at_ms': ts,

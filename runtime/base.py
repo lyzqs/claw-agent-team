@@ -36,7 +36,26 @@ class RuntimeBindingContext:
     metadata: dict[str, Any]
 
 
+@dataclass(frozen=True)
+class RuntimeCapabilities:
+    dispatch: bool = True
+    observe_exact_text: bool = True
+    observe_json_marker: bool = True
+    abort: bool = True
+    callback_protocol: bool = False
+    artifact_callback: bool = False
+
+
 class RuntimeAdapter(Protocol):
+    @property
+    def runtime_type(self) -> str: ...
+
+    @property
+    def provider(self) -> str: ...
+
+    @property
+    def capabilities(self) -> RuntimeCapabilities: ...
+
     def dispatch(self, *, prompt: str, dispatch_id: str | None = None, timeout_ms: int = 30 * 60 * 1000) -> dict[str, Any]: ...
     def wait_for_exact_text(self, *, expected_text: str, timeout_seconds: int = 45, limit: int = 20, min_timestamp_ms: int | None = None) -> dict[str, Any]: ...
     def wait_for_json_marker(self, *, marker: str, timeout_seconds: int = 45, limit: int = 20, min_timestamp_ms: int | None = None) -> dict[str, Any]: ...

@@ -4,7 +4,7 @@ import json
 import sys
 from pathlib import Path
 
-from .base import RunAbortedObserved, RunErrorObserved, TimeoutObserved
+from .base import RunAbortedObserved, RunErrorObserved, RuntimeCapabilities, TimeoutObserved
 
 PROTO_ROOT = Path('/root/.openclaw/workspace/agent-team-prototype')
 if str(PROTO_ROOT) not in sys.path:
@@ -38,6 +38,16 @@ class OpenClawRuntimeAdapter:
     def __init__(self, session_key: str):
         self.session_key = session_key
         self._adapter = OpenClawExecutionAdapter(session_key)
+        self.runtime_type = 'openclaw_session'
+        self.provider = 'openclaw'
+        self.capabilities = RuntimeCapabilities(
+            dispatch=True,
+            observe_exact_text=True,
+            observe_json_marker=True,
+            abort=True,
+            callback_protocol=False,
+            artifact_callback=False,
+        )
 
     def dispatch(self, *, prompt: str, dispatch_id: str | None = None, timeout_ms: int = 30 * 60 * 1000) -> dict[str, Any]:
         return self._adapter.dispatch(prompt=prompt, dispatch_id=dispatch_id, timeout_ms=timeout_ms)

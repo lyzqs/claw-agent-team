@@ -8,32 +8,12 @@ from typing import Any
 
 from .db import AgentTeamDB, NotFoundError, ValidationError, now_ms
 from .routing_policy import route_issue
-from .activity import ensure_issue_activity_table, ensure_issue_attempt_callback_table, record_issue_activity, fetch_issue_activity, record_attempt_callback_event
-from .human_queue_service import (
-    HumanQueueService,
-    WAITING_HUMAN_STATUSES,
-    WAITING_HUMAN_STATUS_BY_TYPE,
-    derive_human_queue_request,
-)
+from .activity import ensure_issue_activity_table, ensure_issue_attempt_callback_table, record_issue_activity
+from .human_queue_service import HumanQueueService, WAITING_HUMAN_STATUSES, WAITING_HUMAN_STATUS_BY_TYPE
 from .board_query_service import BoardQueryService
 from .dispatch_service import DispatchService
 from .dependency_service import DependencyService
 from .derived_issue_service import DerivedIssueService
-
-# Reuse the prototype adapter until a dedicated production adapter module is split out.
-import sys
-from pathlib import Path
-
-PROTO_ROOT = Path('/root/.openclaw/workspace/agent-team-prototype')
-if str(PROTO_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROTO_ROOT))
-
-from execution_adapter import (  # type: ignore  # noqa: E402
-    OpenClawExecutionAdapter,
-    RunAbortedObserved,
-    RunErrorObserved,
-    TimeoutObserved,
-)
 
 
 def uid(prefix: str) -> str:
@@ -77,43 +57,6 @@ def append_unique_artifact(existing: list[Any], artifact: Any) -> list[Any]:
         items.append(artifact)
     return items
 
-
-def resolve_session_snapshot(session_key: str) -> dict[str, Any]:
-    parts = session_key.split(':')
-    if len(parts) < 2 or parts[0] != 'agent':
-        return {}
-    agent_id = parts[1]
-    sessions_path = Path('/root/.openclaw/agents') / agent_id / 'sessions' / 'sessions.json'
-    if not sessions_path.exists():
-        return {}
-    try:
-        data = json.loads(sessions_path.read_text(encoding='utf-8'))
-    except Exception:
-        return {}
-    entry = data.get(session_key)
-    return entry if isinstance(entry, dict) else {}
-
-
-@dataclass
-class IssueRecord:
-    issue_id: str
-    issue_no: int
-    status: str
-    title: str
-    assigned_employee_id: str | None
-    owner_employee_id: str | None
-    active_attempt_no: int | None
-
-
-@dataclass
-class AttemptRecord:
-    attempt_id: str
-    attempt_no: int
-    issue_id: str
-    status: str
-    dispatch_ref: str | None
-    runtime_binding_id: str | None
-    assigned_employee_id: str | None
 
 
 class AgentTeamService:

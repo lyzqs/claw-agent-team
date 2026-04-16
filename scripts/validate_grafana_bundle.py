@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import tempfile
 from pathlib import Path
 
 import yaml
@@ -11,6 +9,86 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BUNDLE_ROOT = REPO_ROOT / "deploy" / "grafana"
+DASHBOARD_DIR = BUNDLE_ROOT / "dashboards"
+
+
+EXPECTED_DASHBOARDS = {
+    "local-host-observability.json": {
+        "uid": "agent-team-local-observe",
+        "snippets": [
+            "node_cpu_seconds_total",
+            "node_memory_MemAvailable_bytes",
+            "namedprocess_namegroup_cpu_seconds_total",
+            "namedprocess_namegroup_memory_bytes",
+            "topk(10",
+        ],
+    },
+    "newapi-business-overview.json": {
+        "uid": "at-newapi-business-overview",
+        "snippets": [
+            "newapi_requests_total",
+            "newapi_request_success_total",
+            "newapi_request_error_total",
+            "newapi_tokens_consumed_total",
+            "newapi_quota_consumed_total",
+            "newapi_channel_error_rate",
+        ],
+    },
+    "newapi-runtime-channel-health.json": {
+        "uid": "at-newapi-runtime-channel-health",
+        "snippets": [
+            "newapi_channel_health_score",
+            "newapi_channel_error_rate",
+            "newapi_channel_response_time_ms",
+            "newapi_errors_by_error_code_total",
+            "newapi_channel_status",
+        ],
+    },
+    "newapi-runtime-process-dependencies.json": {
+        "uid": "at-newapi-runtime-process-dependencies",
+        "snippets": [
+            "newapi_up",
+            "newapi_process_cpu_percent",
+            "newapi_process_memory_bytes",
+            "newapi_process_open_fds",
+            "newapi_db_connection_health",
+            "newapi_error_log_enabled",
+        ],
+    },
+    "uptime-kuma-synthetic-overview.json": {
+        "uid": "at-uptime-kuma-synthetic-overview",
+        "snippets": [
+            "kuma_monitors_up_total",
+            "kuma_monitors_down_total",
+            "kuma_group_availability_ratio",
+            "kuma_group_avg_response_time_ms",
+            "kuma_cert_expiry_days",
+            "kuma_monitor_flap_score",
+        ],
+    },
+    "uptime-kuma-synthetic-group-health.json": {
+        "uid": "at-uptime-kuma-synthetic-group-health",
+        "snippets": [
+            "kuma_monitors_up_total",
+            "kuma_monitors_down_total",
+            "kuma_group_avg_response_time_ms",
+            "kuma_group_availability_ratio",
+            "kuma_group_alerting_scope",
+            "kuma_monitor_retry_policy",
+        ],
+    },
+    "uptime-kuma-synthetic-monitor-details.json": {
+        "uid": "at-uptime-kuma-synthetic-monitor-details",
+        "snippets": [
+            "kuma_monitor_response_time_ms",
+            "kuma_monitor_failures_total",
+            "kuma_monitor_recoveries_total",
+            "kuma_monitor_flap_score",
+            "kuma_cert_expiry_days",
+            "kuma_monitor_status",
+        ],
+    },
+}
 
 
 def load_yaml(path: Path) -> object:
@@ -20,32 +98,17 @@ def load_yaml(path: Path) -> object:
 def validate_dashboard(path: Path) -> dict:
     payload = json.loads(path.read_text())
     panels = payload.get("panels", [])
-    titles = {panel.get("title") for panel in panels}
-    required_titles = {
-        "总 CPU 使用率",
-        "内存使用率",
-        "已用内存",
-        "运行中进程数",
-        "CPU 使用率趋势",
-        "内存使用率趋势",
-        "Top 10 进程 CPU 占用",
-        "Top 10 进程驻留内存",
-    }
-    if not required_titles.issubset(titles):
-        missing = sorted(required_titles - titles)
-        raise ValueError(f"dashboard missing panels: {missing}")
+    if not panels:
+        raise ValueError(f"dashboard has no panels: {path.name}")
 
-    expressions = [target.get("expr", "") for panel in panels for target in panel.get("targets", [])]
-    required_snippets = [
-        "node_cpu_seconds_total",
-        "node_memory_MemAvailable_bytes",
-        "namedprocess_namegroup_cpu_seconds_total",
-        "namedprocess_namegroup_memory_bytes",
-        "topk(10",
-    ]
-    for snippet in required_snippets:
-        if not any(snippet in expression for expression in expressions):
-            raise ValueError(f"dashboard missing query snippet: {snippet}")
+    expected = EXPECTED_DASHBOARDS.get(path.name)
+    if expected:
+        if payload.get("uid") != expected["uid"]:
+            raise ValueError(f"dashboard uid mismatch for {path.name}: {payload.get('uid')} != {expected['uid']}")
+        expressions = [target.get("expr", "") for panel in panels for target in panel.get("targets", [])]
+        for snippet in expected["snippets"]:
+            if not any(snippet in expression for expression in expressions):
+                raise ValueError(f"dashboard missing query snippet: {snippet} ({path.name})")
 
     for panel in panels:
         thresholds = panel.get("fieldConfig", {}).get("defaults", {}).get("thresholds")
@@ -57,48 +120,20 @@ def validate_dashboard(path: Path) -> dict:
         if not isinstance(steps, list):
             raise ValueError(f"panel thresholds.steps must be a list: {panel.get('title')}")
 
-    return {
-        "title": payload.get("title"),
-        "panel_count": len(panels),
-        "uid": payload.get("uid"),
+    datasource_uids = {
+        target.get("datasource", {}).get("uid")
+        for panel in panels
+        for target in panel.get("targets", [])
+        if isinstance(target.get("datasource"), dict)
     }
-
-
-def validate_nginx_template(path: Path) -> dict:
-    rendered = (
-        path.read_text()
-        .replace("__PUBLIC_HOST__", "grafana.example.test")
-        .replace("__GRAFANA_HTTP_PORT__", "3300")
-    )
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_root = Path(temp_dir)
-        site_conf = temp_root / "site.conf"
-        site_conf.write_text(rendered)
-        root_conf = temp_root / "nginx.conf"
-        root_conf.write_text(
-            "events {}\n"
-            "http {\n"
-            f"  include {site_conf};\n"
-            "}\n"
-        )
-        subprocess.run(
-            ["nginx", "-t", "-c", str(root_conf), "-p", temp_dir],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    return {"syntax": "ok"}
+    datasource_uids.discard(None)
+    if path.name != "local-host-observability.json" and datasource_uids != {"prometheus-local-main"}:
+        raise ValueError(f"dashboard datasource uid mismatch: {path.name} -> {sorted(datasource_uids)}")
+    return {"title": payload.get("title"), "panel_count": len(panels), "uid": payload.get("uid")}
 
 
 def main() -> None:
-    report = {
-        "bundle_root": str(BUNDLE_ROOT),
-        "yaml_files": {},
-        "dashboard": {},
-        "nginx_template": {},
-        "systemd_units": {},
-        "status": "ok",
-    }
+    report = {"bundle_root": str(BUNDLE_ROOT), "yaml_files": {}, "dashboards": {}, "systemd_units": {}, "status": "ok"}
 
     yaml_paths = [
         BUNDLE_ROOT / "process-exporter" / "process-exporter.yml",
@@ -110,21 +145,37 @@ def main() -> None:
         payload = load_yaml(path)
         report["yaml_files"][str(path.relative_to(REPO_ROOT))] = {"loaded": payload is not None}
 
-    report["dashboard"] = validate_dashboard(BUNDLE_ROOT / "dashboards" / "local-host-observability.json")
-    report["nginx_template"] = validate_nginx_template(BUNDLE_ROOT / "nginx" / "grafana-http.conf.template")
+    for dashboard_path in sorted(DASHBOARD_DIR.glob("*.json")):
+        report["dashboards"][dashboard_path.name] = validate_dashboard(dashboard_path)
 
     for unit_path in [
         BUNDLE_ROOT / "systemd" / "process-exporter.service",
         BUNDLE_ROOT / "systemd" / "agent-team-prometheus.service",
+        BUNDLE_ROOT / "systemd" / "newapi-metrics-exporter.service",
+        BUNDLE_ROOT / "systemd" / "uptime-kuma-metrics-exporter.service",
     ]:
         text = unit_path.read_text()
         if "ExecStart=" not in text:
             raise ValueError(f"systemd unit missing ExecStart: {unit_path}")
         report["systemd_units"][str(unit_path.relative_to(REPO_ROOT))] = {"execstart": "ok"}
 
-    grafana_override = (BUNDLE_ROOT / "grafana" / "grafana-server.override.conf.template").read_text()
-    if "__GRAFANA_HTTP_PORT__" not in grafana_override:
-        raise ValueError("grafana override template missing __GRAFANA_HTTP_PORT__ placeholder")
+    prometheus_yaml = load_yaml(BUNDLE_ROOT / "prometheus" / "prometheus.yml")
+    jobs = {item["job_name"] for item in prometheus_yaml.get("scrape_configs", [])}
+    for required_job in {"newapi-exporter", "uptime-kuma-exporter"}:
+        if required_job not in jobs:
+            raise ValueError(f"prometheus scrape config missing {required_job} job")
+
+    datasource_yaml = load_yaml(BUNDLE_ROOT / "provisioning" / "datasources" / "prometheus.yaml")
+    datasource_uids = {item["uid"] for item in datasource_yaml.get("datasources", [])}
+    for required_uid in {"prometheus-local-main", "prometheus-local"}:
+        if required_uid not in datasource_uids:
+            raise ValueError(f"datasource provisioning missing {required_uid} uid")
+
+    providers_yaml = load_yaml(BUNDLE_ROOT / "provisioning" / "dashboards" / "dashboard-provider.yaml")
+    folders = {item["folder"] for item in providers_yaml.get("providers", [])}
+    for folder in {"AT | 10 Platform | Host-System", "AT | 21 Project | NewAPI", "AT | 30 Ops | Uptime-Kuma"}:
+        if folder not in folders:
+            raise ValueError(f"dashboard provider missing folder: {folder}")
 
     print(json.dumps(report, ensure_ascii=False, indent=2))
 

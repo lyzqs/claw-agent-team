@@ -3,10 +3,30 @@ apiVersion: 1
 providers:
   - name: agent-team-grafana-local-observability
     orgId: 1
-    folder: Agent Team / Grafana
+    folder: AT | 10 Platform | Host-System
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
     allowUiUpdates: true
     options:
-      path: /var/lib/grafana/dashboards/agent-team-grafana
+      path: /var/lib/grafana/dashboards/agent-team-grafana/host-system
+
+  - name: agent-team-grafana-newapi
+    orgId: 1
+    folder: AT | 21 Project | NewAPI
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/agent-team-grafana/newapi
+
+  - name: agent-team-grafana-uptime-kuma
+    orgId: 1
+    folder: AT | 30 Ops | Uptime-Kuma
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/agent-team-grafana/uptime-kuma

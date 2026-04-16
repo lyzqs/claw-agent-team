@@ -1,0 +1,15 @@
+[Unit]
+Description=Uptime Kuma metrics exporter for Prometheus
+After=network.target uptime-kuma.service
+Wants=uptime-kuma.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.openclaw/workspace-agent-team
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/uptime_kuma_metrics_exporter.py --db-path /opt/uptime-kuma/data/kuma.db --target-base-url http://127.0.0.1:3001 --listen-host 127.0.0.1 --listen-port 19120 --env local --project agent-team-grafana --system uptime-kuma --service uptime-kuma --job uptime-kuma-exporter
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -187,16 +187,27 @@ install_bundle_files() {
   install -d -m 0755 /etc/grafana/provisioning/datasources
   install -d -m 0755 /etc/grafana/provisioning/dashboards
   install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana
+  install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/host-system
+  install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/newapi
+  install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/uptime-kuma
   install -d -m 0755 /etc/nginx/sites-available /etc/nginx/sites-enabled
   install -d -m 0755 /var/lib/agent-team-prometheus
 
   install -m 0644 "${REPO_ROOT}/deploy/grafana/process-exporter/process-exporter.yml" /etc/process-exporter/process-exporter.yml
   install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/process-exporter.service" /etc/systemd/system/process-exporter.service
   install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/agent-team-prometheus.service" /etc/systemd/system/agent-team-prometheus.service
+  install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/newapi-metrics-exporter.service" /etc/systemd/system/newapi-metrics-exporter.service
+  install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/uptime-kuma-metrics-exporter.service" /etc/systemd/system/uptime-kuma-metrics-exporter.service
   install -m 0644 "${REPO_ROOT}/deploy/grafana/prometheus/prometheus.yml" /opt/agent-team-grafana/prometheus/prometheus.yml
   install -m 0644 "${REPO_ROOT}/deploy/grafana/provisioning/datasources/prometheus.yaml" /etc/grafana/provisioning/datasources/agent-team-prometheus.yaml
   install -m 0644 "${REPO_ROOT}/deploy/grafana/provisioning/dashboards/dashboard-provider.yaml" /etc/grafana/provisioning/dashboards/agent-team-dashboard-provider.yaml
-  install -m 0644 "${REPO_ROOT}/deploy/grafana/dashboards/local-host-observability.json" /var/lib/grafana/dashboards/agent-team-grafana/local-host-observability.json
+  install -m 0644 "${REPO_ROOT}/deploy/grafana/dashboards/local-host-observability.json" /var/lib/grafana/dashboards/agent-team-grafana/host-system/local-host-observability.json
+  for dashboard in "${REPO_ROOT}"/deploy/grafana/dashboards/newapi-*.json; do
+    install -m 0644 "$dashboard" "/var/lib/grafana/dashboards/agent-team-grafana/newapi/$(basename "$dashboard")"
+  done
+  for dashboard in "${REPO_ROOT}"/deploy/grafana/dashboards/uptime-kuma-*.json; do
+    install -m 0644 "$dashboard" "/var/lib/grafana/dashboards/agent-team-grafana/uptime-kuma/$(basename "$dashboard")"
+  done
 
   render_template \
     "${REPO_ROOT}/deploy/grafana/grafana/grafana-server.override.conf.template" \
@@ -214,6 +225,8 @@ restart_services() {
   systemctl daemon-reload
   systemctl enable --now prometheus-node-exporter.service
   systemctl enable --now process-exporter.service
+  systemctl enable --now newapi-metrics-exporter.service
+  systemctl enable --now uptime-kuma-metrics-exporter.service
   systemctl enable --now agent-team-prometheus.service
   systemctl enable --now grafana-server.service
   systemctl enable --now nginx.service
@@ -224,6 +237,8 @@ restart_services() {
 run_health_checks() {
   log "Running local health checks"
   wait_for_http 10 2 http://127.0.0.1:9256/metrics
+  wait_for_http 10 2 http://127.0.0.1:19100/metrics
+  wait_for_http 10 2 http://127.0.0.1:19120/metrics
   wait_for_http 10 2 http://127.0.0.1:19090/-/ready
   wait_for_http 30 2 "http://127.0.0.1:${GRAFANA_HTTP_PORT}/api/health"
   wait_for_http 15 2 -H "Host: ${PUBLIC_HOST}" http://127.0.0.1/

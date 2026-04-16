@@ -817,6 +817,62 @@ def decide_next_role(*, current_role: str | None, metadata: dict[str, Any]) -> s
     return None
 
 
+def enqueue_route_failure_compensation(
+    svc: AgentTeamService,
+    *,
+    issue_id: str,
+    from_role: str | None,
+    next_role: str | None,
+    reason: str,
+    missing_target: bool = False,
+) -> dict[str, Any]:
+    from_label = ROLE_LABELS.get(str(from_role or ''), str(from_role or '未知角色').upper())
+    to_label = ROLE_LABELS.get(str(next_role or ''), str(next_role or '未知角色').upper())
+    detail = str(reason or '').strip()
+    lowered = detail.lower()
+
+    if missing_target:
+        human_type = 'action'
+        prompt = f'系统原本想把这条 issue 从 {from_label} 流转到 {to_label}，但当前项目里没有可用的 {to_label} 角色实例。'
+        required_input = f'请补齐 {to_label} 角色实例，或者明确改派给哪个角色继续推进。'
+    elif 'route not allowed' in lowered or 'high risk routes must' in lowered or 'require ceo' in lowered:
+        human_type = 'approval'
+        prompt = f'系统原本想把这条 issue 从 {from_label} 流转到 {to_label}，但被当前路由规则拦住了。'
+        required_input = f'原因：{detail or "当前路由规则不允许该流转"}。请确认应该改派哪个角色、是否升级 CEO，或是否需要调整路由规则。'
+    else:
+        human_type = 'action'
+        prompt = f'系统在尝试把这条 issue 从 {from_label} 流转到 {to_label} 时失败。'
+        required_input = detail or '请确认下一步应该如何继续推进。'
+
+    return svc.enqueue_human(
+        issue_id=issue_id,
+        human_type=human_type,
+        prompt=prompt,
+        required_input=required_input,
+    )
+
+
+def record_compensation_activity(
+    svc: AgentTeamService,
+    *,
+    issue_id: str,
+    attempt_id: str | None,
+    assigned_employee_id: str | None,
+    summary: str,
+    details: dict[str, Any],
+) -> None:
+    record_issue_activity(
+        svc.db.conn,
+        now_ms=int(time.time() * 1000),
+        issue_id=issue_id,
+        attempt_id=attempt_id,
+        action_type='system_compensation',
+        summary=summary,
+        actor_employee_id=assigned_employee_id,
+        details=details,
+    )
+
+
 def extract_reusable_artifact_for_issue(issue: dict[str, Any]) -> dict[str, Any] | None:
     metadata = parse_json(issue.get('metadata_json'))
     artifacts = metadata.get('artifacts') if isinstance(metadata.get('artifacts'), dict) else {}
@@ -902,12 +958,29 @@ def main() -> int:
                 })
                 continue
             if not issue.get('binding_key'):
-                report['skipped'].append({
+                human_out = svc.enqueue_human(
+                    issue_id=issue['issue_id'],
+                    human_type='action',
+                    prompt='这条 issue 当前缺少可用的主运行时绑定，系统无法继续自动派发。',
+                    required_input='请修复该角色实例的 primary runtime binding，或明确改派到其他可执行角色。',
+                )
+                changed = True
+                item = {
                     'kind': 'dispatch',
                     'issue_id': issue['issue_id'],
                     'issue_no': issue['issue_no'],
                     'reason': 'missing_primary_runtime_binding',
-                })
+                    'human_queue': human_out,
+                }
+                report['skipped'].append(item)
+                record_compensation_activity(
+                    svc,
+                    issue_id=issue['issue_id'],
+                    attempt_id=None,
+                    assigned_employee_id=issue.get('assigned_employee_id'),
+                    summary='System compensation: missing runtime binding moved to human queue',
+                    details=item,
+                )
                 continue
             last_attempt_rows = svc.db.fetch_all(
                 'SELECT id, input_snapshot_json FROM issue_attempts WHERE issue_id = ? ORDER BY attempt_no DESC LIMIT 1',
@@ -944,25 +1017,78 @@ def main() -> int:
                 elif next_role and next_role not in {'close', 'human_queue'}:
                     target_employee_key = pick_target_employee_key(svc, project_key=issue['project_key'], role=next_role)
                     if target_employee_key:
-                        route_out = svc.handoff_issue(
-                            issue_id=issue['issue_id'],
-                            to_employee_key=target_employee_key,
-                            note=f'auto route after {issue.get("role") or "unknown"} terminal callback',
-                            issue_type=str(metadata.get('issue_type') or 'normal'),
-                            risk_level=str(metadata.get('risk_level') or 'normal'),
-                        )
-                        item['route'] = {
-                            'to_role': next_role,
-                            'target_employee_key': target_employee_key,
-                            'routing_reason': route_out.get('routing_reason'),
-                        }
-                        changed = True
+                        try:
+                            route_out = svc.handoff_issue(
+                                issue_id=issue['issue_id'],
+                                to_employee_key=target_employee_key,
+                                note=f'auto route after {issue.get("role") or "unknown"} terminal callback',
+                                issue_type=str(metadata.get('issue_type') or 'normal'),
+                                risk_level=str(metadata.get('risk_level') or 'normal'),
+                            )
+                            item['route'] = {
+                                'to_role': next_role,
+                                'target_employee_key': target_employee_key,
+                                'routing_reason': route_out.get('routing_reason'),
+                            }
+                            changed = True
+                        except Exception as e:
+                            human_out = enqueue_route_failure_compensation(
+                                svc,
+                                issue_id=issue['issue_id'],
+                                from_role=issue.get('role'),
+                                next_role=next_role,
+                                reason=str(e),
+                            )
+                            item['route_error'] = str(e)
+                            item['human_queue'] = human_out
+                            changed = True
+                            record_compensation_activity(
+                                svc,
+                                issue_id=issue['issue_id'],
+                                attempt_id=last_attempt_id,
+                                assigned_employee_id=issue.get('assigned_employee_id'),
+                                summary='System compensation: route failure moved to human queue',
+                                details={'from_role': issue.get('role'), 'to_role': next_role, 'reason': str(e), 'human_queue': human_out},
+                            )
                     else:
+                        human_out = enqueue_route_failure_compensation(
+                            svc,
+                            issue_id=issue['issue_id'],
+                            from_role=issue.get('role'),
+                            next_role=next_role,
+                            reason=f'missing employee for role={next_role} project={issue["project_key"]}',
+                            missing_target=True,
+                        )
                         item['route_error'] = f'missing employee for role={next_role} project={issue["project_key"]}'
-                        report['errors'].append(item)
+                        item['human_queue'] = human_out
+                        changed = True
+                        record_compensation_activity(
+                            svc,
+                            issue_id=issue['issue_id'],
+                            attempt_id=last_attempt_id,
+                            assigned_employee_id=issue.get('assigned_employee_id'),
+                            summary='System compensation: missing route target moved to human queue',
+                            details={'from_role': issue.get('role'), 'to_role': next_role, 'reason': item['route_error'], 'human_queue': human_out},
+                        )
                 else:
+                    human_out = svc.enqueue_human(
+                        issue_id=issue['issue_id'],
+                        human_type='action',
+                        prompt='系统没有从这条 issue 的最新完成结果里推导出下一步该交给谁。',
+                        required_input='请明确下一步应该流转给哪个角色，或者直接关闭这条 issue。',
+                    )
                     item['reason'] = 'no_next_role_decision'
+                    item['human_queue'] = human_out
+                    changed = True
                     report['skipped'].append(item)
+                    record_compensation_activity(
+                        svc,
+                        issue_id=issue['issue_id'],
+                        attempt_id=last_attempt_id,
+                        assigned_employee_id=issue.get('assigned_employee_id'),
+                        summary='System compensation: missing next role moved to human queue',
+                        details=item,
+                    )
                 append_action({'at': report['ran_at'], **item})
                 if changed:
                     report['observed'].append(item)
@@ -1074,26 +1200,64 @@ def main() -> int:
                     elif next_role and next_role not in {'close', 'human_queue'}:
                         target_employee_key = pick_target_employee_key(svc, project_key=issue_ctx['project_key'], role=next_role)
                         if target_employee_key:
-                            route_out = svc.handoff_issue(
-                                issue_id=attempt['issue_id'],
-                                to_employee_key=target_employee_key,
-                                note=f'auto route after {attempt.get("role") or "unknown"} success',
-                                issue_type=str(metadata.get('issue_type') or 'normal'),
-                                risk_level=str(metadata.get('risk_level') or 'normal'),
-                            )
-                            route_item = {
-                                'kind': 'route',
-                                'issue_id': attempt['issue_id'],
-                                'issue_no': attempt['issue_no'],
-                                'from_role': attempt.get('role'),
-                                'to_role': next_role,
-                                'target_employee_key': target_employee_key,
-                                'routing_reason': route_out.get('routing_reason'),
-                            }
-                            item['route'] = route_item
-                            append_action({'at': report['ran_at'], **route_item})
+                            try:
+                                route_out = svc.handoff_issue(
+                                    issue_id=attempt['issue_id'],
+                                    to_employee_key=target_employee_key,
+                                    note=f'auto route after {attempt.get("role") or "unknown"} success',
+                                    issue_type=str(metadata.get('issue_type') or 'normal'),
+                                    risk_level=str(metadata.get('risk_level') or 'normal'),
+                                )
+                                route_item = {
+                                    'kind': 'route',
+                                    'issue_id': attempt['issue_id'],
+                                    'issue_no': attempt['issue_no'],
+                                    'from_role': attempt.get('role'),
+                                    'to_role': next_role,
+                                    'target_employee_key': target_employee_key,
+                                    'routing_reason': route_out.get('routing_reason'),
+                                }
+                                item['route'] = route_item
+                                append_action({'at': report['ran_at'], **route_item})
+                            except Exception as e:
+                                human_out = enqueue_route_failure_compensation(
+                                    svc,
+                                    issue_id=attempt['issue_id'],
+                                    from_role=attempt.get('role'),
+                                    next_role=next_role,
+                                    reason=str(e),
+                                )
+                                item['route_error'] = str(e)
+                                item['human_queue'] = human_out
+                                changed = True
+                                record_compensation_activity(
+                                    svc,
+                                    issue_id=attempt['issue_id'],
+                                    attempt_id=attempt['attempt_id'],
+                                    assigned_employee_id=attempt.get('assigned_employee_id'),
+                                    summary='System compensation: route failure moved to human queue',
+                                    details={'from_role': attempt.get('role'), 'to_role': next_role, 'reason': str(e), 'human_queue': human_out},
+                                )
                         else:
+                            human_out = enqueue_route_failure_compensation(
+                                svc,
+                                issue_id=attempt['issue_id'],
+                                from_role=attempt.get('role'),
+                                next_role=next_role,
+                                reason=f'missing employee for role={next_role} project={issue_ctx["project_key"]}',
+                                missing_target=True,
+                            )
                             item['route_error'] = f'missing employee for role={next_role} project={issue_ctx["project_key"]}'
+                            item['human_queue'] = human_out
+                            changed = True
+                            record_compensation_activity(
+                                svc,
+                                issue_id=attempt['issue_id'],
+                                attempt_id=attempt['attempt_id'],
+                                assigned_employee_id=attempt.get('assigned_employee_id'),
+                                summary='System compensation: missing route target moved to human queue',
+                                details={'from_role': attempt.get('role'), 'to_role': next_role, 'reason': item['route_error'], 'human_queue': human_out},
+                            )
                 elif out.get('observe_timeout'):
                     item['observe_timeout'] = out['observe_timeout']
                     if age_seconds >= STALE_ATTEMPT_SECONDS:

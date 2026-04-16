@@ -850,6 +850,7 @@
         agent_has_active_issue: '这个 Agent 目前已有活跃 issue 在处理中，系统暂时不再并发派发新的 issue 给它。',
         missing_expected_completion_signature: '这轮 run 缺少可识别的完成标记，worker 无法可靠判断它是否已经正常收口。',
         no_next_role_decision: '系统没有从本轮结果里得出下一步该交给谁，所以暂时停在当前状态。',
+        blocked_by_open_dependency: '这条 issue 仍被未完成的前置依赖阻塞，所以现在不会继续派发。',
       };
       if (map[reason]) return map[reason];
       if (typeof reason === 'string' && reason.startsWith('route not allowed:')) {

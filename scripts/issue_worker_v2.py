@@ -1034,49 +1034,6 @@ def main() -> int:
         for issue in ready_items:
             if dispatched_this_run >= MAX_DISPATCH_PER_RUN:
                 break
-            if issue.get('has_open_dependencies'):
-                report['skipped'].append({
-                    'kind': 'dispatch',
-                    'issue_id': issue['issue_id'],
-                    'issue_no': issue['issue_no'],
-                    'reason': 'blocked_by_open_dependency',
-                })
-                continue
-            current_agent_id = str(issue.get('agent_id') or '').strip()
-            if issue.get('agent_has_active_issue') or (current_agent_id and current_agent_id in occupied_agent_ids):
-                report['skipped'].append({
-                    'kind': 'dispatch',
-                    'issue_id': issue['issue_id'],
-                    'issue_no': issue['issue_no'],
-                    'reason': 'agent_has_active_issue',
-                    'agent_id': issue.get('agent_id'),
-                })
-                continue
-            if not issue.get('binding_key'):
-                human_out = svc.enqueue_human(
-                    issue_id=issue['issue_id'],
-                    human_type='action',
-                    prompt='这条 issue 当前缺少可用的主运行时绑定，系统无法继续自动派发。',
-                    required_input='请修复该角色实例的 primary runtime binding，或明确改派到其他可执行角色。',
-                )
-                changed = True
-                item = {
-                    'kind': 'dispatch',
-                    'issue_id': issue['issue_id'],
-                    'issue_no': issue['issue_no'],
-                    'reason': 'missing_primary_runtime_binding',
-                    'human_queue': human_out,
-                }
-                report['skipped'].append(item)
-                record_compensation_activity(
-                    svc,
-                    issue_id=issue['issue_id'],
-                    attempt_id=None,
-                    assigned_employee_id=issue.get('assigned_employee_id'),
-                    summary='System compensation: missing runtime binding moved to human queue',
-                    details=item,
-                )
-                continue
             last_attempt_rows = svc.db.fetch_all(
                 'SELECT id, input_snapshot_json FROM issue_attempts WHERE issue_id = ? ORDER BY attempt_no DESC LIMIT 1',
                 (issue['issue_id'],),
@@ -1188,6 +1145,49 @@ def main() -> int:
                 append_action({'at': report['ran_at'], **item})
                 if changed:
                     report['observed'].append(item)
+                continue
+            if issue.get('has_open_dependencies'):
+                report['skipped'].append({
+                    'kind': 'dispatch',
+                    'issue_id': issue['issue_id'],
+                    'issue_no': issue['issue_no'],
+                    'reason': 'blocked_by_open_dependency',
+                })
+                continue
+            current_agent_id = str(issue.get('agent_id') or '').strip()
+            if issue.get('agent_has_active_issue') or (current_agent_id and current_agent_id in occupied_agent_ids):
+                report['skipped'].append({
+                    'kind': 'dispatch',
+                    'issue_id': issue['issue_id'],
+                    'issue_no': issue['issue_no'],
+                    'reason': 'agent_has_active_issue',
+                    'agent_id': issue.get('agent_id'),
+                })
+                continue
+            if not issue.get('binding_key'):
+                human_out = svc.enqueue_human(
+                    issue_id=issue['issue_id'],
+                    human_type='action',
+                    prompt='这条 issue 当前缺少可用的主运行时绑定，系统无法继续自动派发。',
+                    required_input='请修复该角色实例的 primary runtime binding，或明确改派到其他可执行角色。',
+                )
+                changed = True
+                item = {
+                    'kind': 'dispatch',
+                    'issue_id': issue['issue_id'],
+                    'issue_no': issue['issue_no'],
+                    'reason': 'missing_primary_runtime_binding',
+                    'human_queue': human_out,
+                }
+                report['skipped'].append(item)
+                record_compensation_activity(
+                    svc,
+                    issue_id=issue['issue_id'],
+                    attempt_id=None,
+                    assigned_employee_id=issue.get('assigned_employee_id'),
+                    summary='System compensation: missing runtime binding moved to human queue',
+                    details=item,
+                )
                 continue
 
             skip_duplicate, duplicate_reason = should_skip_same_role_redispatch(issue, last_attempt_ctx)

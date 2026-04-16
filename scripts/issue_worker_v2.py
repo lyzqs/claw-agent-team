@@ -845,8 +845,7 @@ def main() -> int:
             if last_attempt_id:
                 metadata['retry_context'] = latest_attempt_context(svc, issue['issue_id'])
             issue['metadata_json'] = json.dumps(metadata, ensure_ascii=False)
-            session_key = canonical_session_key(project_key=issue.get('project_key') or 'shared', role=issue.get('role') or 'dev')
-            payload = build_worker_payload(issue, last_payload, session_key=session_key)
+            payload = build_worker_payload(issue, last_payload, session_key=str(issue.get('session_key') or ''))
             out = svc.dispatch_execution(
                 issue_id=issue['issue_id'],
                 runtime_binding_key=issue['binding_key'],

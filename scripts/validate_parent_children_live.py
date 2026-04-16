@@ -84,6 +84,12 @@ def main() -> int:
             'final_parent_status': final['status'],
             'final_parent_metadata': final['metadata_json'],
         }
+        for issue_id in [parent_issue_id, child1['issue_id'], child2['issue_id']]:
+            svc.db.conn.execute('DELETE FROM issue_activities WHERE issue_id = ?', (issue_id,))
+            svc.db.conn.execute('DELETE FROM issue_relations WHERE from_issue_id = ? OR to_issue_id = ?', (issue_id, issue_id))
+            svc.db.conn.execute('DELETE FROM issues WHERE id = ?', (issue_id,))
+        svc.db.conn.commit()
+        report['cleanup'] = 'validation issues deleted'
         print(json.dumps(report, ensure_ascii=False, indent=2))
     finally:
         svc.close()

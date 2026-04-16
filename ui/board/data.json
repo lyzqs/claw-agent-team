@@ -19,9 +19,9 @@
       "title": "人工审核测试",
       "priority": "p2",
       "status": "waiting_human_info",
-      "blocker_summary": "已确认，请直接流转当前issue到关闭",
-      "required_human_input": "已确认，请直接流转当前issue到关闭",
-      "updated_at_ms": 1776305688350
+      "blocker_summary": "Human requested more information",
+      "required_human_input": "Provide additional information",
+      "updated_at_ms": 1776313521944
     }
   ],
   "employee_view": [

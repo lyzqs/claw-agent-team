@@ -1,0 +1,14 @@
+[Unit]
+Description=Agent Team Prometheus for Grafana local observability
+After=network.target process-exporter.service prometheus-node-exporter.service
+Wants=process-exporter.service prometheus-node-exporter.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/prometheus --config.file=/opt/agent-team-grafana/prometheus/prometheus.yml --storage.tsdb.path=/var/lib/agent-team-prometheus --web.listen-address=127.0.0.1:19090 --storage.tsdb.retention.time=7d
+Restart=always
+RestartSec=2
+User=root
+
+[Install]
+WantedBy=multi-user.target

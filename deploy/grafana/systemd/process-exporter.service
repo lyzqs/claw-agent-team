@@ -1,0 +1,13 @@
+[Unit]
+Description=Process Exporter for per-process Prometheus metrics
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/process-exporter --config.path=/etc/process-exporter/process-exporter.yml --web.listen-address=127.0.0.1:9256
+Restart=always
+RestartSec=2
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -58,3 +58,32 @@ Worker observe loop should tolerate transient gateway/session polling timeouts, 
 - Related Files: scripts/issue_worker_v2.py, services/agent_team_service.py, /root/.openclaw/workspace/agent-team-prototype/execution_adapter.py
 
 ---
+
+## [ERR-20260416-003] exec-preflight-rejects-inline-python-validation
+
+**Logged**: 2026-04-16T12:55:00Z
+**Priority**: low
+**Status**: pending
+**Area**: infra
+
+### Summary
+OpenClaw exec preflight rejected a bundled validation command because it contained inline Python and chained interpreter validation.
+
+### Error
+```
+exec preflight: complex interpreter invocation detected; refusing to run without script preflight validation. Use a direct `python <file>.py` or `node <file>.js` command.
+```
+
+### Context
+- Operation: combined validation command for the Grafana issue attempt
+- Trigger: mixed shell command contained inline Python and multiple validation steps
+- Resolution used: split validation into direct `python3 scripts/validate_grafana_bundle.py`, `bash -n ...`, and `git status ...` commands
+
+### Suggested Fix
+Prefer direct script invocations or separate exec calls when validating repo changes. Avoid inline heredoc Python in exec when a standalone script already exists.
+
+### Metadata
+- Reproducible: yes
+- Related Files: scripts/validate_grafana_bundle.py
+
+---

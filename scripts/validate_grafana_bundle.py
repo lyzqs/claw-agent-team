@@ -23,6 +23,51 @@ EXPECTED_DASHBOARDS = {
             "topk(10",
         ],
     },
+    "arena-business-overview.json": {
+        "uid": "at-arena-business-overview",
+        "snippets": [
+            "arena_portfolio_market_value",
+            "arena_portfolio_unrealized_pnl",
+            "arena_holdings_total",
+            "arena_executed_trades_total",
+            "arena_candidates_total",
+            "arena_trade_tickets_total",
+            "arena_pending_trades_total",
+            "arena_runtime_snapshot_age_seconds",
+        ],
+    },
+    "arena-runtime-execution-flow.json": {
+        "uid": "at-arena-runtime-execution-flow",
+        "snippets": [
+            "arena_auto_review_queue_total",
+            "arena_dashboard_http_health",
+            "arena_runtime_snapshot_age_seconds",
+            "arena_order_lifecycle_latency_seconds",
+            "arena_runtime_events_total",
+            "arena_runtime_loop_duration_seconds",
+            "arena_ticket_blockers_total",
+        ],
+    },
+    "arena-position-holdings-exits.json": {
+        "uid": "at-arena-position-holdings-exits",
+        "snippets": [
+            "arena_holdings_total",
+            "arena_exit_playbooks_total",
+            "arena_rotation_candidates_total",
+            "arena_portfolio_market_value",
+            "arena_portfolio_unrealized_pnl",
+            "arena_executed_trades_total",
+            "arena_pending_trades_total",
+        ],
+    },
+    "arena-review-validation-iteration.json": {
+        "uid": "at-arena-review-validation-iteration",
+        "snippets": [
+            "arena_validation_outcomes_total",
+            "arena_news_score_distribution",
+            "arena_runtime_events_total",
+        ],
+    },
     "newapi-business-overview.json": {
         "uid": "at-newapi-business-overview",
         "snippets": [
@@ -151,6 +196,7 @@ def main() -> None:
     for unit_path in [
         BUNDLE_ROOT / "systemd" / "process-exporter.service",
         BUNDLE_ROOT / "systemd" / "agent-team-prometheus.service",
+        BUNDLE_ROOT / "systemd" / "arena-metrics-exporter.service",
         BUNDLE_ROOT / "systemd" / "newapi-metrics-exporter.service",
         BUNDLE_ROOT / "systemd" / "uptime-kuma-metrics-exporter.service",
     ]:
@@ -161,7 +207,7 @@ def main() -> None:
 
     prometheus_yaml = load_yaml(BUNDLE_ROOT / "prometheus" / "prometheus.yml")
     jobs = {item["job_name"] for item in prometheus_yaml.get("scrape_configs", [])}
-    for required_job in {"newapi-exporter", "uptime-kuma-exporter"}:
+    for required_job in {"newapi-exporter", "arena-exporter", "uptime-kuma-exporter"}:
         if required_job not in jobs:
             raise ValueError(f"prometheus scrape config missing {required_job} job")
 
@@ -173,7 +219,7 @@ def main() -> None:
 
     providers_yaml = load_yaml(BUNDLE_ROOT / "provisioning" / "dashboards" / "dashboard-provider.yaml")
     folders = {item["folder"] for item in providers_yaml.get("providers", [])}
-    for folder in {"AT | 10 Platform | Host-System", "AT | 21 Project | NewAPI", "AT | 30 Ops | Uptime-Kuma"}:
+    for folder in {"AT | 10 Platform | Host-System", "AT | 21 Project | NewAPI", "AT | 22 Project | Arena", "AT | 30 Ops | Uptime-Kuma"}:
         if folder not in folders:
             raise ValueError(f"dashboard provider missing folder: {folder}")
 

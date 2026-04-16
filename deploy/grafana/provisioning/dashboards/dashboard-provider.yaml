@@ -21,6 +21,16 @@ providers:
     options:
       path: /var/lib/grafana/dashboards/agent-team-grafana/newapi
 
+  - name: agent-team-grafana-arena
+    orgId: 1
+    folder: AT | 22 Project | Arena
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/agent-team-grafana/arena
+
   - name: agent-team-grafana-uptime-kuma
     orgId: 1
     folder: AT | 30 Ops | Uptime-Kuma

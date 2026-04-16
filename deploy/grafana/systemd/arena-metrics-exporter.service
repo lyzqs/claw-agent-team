@@ -1,0 +1,15 @@
+[Unit]
+Description=Arena metrics exporter for Prometheus
+After=network.target instreet-arena-dashboard.service
+Wants=instreet-arena-dashboard.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.openclaw/workspace-agent-team
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/arena_metrics_exporter.py --runtime-path /root/.openclaw/workspace-inStreet/arena/data/runtime.json --run-history-path /root/.openclaw/workspace-inStreet/arena/data/logs/runs.jsonl --order-audit-path /root/.openclaw/workspace-inStreet/arena/data/order_audit.jsonl --trade-tickets-path /root/.openclaw/workspace-inStreet/arena/data/trade_tickets.jsonl --ai-decisions-path /root/.openclaw/workspace-inStreet/arena/data/ai_decisions.jsonl --dashboard-health-url http://127.0.0.1:8788/health --listen-host 127.0.0.1 --listen-port 19150 --env local --project agent-team-grafana --system arena --service instreet-arena --job arena-exporter
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

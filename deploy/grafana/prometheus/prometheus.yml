@@ -23,6 +23,11 @@ scrape_configs:
       - targets:
           - 127.0.0.1:19100
 
+  - job_name: arena-exporter
+    static_configs:
+      - targets:
+          - 127.0.0.1:19150
+
   - job_name: uptime-kuma-exporter
     static_configs:
       - targets:

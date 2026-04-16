@@ -25,7 +25,7 @@ class BoardQueryService:
                  LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id
                  LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
                  LEFT JOIN runtime_bindings rb ON rb.employee_id = ei.id AND rb.is_primary = 1
-                 WHERE 1=1'''
+                 WHERE p.id IS NOT NULL'''
         params: list[Any] = []
         if project_key:
             sql += ' AND p.project_key = ?'

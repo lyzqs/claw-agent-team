@@ -1182,20 +1182,36 @@
       const skipped = Array.isArray(report.skipped) ? report.skipped : [];
       const cancelled = Array.isArray(report.cancelled) ? report.cancelled : [];
       const errors = Array.isArray(report.errors) ? report.errors : [];
-      const skipItems = skipped.slice(-6).map(item => `<div class="detail-item"><div class="detail-head"><span>#${item.issue_no || '?'} ${item.kind || 'dispatch'}</span><span>${item.reason || 'skipped'}</span></div><div class="detail-sub">${item.role || item.agent_id || ''}</div></div>`).join('');
-      const errorItems = errors.slice(-4).map(item => `<div class="detail-item"><div class="detail-head"><span>worker error</span></div><div class="detail-sub">${item.message || JSON.stringify(item)}</div></div>`).join('');
       return `
         <div class="detail-grid">
           <div class="json-lite-item"><div class="json-lite-key">ran_at</div><div>${formatIsoText(report.ran_at)}</div></div>
           <div class="json-lite-item"><div class="json-lite-key">mode</div><div>${report.mode || 'unknown'}</div></div>
-          <div class="json-lite-item"><div class="json-lite-key">dispatched</div><div>${dispatched.length}</div></div>
-          <div class="json-lite-item"><div class="json-lite-key">observed</div><div>${observed.length}</div></div>
-          <div class="json-lite-item"><div class="json-lite-key">skipped</div><div>${skipped.length}</div></div>
-          <div class="json-lite-item"><div class="json-lite-key">cancelled</div><div>${cancelled.length}</div></div>
-          <div class="json-lite-item"><div class="json-lite-key">errors</div><div>${errors.length}</div></div>
+          <div class="json-lite-item"><div class="json-lite-key">dispatch</div><div>${dispatched.length}</div></div>
+          <div class="json-lite-item"><div class="json-lite-key">observe</div><div>${observed.length}</div></div>
+          <div class="json-lite-item"><div class="json-lite-key">skip</div><div>${skipped.length}</div></div>
+          <div class="json-lite-item"><div class="json-lite-key">error</div><div>${errors.length}</div></div>
         </div>
-        ${skipItems ? `<div style="margin-top:12px;"><div class="k">最近跳过原因</div><div class="detail-stack" style="margin-top:8px;">${skipItems}</div></div>` : ''}
-        ${errorItems ? `<div style="margin-top:12px;"><div class="k">最近错误</div><div class="detail-stack" style="margin-top:8px;">${errorItems}</div></div>` : ''}
+      `;
+    }
+
+    function renderWorkerReportDetails(report) {
+      if (!report || typeof report !== 'object') return '<div class="queue-empty">暂无 worker 详情</div>';
+      const dispatched = Array.isArray(report.dispatched) ? report.dispatched : [];
+      const observed = Array.isArray(report.observed) ? report.observed : [];
+      const skipped = Array.isArray(report.skipped) ? report.skipped : [];
+      const cancelled = Array.isArray(report.cancelled) ? report.cancelled : [];
+      const errors = Array.isArray(report.errors) ? report.errors : [];
+      const renderItems = (items, title) => items.length ? `<div class="modal-section"><h3>${title}</h3><div class="json-lite">${items.map(item => `<div class="json-lite-item">${renderNestedValue(item)}</div>`).join('')}</div></div>` : '';
+      return `
+        <div class="modal-section">
+          <h3>摘要</h3>
+          ${summarizeWorkerReport(report)}
+        </div>
+        ${renderItems(skipped, '跳过原因')}
+        ${renderItems(errors, '错误')}
+        ${renderItems(dispatched, '本轮 dispatch')}
+        ${renderItems(observed, '本轮 observe')}
+        ${renderItems(cancelled, '本轮 cancel')}
       `;
     }
 
@@ -1281,7 +1297,7 @@
       document.getElementById('statProjects').onclick = () => openInfoModal('项目说明', document.getElementById('projectMeta').innerHTML || '暂无项目');
       document.getElementById('statRoles').onclick = () => openInfoModal('固定角色', document.getElementById('roleMeta').outerHTML || '暂无角色');
       document.getElementById('statInstances').onclick = () => openInfoModal('角色实例说明', document.getElementById('instanceMeta').innerHTML || '暂无实例');
-      document.getElementById('statAgents').onclick = () => openInfoModal('运行态摘要', document.getElementById('runtimeSummary').innerHTML || '暂无摘要');
+      document.getElementById('statAgents').onclick = () => openInfoModal('运行态摘要', renderWorkerReportDetails(workerReport));
     }
 
     function getAllIssuesEnriched() {

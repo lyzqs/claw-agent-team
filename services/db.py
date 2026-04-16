@@ -152,6 +152,7 @@ class AgentTeamDB:
         if not db_path.exists():
             raise AgentTeamServiceError(f'DB missing: {db_path}')
         self.conn = sqlite3.connect(db_path)
+        self.conn.execute('PRAGMA foreign_keys = ON')
         self.conn.row_factory = sqlite3.Row
         ensure_issue_status_schema(self.conn)
         ensure_attempt_callback_schema(self.conn)

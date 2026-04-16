@@ -545,8 +545,10 @@ class AgentTeamService:
                 del registry[registry_key]
 
         try:
+            self.db.conn.execute('DELETE FROM issues WHERE project_id = ?', (project['id'],))
             if employee_ids:
                 placeholders = ','.join('?' for _ in employee_ids)
+                self.db.conn.execute(f'DELETE FROM runtime_bindings WHERE employee_id IN ({placeholders})', tuple(employee_ids))
                 self.db.conn.execute(f'DELETE FROM issue_activities WHERE actor_employee_id IN ({placeholders})', tuple(employee_ids))
                 self.db.conn.execute(f'DELETE FROM issue_checkpoints WHERE created_by_employee_id IN ({placeholders})', tuple(employee_ids))
                 self.db.conn.execute(f'DELETE FROM issue_relations WHERE created_by_employee_id IN ({placeholders})', tuple(employee_ids))

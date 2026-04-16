@@ -1306,10 +1306,14 @@
         const agent = issueAgentMap(issue.id);
         return {
           ...item,
+          issue: {
+            ...issue,
+            project_key: issue.project_key || (boardData?.project_view || []).find(p => p.id === issue.project_id)?.project_key || issue.project_id || '',
+          },
           current_agent_id: agent?.agent_id || 'unassigned',
           current_agent_role: agent?.role || roleOfAgent(agent?.agent_id || ''),
           current_agent_label: displayAgentName(agent?.agent_id || 'unassigned'),
-          current_agent_session: agent?.session_key || '',
+          current_agent_session: agent?.session_key || issue.session_key || '',
         };
       });
     }

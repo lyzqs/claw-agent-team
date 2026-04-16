@@ -135,11 +135,39 @@ def should_skip_same_role_redispatch(issue: dict[str, Any], last_attempt_ctx: di
     last_role = str(last_attempt_ctx.get('attempt_role') or '')
     if not issue_role or issue_role != last_role:
         return False, ''
+
+    terminal_payload = last_attempt_ctx.get('wait_payload') if isinstance(last_attempt_ctx.get('wait_payload'), dict) and last_attempt_ctx.get('wait_payload') else None
+    if terminal_payload is None and isinstance(last_attempt_ctx.get('payload'), dict):
+        terminal_payload = last_attempt_ctx.get('payload')
+    if isinstance(terminal_payload, dict):
+        suggested_next = str(terminal_payload.get('suggested_next_role') or '').strip()
+        needs_human = bool(terminal_payload.get('needs_human')) or str(terminal_payload.get('status') or '').strip() == 'needs_human'
+        if needs_human:
+            return False, ''
+        if suggested_next and suggested_next != issue_role:
+            return False, ''
+
     issue_updated = int(issue.get('updated_at_ms') or 0)
     last_updated = int(last_attempt_ctx.get('updated_at_ms') or 0)
     if issue_updated > last_updated:
         return False, ''
     return True, 'same_role_succeeded_attempt_already_exists_without_new_issue_update'
+
+
+def pending_terminal_handoff(last_attempt_ctx: dict[str, Any], *, current_role: str | None) -> dict[str, Any]:
+    if str(last_attempt_ctx.get('status') or '') != 'succeeded':
+        return {}
+    payload = last_attempt_ctx.get('wait_payload') if isinstance(last_attempt_ctx.get('wait_payload'), dict) and last_attempt_ctx.get('wait_payload') else None
+    if payload is None and isinstance(last_attempt_ctx.get('payload'), dict):
+        payload = last_attempt_ctx.get('payload')
+    if not isinstance(payload, dict):
+        return {}
+    suggested_next = str(payload.get('suggested_next_role') or '').strip()
+    if not suggested_next:
+        return {}
+    if suggested_next == str(current_role or ''):
+        return {}
+    return payload
 
 
 
@@ -876,6 +904,54 @@ def main() -> int:
             last_attempt_ctx = latest_attempt_context(svc, issue['issue_id']) if last_attempt_id else {}
             if last_attempt_ctx:
                 metadata['retry_context'] = last_attempt_ctx
+            pending_handoff = pending_terminal_handoff(last_attempt_ctx, current_role=issue.get('role'))
+            if pending_handoff:
+                metadata['prior_handoff'] = pending_handoff
+                if isinstance(pending_handoff.get('suggested_next_role'), str) and pending_handoff.get('suggested_next_role').strip():
+                    metadata['suggested_next_role'] = pending_handoff.get('suggested_next_role').strip()
+                if isinstance(pending_handoff.get('risk_level'), str) and pending_handoff.get('risk_level').strip():
+                    metadata['risk_level'] = pending_handoff.get('risk_level').strip()
+                metadata['needs_human'] = bool(pending_handoff.get('needs_human')) or str(pending_handoff.get('status') or '').strip() == 'needs_human'
+                next_role = decide_next_role(current_role=issue.get('role'), metadata=metadata)
+                item = {
+                    'kind': 'pending_terminal_handoff',
+                    'issue_id': issue['issue_id'],
+                    'issue_no': issue['issue_no'],
+                    'from_role': issue.get('role'),
+                    'next_role_decision': next_role,
+                    'last_attempt_no': last_attempt_ctx.get('attempt_no'),
+                }
+                if next_role == 'close':
+                    closed = svc.close_issue(issue_id=issue['issue_id'], resolution='completed')
+                    item['close'] = {'resolution': closed.get('resolution'), 'status': closed.get('status')}
+                    changed = True
+                elif next_role and next_role not in {'close', 'human_queue'}:
+                    target_employee_key = pick_target_employee_key(svc, project_key=issue['project_key'], role=next_role)
+                    if target_employee_key:
+                        route_out = svc.handoff_issue(
+                            issue_id=issue['issue_id'],
+                            to_employee_key=target_employee_key,
+                            note=f'auto route after {issue.get("role") or "unknown"} terminal callback',
+                            issue_type=str(metadata.get('issue_type') or 'normal'),
+                            risk_level=str(metadata.get('risk_level') or 'normal'),
+                        )
+                        item['route'] = {
+                            'to_role': next_role,
+                            'target_employee_key': target_employee_key,
+                            'routing_reason': route_out.get('routing_reason'),
+                        }
+                        changed = True
+                    else:
+                        item['route_error'] = f'missing employee for role={next_role} project={issue["project_key"]}'
+                        report['errors'].append(item)
+                else:
+                    item['reason'] = 'no_next_role_decision'
+                    report['skipped'].append(item)
+                append_action({'at': report['ran_at'], **item})
+                if changed:
+                    report['observed'].append(item)
+                continue
+
             skip_duplicate, duplicate_reason = should_skip_same_role_redispatch(issue, last_attempt_ctx)
             if skip_duplicate:
                 report['skipped'].append({

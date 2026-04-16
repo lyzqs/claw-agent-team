@@ -41,7 +41,13 @@ class BoardQueryService:
         }
 
     def get_issue(self, *, issue_id: str) -> dict[str, Any]:
-        issue = self.db.get_one('SELECT * FROM issues WHERE id = ?', (issue_id,))
+        issue = self.db.get_one(
+            '''SELECT i.*, p.project_key
+               FROM issues i
+               LEFT JOIN projects p ON p.id = i.project_id
+               WHERE i.id = ?''',
+            (issue_id,),
+        )
         attempts = self.db.fetch_all('SELECT * FROM issue_attempts WHERE issue_id = ? ORDER BY attempt_no', (issue_id,))
         callbacks_by_attempt: dict[str, list[dict[str, Any]]] = {}
         for attempt in attempts:

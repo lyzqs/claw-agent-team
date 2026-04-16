@@ -105,6 +105,19 @@
       color:var(--muted);
       box-shadow: var(--shadow-soft);
     }
+    .chip-row {
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:8px;
+    }
+    .snapshot-chip {
+      font-size:12px;
+      color:#475467;
+      background:#f8fafc;
+      border-color:#dbe2ea;
+      max-width:100%;
+    }
     .tag-running { color:#166534; background:#ecfdf3; border-color:#bbf7d0; }
     .tag-paused { color:#991b1b; background:#fff1f2; border-color:#fecdd3; }
     .layout-shell {
@@ -468,7 +481,10 @@
         <button id="reloadBtn">重新加载</button>
         <button id="runBtn" class="success">恢复流程</button>
         <button id="pauseBtn" class="danger">暂停流程</button>
-        <span id="workflowChip" class="chip">流程状态加载中…</span>
+        <div class="chip-row">
+          <span id="workflowChip" class="chip">流程状态加载中…</span>
+          <span id="snapshotChip" class="chip snapshot-chip">快照信息加载中…</span>
+        </div>
       </div>
     </div>
 
@@ -661,6 +677,7 @@
     let boardData = null;
     let humanQueueData = { items: [], total: 0 };
     let workflowControl = { mode: 'running' };
+    let snapshotMeta = { source: 'unknown', generated_at: null, schema_version: null, fallback: false };
     let filteredIssues = [];
     let selectedIssueId = null;
     let currentPage = 1;
@@ -701,9 +718,11 @@
       return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
     }
 
-    function formatTime(ms) {
-      if (!ms) return '—';
-      return new Date(ms).toLocaleString('zh-CN', { hour12: false });
+    function formatIsoText(value) {
+      if (!value) return '—';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleString('zh-CN', { hour12: false });
     }
 
     function isPaused() { return workflowControl?.mode === 'paused'; }
@@ -998,6 +1017,9 @@
       const chip = document.getElementById('workflowChip');
       chip.textContent = workflowControl.mode === 'paused' ? '总流程已暂停' : '总流程运行中';
       chip.className = `chip ${workflowControl.mode === 'paused' ? 'tag-paused' : 'tag-running'}`;
+      const snapshotChip = document.getElementById('snapshotChip');
+      const snapshotSource = snapshotMeta.fallback ? 'fallback-json' : (snapshotMeta.source || 'api');
+      snapshotChip.textContent = `快照 ${snapshotMeta.schema_version || 'unknown'} · ${snapshotSource} · ${formatIsoText(snapshotMeta.generated_at)}`;
       document.getElementById('projectMeta').innerHTML = projects.length
         ? `<div class="detail-stack">${projects.map(p => `<div class="detail-item"><div class="detail-head"><span>${p.name}</span><span>${p.project_key}</span></div><div class="detail-sub">总 Issue ${p.total_issues}，已关闭 ${p.closed_issues}，Agent 队列 ${p.agent_queue_issues}，人工队列 ${p.human_queue_issues}</div></div>`).join('')}</div>`
         : '暂无项目';
@@ -1348,29 +1370,19 @@
     async function loadData() {
       try {
         const snapshotRes = await apiGet(`/api/board-snapshot?t=${Date.now()}`);
-        if (snapshotRes.ok && snapshotRes.result) {
-          boardData = snapshotRes.result.board || {};
-          issuesData = snapshotRes.result.issues || [];
-          workflowControl = snapshotRes.result.workflow_control || { mode: 'running' };
-          humanQueueData = { items: boardData.human_queue || [], total: (boardData.human_queue || []).length };
-        } else {
-          const boardUrl = new URL(`/board/data.json?t=${Date.now()}`, window.location.origin).toString();
-          const issuesUrl = new URL(`/board/issues.json?t=${Date.now()}`, window.location.origin).toString();
-          const [boardRes, issuesRes, controlRes, humanRes] = await Promise.all([
-            fetch(boardUrl),
-            fetch(issuesUrl),
-            apiGet('/api/workflow-control'),
-            apiGet('/api/human-queue'),
-          ]);
-          if (!boardRes.ok) throw new Error(`board HTTP ${boardRes.status}`);
-          if (!issuesRes.ok) throw new Error(`issues HTTP ${issuesRes.status}`);
-          if (!controlRes.ok) throw new Error(controlRes.error || 'workflow control load failed');
-          if (!humanRes.ok) throw new Error(humanRes.error || 'human queue load failed');
-          boardData = await boardRes.json();
-          issuesData = await issuesRes.json();
-          workflowControl = controlRes.result;
-          humanQueueData = humanRes.result;
+        if (!snapshotRes.ok || !snapshotRes.result) {
+          throw new Error(snapshotRes.error || 'board snapshot load failed');
         }
+        boardData = snapshotRes.result.board || {};
+        issuesData = snapshotRes.result.issues || [];
+        workflowControl = snapshotRes.result.workflow_control || { mode: 'running' };
+        humanQueueData = { items: boardData.human_queue || [], total: (boardData.human_queue || []).length };
+        snapshotMeta = {
+          source: snapshotRes.result.source || 'agent-team.db',
+          generated_at: snapshotRes.result.generated_at || null,
+          schema_version: snapshotRes.result.schema_version || null,
+          fallback: false,
+        };
         renderSummary();
         renderHumanQueuePanel();
         renderAnalytics();
@@ -1383,6 +1395,8 @@
         const chip = document.getElementById('workflowChip');
         chip.textContent = `加载失败：${err.message}`;
         chip.className = 'chip tag-paused';
+        const snapshotChip = document.getElementById('snapshotChip');
+        snapshotChip.textContent = '快照加载失败';
         console.error(err);
       }
     }

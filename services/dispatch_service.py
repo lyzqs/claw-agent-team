@@ -304,6 +304,43 @@ class DispatchService:
             (json.dumps(issue_metadata, ensure_ascii=False), ts, attempt['issue_id']),
         )
 
+        if phase == 'terminal_handoff':
+            normalized_payload = dict(payload) if isinstance(payload, dict) else {}
+            suggested_next_role = str(normalized_payload.get('suggested_next_role') or default_next_role_for(metadata.get('attempt_role')))
+            normalized_payload['suggested_next_role'] = suggested_next_role
+            normalized_payload.setdefault('artifacts', [])
+            normalized_payload.setdefault('blocking_findings', [])
+            normalized_payload.setdefault('status', 'done')
+            normalized_payload.setdefault('risk_level', 'normal')
+            normalized_payload.setdefault('needs_human', False)
+            normalized_payload.pop('create_issue_proposal', None)
+            normalized_payload.pop('create_issue_proposals', None)
+            normalized_payload.setdefault('summary', normalized_payload.get('reason') or 'Terminal callback accepted')
+            issue_current = self.db.get_one('SELECT status, blocker_summary, required_human_input FROM issues WHERE id = ?', (attempt['issue_id'],))
+            if normalized_payload.get('needs_human') or str(normalized_payload.get('status') or '').strip() == 'needs_human':
+                human_request = derive_human_queue_request(normalized_payload)
+                next_issue_status = WAITING_HUMAN_STATUS_BY_TYPE[human_request['human_type']]
+                blocker_summary = human_request['prompt']
+                required_human_input = human_request['required_input']
+                closed_at = None
+            else:
+                next_issue_status = 'review' if str(issue_current['status'] or '') not in WAITING_HUMAN_STATUSES else str(issue_current['status'])
+                blocker_summary = None if next_issue_status == 'review' else issue_current['blocker_summary']
+                required_human_input = None if next_issue_status == 'review' else issue_current['required_human_input']
+                closed_at = None
+            output_snapshot = {
+                'source': 'callback_terminal',
+                'payload': normalized_payload,
+            }
+            self.db.conn.execute(
+                'UPDATE issue_attempts SET status = ?, ended_at_ms = ?, result_summary = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
+                ('succeeded', ts, str(normalized_payload.get('summary') or normalized_payload.get('reason') or 'Terminal callback accepted'), json.dumps(output_snapshot, ensure_ascii=False), 'callback_terminal', ts, attempt_id),
+            )
+            self.db.conn.execute(
+                'UPDATE issues SET status = ?, closed_at_ms = ?, blocker_summary = ?, required_human_input = ?, updated_at_ms = ? WHERE id = ?',
+                (next_issue_status, closed_at, blocker_summary, required_human_input, ts, attempt['issue_id']),
+            )
+
         self._record_checkpoint(
             issue_id=attempt['issue_id'],
             attempt_id=attempt_id,

@@ -725,6 +725,13 @@
       return d.toLocaleString('zh-CN', { hour12: false });
     }
 
+    function formatTime(ms) {
+      if (!ms) return '—';
+      const d = new Date(ms);
+      if (Number.isNaN(d.getTime())) return String(ms);
+      return d.toLocaleString('zh-CN', { hour12: false });
+    }
+
     function isPaused() { return workflowControl?.mode === 'paused'; }
 
     function roleOfAgent(agentId) {
@@ -753,6 +760,7 @@
       const url = new URL(path, window.location.origin).toString();
       const res = await fetch(url, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
@@ -761,7 +769,9 @@
 
     async function apiGet(path) {
       const url = new URL(path, window.location.origin).toString();
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+      });
       return await res.json();
     }
 

@@ -87,3 +87,32 @@ Prefer direct script invocations or separate exec calls when validating repo cha
 - Related Files: scripts/validate_grafana_bundle.py
 
 ---
+
+## [ERR-20260416-004] board-issues-json-is-list-not-dict
+
+**Logged**: 2026-04-16T15:27:00Z
+**Priority**: low
+**Status**: pending
+**Area**: backend
+
+### Summary
+A quick inspection command failed because `ui/board/issues.json` is a top-level list of issue-context objects, not a dict with an `issues` key.
+
+### Error
+```
+AttributeError: 'list' object has no attribute 'get'
+```
+
+### Context
+- Operation: ad-hoc Python inspection of `/root/.openclaw/workspace-agent-team/ui/board/issues.json`
+- Mistake: assumed the file shape matched `ui/board/data.json`
+- Resolution used: iterate the top-level list and read `item["issue"]`
+
+### Suggested Fix
+When inspecting board export files, check JSON top-level type first before assuming a schema. `data.json` and `issues.json` use different shapes.
+
+### Metadata
+- Reproducible: yes
+- Related Files: ui/board/issues.json, ui/board/data.json
+
+---

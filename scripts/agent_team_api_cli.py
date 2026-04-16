@@ -93,6 +93,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument('issue_id')
     s.add_argument('--resolution', choices=['approve', 'reject', 'needs_info'], required=True)
     s.add_argument('--note', default='')
+    s.add_argument('--next-employee-key', default='')
+    s.add_argument('--next-role', default='')
 
     return p
 
@@ -177,7 +179,15 @@ def main() -> int:
                 )
             )
         elif args.cmd == 'resolve-human':
-            print_json(svc.resolve_human_action(issue_id=args.issue_id, resolution=args.resolution, note=args.note))
+            print_json(
+                svc.resolve_human_action(
+                    issue_id=args.issue_id,
+                    resolution=args.resolution,
+                    note=args.note,
+                    next_employee_key=args.next_employee_key,
+                    next_role=args.next_role,
+                )
+            )
         else:
             raise SystemExit(f'Unknown command: {args.cmd}')
         return 0

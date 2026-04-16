@@ -197,6 +197,8 @@ class Handler(BaseHTTPRequestHandler):
                     issue_id=payload['issue_id'],
                     resolution=payload['resolution'],
                     note=payload.get('note', ''),
+                    next_employee_key=payload.get('next_employee_key'),
+                    next_role=payload.get('next_role'),
                 )
             elif parsed.path == '/api/human/enqueue':
                 out = svc.enqueue_human(

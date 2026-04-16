@@ -425,8 +425,22 @@ class AgentTeamService:
             required_input=required_input,
         )
 
-    def resolve_human_action(self, *, issue_id: str, resolution: str, note: str = '') -> dict[str, Any]:
-        return self.human_queue.resolve_human_action(issue_id=issue_id, resolution=resolution, note=note)
+    def resolve_human_action(
+        self,
+        *,
+        issue_id: str,
+        resolution: str,
+        note: str = '',
+        next_employee_key: str | None = None,
+        next_role: str | None = None,
+    ) -> dict[str, Any]:
+        return self.human_queue.resolve_human_action(
+            issue_id=issue_id,
+            resolution=resolution,
+            note=note,
+            next_employee_key=next_employee_key,
+            next_role=next_role,
+        )
 
     def get_issue_activity(self, *, issue_id: str) -> dict[str, Any]:
         return self.board_query.get_issue_activity(issue_id=issue_id)

@@ -804,10 +804,22 @@
       showToast('Retry 下一步补 payload 编辑器后即可完整重试。', false);
     }
 
-    async function resolveHuman(issueId, resolution, note='') {
-      const out = await apiPost('/api/human/resolve', { issue_id: issueId, resolution, note });
+    async function resolveHuman(issueId, resolution, note='', nextEmployeeKey='', nextRole='') {
+      const out = await apiPost('/api/human/resolve', { issue_id: issueId, resolution, note, next_employee_key: nextEmployeeKey, next_role: nextRole });
       await loadData();
       return out;
+    }
+
+    function humanRouteOptions(item) {
+      const options = [
+        { value: '', label: '默认回原处理角色' },
+        { value: 'pm', label: '流转给 PM' },
+        { value: 'dev', label: '流转给 Dev' },
+        { value: 'qa', label: '流转给 QA' },
+        { value: 'ops', label: '流转给 Ops' },
+        { value: 'ceo', label: '流转给 CEO' },
+      ];
+      return `<select class="human-route-select" data-issue-id="${item.id}">${options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}</select>`;
     }
 
     function renderHumanQueuePanel() {
@@ -828,6 +840,7 @@
           </div>
           <div><strong>Blocker:</strong> ${item.blocker_summary || ''}</div>
           <div style="margin-top:6px;"><strong>需要你提供:</strong> ${item.required_human_input || ''}</div>
+          <div style="margin-top:8px;"><strong>批准后流转:</strong> ${humanRouteOptions(item)}</div>
           <div class="queue-actions">
             <button class="success" onclick="window.resolveQueueItem('${item.id}','approve')">批准 / 已确认</button>
             <button class="secondary" onclick="window.resolveQueueItem('${item.id}','needs_info')">继续补信息</button>
@@ -1373,7 +1386,12 @@
     }
     window.resolveQueueItem = async function(issueId, resolution) {
       const note = resolution === 'needs_info' ? prompt('请补充需要用户继续提供的信息', '') || '' : '';
-      const out = await resolveHuman(issueId, resolution, note);
+      let nextRole = '';
+      if (resolution === 'approve') {
+        const select = document.querySelector(`.human-route-select[data-issue-id="${issueId}"]`);
+        nextRole = select?.value || '';
+      }
+      const out = await resolveHuman(issueId, resolution, note, '', nextRole);
       showToast(out.ok ? '已处理待确认事项' : `处理失败: ${out.error || 'unknown error'}`, !out.ok);
     }
 

@@ -833,6 +833,88 @@
       return AGENT_LABELS[agentId] || agentId;
     }
 
+    function roleLabel(role) {
+      const map = { pm: 'PM', dev: 'Dev', qa: 'QA', ops: 'Ops', ceo: 'CEO', human_queue: '人工队列' };
+      return map[role] || role || '未知角色';
+    }
+
+    function safeParseJson(raw) {
+      if (!raw) return {};
+      try { return JSON.parse(raw) || {}; } catch { return {}; }
+    }
+
+    function humanizeWorkerReason(reason, item = {}) {
+      const map = {
+        same_role_succeeded_attempt_already_exists_without_new_issue_update: '同一角色上一轮已经成功完成，而且 issue 没有新变化，所以这轮不会重复派发。',
+        missing_primary_runtime_binding: '当前 issue 绑定的角色实例没有可用的主运行时绑定，所以系统暂时无法继续派发。',
+        agent_has_active_issue: '这个 Agent 目前已有活跃 issue 在处理中，系统暂时不再并发派发新的 issue 给它。',
+        missing_expected_completion_signature: '这轮 run 缺少可识别的完成标记，worker 无法可靠判断它是否已经正常收口。',
+        no_next_role_decision: '系统没有从本轮结果里得出下一步该交给谁，所以暂时停在当前状态。',
+      };
+      if (map[reason]) return map[reason];
+      if (typeof reason === 'string' && reason.startsWith('route not allowed:')) {
+        const m = reason.match(/route not allowed:\s*([a-z_]+)\s*->\s*([a-z_]+)/i);
+        if (m) return `当前路由规则不允许从 ${roleLabel(m[1])} 直接流转到 ${roleLabel(m[2])}，所以 issue 被卡住了。`;
+      }
+      if (typeof reason === 'string' && reason.startsWith('high risk routes must')) {
+        return '当前被标记为高风险，只允许升级到 CEO 或进入人工确认，不能直接继续自动流转。';
+      }
+      return reason || '系统跳过了这一步，但没有给出更具体原因。';
+    }
+
+    function humanizeIssueStatus(status) {
+      const map = {
+        open: '新建', triaged: '已分派', review: '等待下一步流转', dispatching: '已派发，等待角色处理',
+        running: '处理中', blocked: '阻塞中', waiting_children: '等待子任务完成',
+        waiting_human_info: '等待人工补充信息', waiting_human_action: '等待人工执行动作', waiting_human_approval: '等待人工审批',
+        waiting_recovery_completion: '等待补偿收口', closed: '已关闭'
+      };
+      return map[status] || status || '未知状态';
+    }
+
+    function inferIssueSituation(issueWrap) {
+      const issue = issueWrap.issue || {};
+      const attempts = Array.isArray(issueWrap.attempts) ? issueWrap.attempts : [];
+      const latest = attempts.length ? attempts[attempts.length - 1] : null;
+      const latestPayload = latest ? (safeParseJson(latest.output_snapshot_json).payload || {}) : {};
+      const latestReason = latestPayload.reason || latest?.failure_summary || '';
+      const latestNext = latestPayload.suggested_next_role || '';
+      const workerErrors = Array.isArray(workerReport?.errors) ? workerReport.errors : [];
+      const relatedError = workerErrors.find(err => (err?.traceback || err?.message || '').includes(issue.id) || (err?.message || '').includes(`route not allowed`));
+
+      if (issue.status === 'closed') return '这条 issue 已经关闭。';
+      if (issue.status === 'dispatching') return `当前已经派发给 ${issueWrap.current_agent_label}，正在等待它完成这一轮处理。`;
+      if (issue.status === 'review' && latest?.status === 'succeeded' && latestNext) {
+        if (relatedError?.message) return `${humanizeWorkerReason(relatedError.message)} 当前最新建议是交给 ${roleLabel(latestNext)}。`;
+        return `上一轮 ${roleLabel(issueWrap.current_agent_role)} 已经完成，系统当前正准备按建议流转到 ${roleLabel(latestNext)}。`;
+      }
+      if (issue.status === 'review' && latest?.status === 'cancelled') {
+        return `上一轮处理被系统回收了，原因是：${humanizeWorkerReason(latest?.failure_summary || latestReason)}。当前会等待下一轮重新派发。`;
+      }
+      if (issue.status && issue.status.startsWith('waiting_human')) {
+        return `当前卡在人工环节，原因是：${issue.required_human_input || issue.blocker_summary || '需要你补充信息或确认。'}`;
+      }
+      if (issue.has_open_dependencies) return '当前有前置依赖还没完成，所以这条 issue 暂时不会继续推进。';
+      if (issue.status === 'waiting_children') return '当前要先等子任务都完成，主 issue 才会继续推进。';
+      return '当前停在这里是因为 worker 还没有得出可执行的下一步，建议结合下方最近 activity 和错误说明一起看。';
+    }
+
+    function summarizeAttempt(attempt) {
+      if (!attempt) return '暂无 attempt';
+      const payload = safeParseJson(attempt.output_snapshot_json).payload || {};
+      if (attempt.status === 'succeeded') {
+        const nextRole = payload.suggested_next_role ? `，建议下一步交给 ${roleLabel(payload.suggested_next_role)}` : '';
+        return `${roleLabel(safeParseJson(attempt.input_snapshot_json).attempt_role)} 已完成${nextRole}。${payload.summary || attempt.result_summary || ''}`;
+      }
+      if (attempt.status === 'cancelled') {
+        return `这一轮已取消，原因：${humanizeWorkerReason(attempt.failure_summary || '')}`;
+      }
+      if (attempt.status === 'dispatching') {
+        return '这一轮已经派发出去，等待角色处理结果。';
+      }
+      return `${attempt.status || 'unknown'}${attempt.failure_summary ? `，原因：${humanizeWorkerReason(attempt.failure_summary)}` : ''}`;
+    }
+
     function escapeHtml(value) {
       return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -1139,7 +1221,7 @@
         <div class="nested-box">
           <div class="nested-title">derived issues</div>
           ${created.length ? `<div class="json-lite-item"><div class="json-lite-key">created</div><div class="detail-stack">${created.map(item => `<div class="detail-item"><div class="detail-head"><span>#${item?.created?.issue_no || '?'} ${item?.created?.status || ''}</span><span>${item?.record?.route_role || ''}</span></div><div class="detail-sub">${item?.record?.title || ''} · ${item?.record?.relation_type || ''} · key=${item?.record?.proposal_key || ''}</div></div>`).join('')}</div></div>` : ''}
-          ${skipped.length ? `<div class="json-lite-item"><div class="json-lite-key">skipped</div><div class="detail-stack">${skipped.map(item => `<div class="detail-item"><div class="detail-head"><span>${item?.proposal_key || 'unknown proposal'}</span><span>${item?.reason || 'skipped'}</span></div><div class="detail-sub">${item?.existing?.title || ''}</div></div>`).join('')}</div></div>` : ''}
+          ${skipped.length ? `<div class="json-lite-item"><div class="json-lite-key">skipped</div><div class="detail-stack">${skipped.map(item => `<div class="detail-item"><div class="detail-head"><span>${item?.proposal_key || 'unknown proposal'}</span><span>${humanizeWorkerReason(item?.reason || 'skipped', item)}</span></div><div class="detail-sub">${item?.existing?.title || ''}</div></div>`).join('')}</div></div>` : ''}
         </div>
       `;
     }
@@ -1201,17 +1283,17 @@
       const skipped = Array.isArray(report.skipped) ? report.skipped : [];
       const cancelled = Array.isArray(report.cancelled) ? report.cancelled : [];
       const errors = Array.isArray(report.errors) ? report.errors : [];
-      const renderItems = (items, title) => items.length ? `<div class="modal-section"><h3>${title}</h3><div class="json-lite">${items.map(item => `<div class="json-lite-item">${renderNestedValue(item)}</div>`).join('')}</div></div>` : '';
+      const renderItems = (items, title, transform) => items.length ? `<div class="modal-section"><h3>${title}</h3><div class="detail-stack">${items.map(item => transform ? transform(item) : `<div class="json-lite-item">${renderNestedValue(item)}</div>`).join('')}</div></div>` : '';
       return `
         <div class="modal-section">
           <h3>摘要</h3>
           ${summarizeWorkerReport(report)}
         </div>
-        ${renderItems(skipped, '跳过原因')}
-        ${renderItems(errors, '错误')}
-        ${renderItems(dispatched, '本轮 dispatch')}
-        ${renderItems(observed, '本轮 observe')}
-        ${renderItems(cancelled, '本轮 cancel')}
+        ${renderItems(skipped, '本轮跳过', item => `<div class="detail-item"><div class="detail-head"><span>Issue #${item.issue_no || '?'}</span><span>${item.kind || 'skip'}</span></div><div class="detail-sub">${humanizeWorkerReason(item.reason, item)}</div></div>`)}
+        ${renderItems(errors, '本轮错误', item => `<div class="detail-item"><div class="detail-head"><span>${escapeHtml(item.message || 'error')}</span><span>error</span></div><div class="detail-sub">${escapeHtml(humanizeWorkerReason(item.message || '', item))}</div></div>`)}
+        ${renderItems(dispatched, '本轮 dispatch', item => `<div class="detail-item"><div class="detail-head"><span>Issue #${item.issue_no || '?'}</span><span>${roleLabel(item.role)}</span></div><div class="detail-sub">已派发到 ${escapeHtml(item.runtime_binding_key || '')}，Attempt #${item.attempt_no || '?'}</div></div>`)}
+        ${renderItems(observed, '本轮 observe', item => `<div class="detail-item"><div class="detail-head"><span>Issue #${item.issue_no || '?'}</span><span>${item.result_status || ''}</span></div><div class="detail-sub">${item.observe_timeout ? escapeHtml(item.observe_timeout) : '已观察到新的执行结果。'}</div></div>`)}
+        ${renderItems(cancelled, '本轮 cancel', item => `<div class="detail-item"><div class="detail-head"><span>Issue #${item.issue_no || '?'}</span><span>cancel</span></div><div class="detail-sub">${escapeHtml(item.reason || '已取消')}</div></div>`)}
       `;
     }
 
@@ -1486,9 +1568,11 @@
       const issue = wrap.issue;
       const attempts = Array.isArray(wrap.attempts) ? wrap.attempts : [];
       const latest = attempts.length ? attempts[attempts.length - 1] : null;
+      const issueMeta = safeParseJson(issue.metadata_json);
       root.innerHTML = `
         <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
-        <div style="margin-top:8px;"><span class="pill">${issue.project_key || 'unknown project'}</span><span class="pill">${issue.status}</span><span class="pill">${issue.priority}</span><span class="pill">${wrap.current_agent_label}</span><span class="pill">${wrap.current_agent_id}</span></div>
+        <div style="margin-top:8px;"><span class="pill">${issue.project_key || 'unknown project'}</span><span class="pill">${humanizeIssueStatus(issue.status)}</span><span class="pill">${issue.priority}</span><span class="pill">${wrap.current_agent_label}</span><span class="pill">${wrap.current_agent_id}</span></div>
+        <div class="detail-item" style="margin-top:12px;"><div class="detail-head"><span>当前系统判断</span><span>${latest ? `Attempt #${latest.attempt_no}` : '暂无 Attempt'}</span></div><div class="detail-sub">${escapeHtml(inferIssueSituation(wrap))}<br/>${escapeHtml(summarizeAttempt(latest))}</div></div>
         <div class="kv">
           <div>所属项目</div><div>${issue.project_key || ''}</div>
           <div>当前 Agent</div><div>${wrap.current_agent_label} · <code>${wrap.current_agent_id}</code></div>
@@ -1497,7 +1581,7 @@
           <div>当前 Attempt</div><div>${latest ? `#${latest.attempt_no}` : '暂无'}</div>
           <div>Blocker</div><div>${issue.blocker_summary || ''}</div>
           <div>Dispatch Reason</div><div>${issue.has_open_dependencies ? '等待 blocked_by 依赖完成' : (issue.status === 'waiting_children' ? '等待 parent_of 子任务全部完成' : '可调度 / 由 worker 决定')}</div>
-          <div>Resume Role</div><div>${issue.metadata_json ? (() => { try { const m = JSON.parse(issue.metadata_json); return m.resume_role || '—'; } catch { return '—'; } })() : '—'}</div>
+          <div>Resume Role</div><div>${issueMeta.resume_role || '—'}</div>
           <div>Required Input</div><div>${issue.required_human_input || ''}</div>
           <div>Description</div><div>${issue.description_md || ''}</div>
         </div>
@@ -1531,9 +1615,13 @@
       const latest = attempts.length ? attempts[attempts.length - 1] : null;
       const timeline = latest ? (wrap.timelines?.[latest.id] || []) : [];
       const activities = Array.isArray(wrap.activities) ? wrap.activities : [];
+      const issueMeta = safeParseJson(issue.metadata_json);
       document.getElementById('modalTitle').textContent = `#${issue.issue_no} ${issue.title}`;
-      document.getElementById('modalSubtitle').textContent = `${issue.project_key || 'unknown project'} · ${wrap.current_agent_label} · ${wrap.current_agent_id} · ${issue.status}`;
+      document.getElementById('modalSubtitle').textContent = `${issue.project_key || 'unknown project'} · ${wrap.current_agent_label} · ${wrap.current_agent_id} · ${humanizeIssueStatus(issue.status)}`;
       document.getElementById('modalBody').innerHTML = `
+        <div class="modal-section">
+          <div class="detail-item"><div class="detail-head"><span>当前为什么停在这里</span><span>${latest ? `Attempt #${latest.attempt_no}` : '暂无 Attempt'}</span></div><div class="detail-sub">${escapeHtml(inferIssueSituation(wrap))}<br/>${escapeHtml(summarizeAttempt(latest))}</div></div>
+        </div>
         <div class="modal-section">
           <div class="kv">
             <div>所属项目</div><div>${issue.project_key || ''}</div>
@@ -1545,8 +1633,8 @@
             <div>当前 Attempt</div><div>${latest ? `#${latest.attempt_no}` : '暂无'}</div>
             <div>Blocker</div><div>${issue.blocker_summary || ''}</div>
             <div>Dispatch Reason</div><div>${issue.has_open_dependencies ? '等待 blocked_by 依赖完成' : (issue.status === 'waiting_children' ? '等待 parent_of 子任务全部完成' : '可调度 / 由 worker 决定')}</div>
-            <div>Resume Role</div><div>${issue.metadata_json ? (() => { try { const m = JSON.parse(issue.metadata_json); return m.resume_role || '—'; } catch { return '—'; } })() : '—'}</div>
-            <div>Wait Strategy</div><div>${issue.metadata_json ? (() => { try { const m = JSON.parse(issue.metadata_json); return m.parent_wait_strategy || '—'; } catch { return '—'; } })() : '—'}</div>
+            <div>Resume Role</div><div>${issueMeta.resume_role || '—'}</div>
+            <div>Wait Strategy</div><div>${issueMeta.parent_wait_strategy || '—'}</div>
             <div>Required Input</div><div>${issue.required_human_input || ''}</div>
             <div>Description</div><div>${issue.description_md || ''}</div>
             <div>Acceptance</div><div>${issue.acceptance_criteria_md || ''}</div>

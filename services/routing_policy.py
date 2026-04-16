@@ -17,7 +17,7 @@ class RoutingDecision:
 _ALLOWED_NEXT: dict[Role, set[str]] = {
     'ceo': {'pm', 'close', 'human_queue'},
     'pm': {'dev', 'qa', 'ceo', 'close'},
-    'dev': {'qa', 'pm', 'human_queue', 'ceo'},
+    'dev': {'qa', 'ops', 'pm', 'human_queue', 'ceo'},
     'qa': {'dev', 'ops', 'ceo', 'close'},
     'ops': {'pm', 'ceo', 'human_queue', 'close'},
 }

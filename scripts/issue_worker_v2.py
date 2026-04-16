@@ -780,16 +780,32 @@ def pick_target_employee_key(svc: AgentTeamService, *, project_key: str, role: s
 def decide_next_role(*, current_role: str | None, metadata: dict[str, Any]) -> str | None:
     if bool(metadata.get('needs_human')):
         return 'human_queue'
+
     suggested = metadata.get('suggested_next_role')
     if isinstance(suggested, str) and suggested.strip():
         return suggested.strip()
+
     issue_type = str(metadata.get('issue_type') or 'normal')
     risk_level = str(metadata.get('risk_level') or 'normal')
+    prior_handoff = metadata.get('prior_handoff') if isinstance(metadata.get('prior_handoff'), dict) else {}
+    summary_text = ' '.join(
+        str(x or '') for x in [
+            prior_handoff.get('summary'),
+            prior_handoff.get('reason'),
+            metadata.get('dispatch_instruction'),
+            metadata.get(f'worker_instruction_{current_role}') if current_role else '',
+        ]
+    )
     requires_ops = bool(metadata.get('requires_ops')) or issue_type in {'production_change', 'release'}
+    if not requires_ops and any(token in summary_text.lower() for token in ['ops', 'deploy', 'deployment', 'nginx', 'systemd']):
+        requires_ops = True
+    if not requires_ops and any(token in summary_text for token in ['部署', '发布', '运行态', '环境', 'nginx', '外网访问']):
+        requires_ops = True
+
     if current_role == 'pm':
         return 'dev'
     if current_role == 'dev':
-        return 'qa'
+        return 'ops' if requires_ops else 'qa'
     if current_role == 'qa':
         if requires_ops:
             return 'ops'

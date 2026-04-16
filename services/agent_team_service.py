@@ -661,8 +661,9 @@ class AgentTeamService:
         note: str = '',
         issue_type: str = 'normal',
         risk_level: str = 'normal',
+        handoff_payload: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        issue = self.db.get_one('SELECT assigned_employee_id FROM issues WHERE id = ?', (issue_id,))
+        issue = self.db.get_one('SELECT assigned_employee_id, metadata_json FROM issues WHERE id = ?', (issue_id,))
         if issue['assigned_employee_id'] is None:
             raise ValidationError('issue has no assigned employee to route from')
         from_role = self._employee_role(issue['assigned_employee_id'])
@@ -680,9 +681,18 @@ class AgentTeamService:
             raise ValidationError(decision.reason)
 
         ts = now_ms()
+        metadata = merge_json_object(issue['metadata_json'], {})
+        normalized_handoff = dict(handoff_payload) if isinstance(handoff_payload, dict) else {}
+        if note and not normalized_handoff.get('summary'):
+            normalized_handoff['summary'] = note
+        normalized_handoff.setdefault('reason', note or f'handoff {from_role} -> {to_role}')
+        normalized_handoff.setdefault('suggested_next_role', to_role)
+        normalized_handoff.setdefault('from_role', from_role)
+        metadata['prior_handoff'] = normalized_handoff
+        metadata['suggested_next_role'] = normalized_handoff.get('suggested_next_role') or to_role
         self.db.conn.execute(
-            'UPDATE issues SET status = ?, assigned_employee_id = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
-            ('review', employee['id'], note or None, ts, issue_id),
+            'UPDATE issues SET status = ?, assigned_employee_id = ?, blocker_summary = ?, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
+            ('review', employee['id'], note or None, json.dumps(metadata, ensure_ascii=False), ts, issue_id),
         )
         record_issue_activity(
             self.db.conn,

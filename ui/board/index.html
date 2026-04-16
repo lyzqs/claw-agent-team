@@ -768,6 +768,8 @@
     let filteredIssues = [];
     let selectedIssueId = null;
     let currentPage = 1;
+    let autoRefreshHandle = null;
+    let loadInFlight = false;
     const pageSize = 8;
     const lanePageSize = 5;
     const lanePages = {};
@@ -1804,7 +1806,12 @@
       if (out.ok) await loadData();
     };
 
-    async function loadData() {
+    async function loadData(options = {}) {
+      const preserveView = Boolean(options.preserveView);
+      if (loadInFlight) return;
+      loadInFlight = true;
+      const previousSelectedIssueId = selectedIssueId;
+      const previousPage = currentPage;
       try {
         const snapshotRes = await apiGet(`/api/board-snapshot?t=${Date.now()}`);
         if (!snapshotRes.ok || !snapshotRes.result) {
@@ -1821,12 +1828,19 @@
           schema_version: snapshotRes.result.schema_version || null,
           fallback: false,
         };
+        if (preserveView) {
+          const issueExists = previousSelectedIssueId && issuesData.some(x => x.issue?.id === previousSelectedIssueId);
+          selectedIssueId = issueExists ? previousSelectedIssueId : (issuesData[0]?.issue?.id || null);
+          currentPage = previousPage;
+        }
         renderSummary();
         renderProjectSelectOptions();
         renderHumanQueuePanel();
         renderAnalytics();
         renderFilters();
-        currentPage = 1;
+        if (!preserveView) {
+          currentPage = 1;
+        }
         renderStoryboard();
         renderIssueList();
         renderIssuePreview();
@@ -1837,11 +1851,13 @@
         const snapshotChip = document.getElementById('snapshotChip');
         snapshotChip.textContent = '快照加载失败';
         console.error(err);
+      } finally {
+        loadInFlight = false;
       }
     }
 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
-    document.getElementById('reloadBtn').addEventListener('click', loadData);
+    document.getElementById('reloadBtn').addEventListener('click', () => loadData({ preserveView: true }));
     document.getElementById('openCreateIssueBtn').addEventListener('click', openCreateIssueModal);
     document.getElementById('openCreateProjectBtn').addEventListener('click', openCreateProjectModal);
     document.getElementById('openDeleteProjectBtn').addEventListener('click', openDeleteProjectModal);
@@ -1886,6 +1902,10 @@
       if (currentPage < totalPages) { currentPage++; renderIssueList(); renderIssuePreview(); }
     });
     loadData();
+    autoRefreshHandle = setInterval(() => {
+      if (document.hidden) return;
+      loadData({ preserveView: true });
+    }, 5000);
   </script>
 </body>
 </html>

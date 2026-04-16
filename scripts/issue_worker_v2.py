@@ -24,6 +24,8 @@ STATE_DIR.mkdir(parents=True, exist_ok=True)
 SESSION_REGISTRY_PATH = STATE_DIR / 'session_registry.json'
 REPORT_PATH = STATE_DIR / 'worker_report.json'
 ACTIONS_PATH = STATE_DIR / 'worker_actions.jsonl'
+ISSUE_CONTEXT_DIR = STATE_DIR / 'issue_context'
+ISSUE_CONTEXT_DIR.mkdir(parents=True, exist_ok=True)
 EXPORT_BOARD = ROOT / 'scripts' / 'export_board_snapshot.py'
 EXPORT_ISSUES = ROOT / 'scripts' / 'export_issue_details.py'
 DISPATCH_OBSERVER = ROOT / 'scripts' / 'dispatch_observer_v1.py'
@@ -58,6 +60,16 @@ def parse_json(raw: str | None) -> dict[str, Any]:
         return {}
 
 
+def compact_text(value: Any, *, limit: int = 1200) -> str:
+    text = str(value or '').strip()
+    if not text:
+        return ''
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    if len(text) <= limit:
+        return text
+    return text[: max(0, limit - 3)].rstrip() + '...'
+
+
 
 def normalize_handoff_payload(payload: dict[str, Any], *, marker: str, fallback_next_role: str | None = None) -> dict[str, Any]:
     out = dict(payload) if isinstance(payload, dict) else {}
@@ -77,7 +89,7 @@ def normalize_handoff_payload(payload: dict[str, Any], *, marker: str, fallback_
 
 def latest_success_handoff(svc: AgentTeamService, issue_id: str, exclude_attempt_id: str | None = None) -> dict[str, Any]:
     rows = svc.db.fetch_all(
-        '''SELECT id, output_snapshot_json
+        '''SELECT id, attempt_no, result_summary, ended_at_ms, input_snapshot_json, output_snapshot_json
            FROM issue_attempts
            WHERE issue_id = ? AND status = 'succeeded'
            ORDER BY attempt_no DESC''',
@@ -86,12 +98,44 @@ def latest_success_handoff(svc: AgentTeamService, issue_id: str, exclude_attempt
     for row in rows:
         if exclude_attempt_id and row['id'] == exclude_attempt_id:
             continue
+        input_snapshot = parse_json(row['input_snapshot_json'])
         payload = parse_json(row['output_snapshot_json'])
         wait_result = payload.get('wait_result') if isinstance(payload.get('wait_result'), dict) else {}
         handoff = wait_result.get('payload') if isinstance(wait_result.get('payload'), dict) else {}
+        if not handoff and isinstance(payload.get('payload'), dict):
+            handoff = payload.get('payload')
         if handoff:
-            return handoff
+            enriched = dict(handoff)
+            from_role = str(input_snapshot.get('attempt_role') or '').strip()
+            if from_role and not enriched.get('from_role'):
+                enriched['from_role'] = from_role
+            enriched.setdefault('from_attempt_no', row['attempt_no'])
+            if row['result_summary'] and not enriched.get('from_result_summary'):
+                enriched['from_result_summary'] = row['result_summary']
+            if row['ended_at_ms'] and not enriched.get('from_ended_at_ms'):
+                enriched['from_ended_at_ms'] = row['ended_at_ms']
+            previous_instruction = compact_text(input_snapshot.get('worker_instruction'), limit=900)
+            if previous_instruction and not enriched.get('from_worker_instruction'):
+                enriched['from_worker_instruction'] = previous_instruction
+            return enriched
     return {}
+
+
+def write_issue_context_snapshot(svc: AgentTeamService, issue_id: str) -> str:
+    detail = svc.get_issue(issue_id=issue_id)
+    snapshot = {
+        'schema_version': 'agent-team.issue-context.v1',
+        'generated_at': now_iso(),
+        'issue_id': issue_id,
+        'issue': detail.get('issue') or {},
+        'attempts': detail.get('attempts') or [],
+        'callbacks_by_attempt': detail.get('callbacks_by_attempt') or {},
+        'dependencies': detail.get('dependencies') or {'blocking': [], 'blocked_dependents': []},
+        'activities': svc.get_issue_activity(issue_id=issue_id).get('items') or [],
+    }
+    path = ISSUE_CONTEXT_DIR / f'{issue_id}.json'
+    path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding='utf-8')
+    return str(path)
 
 
 
@@ -487,7 +531,7 @@ def has_recent_runtime_activity(*, session_key: str, since_ms: int, lookback_sec
         return False, {**info, 'check_error': str(e)}
 
 
-def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, Any], *, session_key: str) -> dict[str, Any]:
+def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, Any], *, session_key: str, issue_context_path: str | None = None) -> dict[str, Any]:
     metadata = parse_json(issue.get('metadata_json'))
     role = issue.get('role') or 'agent'
     role_label = ROLE_LABELS.get(role, role.upper())
@@ -538,14 +582,43 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         + "只做当前角色最小必要且正确的工作，不要越过本角色职责边界。"
     )
 
+    issue_context_summary = ''
+    if issue_context_path:
+        issue_context_summary = (
+            "完整上下文文件：\n"
+            f"- JSON 文件路径：{issue_context_path}\n"
+            "- 文件中包含当前 issue 状态、历史 attempts、callbacks、activities、dependencies。\n"
+            "- 如果你需要完整了解上一个角色做了什么、当前为什么停在这里、还依赖什么，请先阅读这个 JSON。\n\n"
+        )
+
     prior_handoff = metadata.get('prior_handoff') if isinstance(metadata.get('prior_handoff'), dict) else {}
     prior_summary = ''
     if prior_handoff:
+        artifacts_text = compact_text(json.dumps(prior_handoff.get('artifacts') or [], ensure_ascii=False), limit=500) if isinstance(prior_handoff.get('artifacts'), list) and prior_handoff.get('artifacts') else ''
+        findings_text = compact_text(json.dumps(prior_handoff.get('blocking_findings') or [], ensure_ascii=False), limit=500) if isinstance(prior_handoff.get('blocking_findings'), list) and prior_handoff.get('blocking_findings') else ''
         prior_summary = (
-            "上一角色交接：\n"
+            "上一角色交接（这是下游继续推进的直接依据，不要忽略）：\n"
+            f"- from_role: {prior_handoff.get('from_role') or ''}\n"
+            f"- from_attempt_no: {prior_handoff.get('from_attempt_no') or ''}\n"
             f"- summary: {prior_handoff.get('summary') or prior_handoff.get('reason') or ''}\n"
-            f"- suggested_next_role: {prior_handoff.get('suggested_next_role') or ''}\n\n"
+            f"- reason: {prior_handoff.get('reason') or ''}\n"
+            f"- suggested_next_role: {prior_handoff.get('suggested_next_role') or ''}\n"
+            + (f"- artifacts: {artifacts_text}\n" if artifacts_text else '')
+            + (f"- blocking_findings: {findings_text}\n" if findings_text else '')
+            + (f"- previous_role_instruction: {compact_text(prior_handoff.get('from_worker_instruction'), limit=700)}\n" if prior_handoff.get('from_worker_instruction') else '')
+            + "\n"
         )
+
+    previous_role_context = ''
+    previous_role = str(last_attempt_payload.get('attempt_role') or '').strip()
+    if previous_role and previous_role != role:
+        previous_instruction = compact_text(last_attempt_payload.get('worker_instruction'), limit=1000)
+        if previous_instruction:
+            previous_role_context = (
+                "上一角色收到的任务上下文摘要（帮助你理解这次交接是从什么背景来的）：\n"
+                f"- from_role: {previous_role}\n"
+                f"{previous_instruction}\n\n"
+            )
 
     human_context = metadata.get('human_context') if isinstance(metadata.get('human_context'), dict) else {}
     human_summary = ''
@@ -614,15 +687,27 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         'qa': '你负责验收、验证、找风险，不负责主体实现。',
         'ops': '你负责部署、环境、运行态与发布保障，不负责需求定义与业务验收。',
     }
+    decomposition_strategy = ''
+    if role in {'ceo', 'pm'}:
+        decomposition_strategy = (
+            "拆分策略（CEO / PM 必须优先考虑，而不是默认一个 issue 流转到底）：\n"
+            "1. 如果当前 issue 同时包含多个阶段、多个交付物、跨角色依赖、或者能拆成多个独立验收目标，优先拆成多个小 issue。\n"
+            "2. 优先把大 issue 变成父 issue / 编排 issue，再创建多个子 issue，并通过 `parent_of` / `blocked_by` 表达顺序和依赖。\n"
+            "3. 需求澄清、实现、部署、验收、补文档、后续治理，只要能独立验收，就尽量拆开，不要硬塞进一个 issue。\n"
+            "4. 如果你判断应该拆分，请优先一次创建多个 proposal，而不是只给下游一句模糊 handoff。\n\n"
+        )
 
     prompt = (
         f"你现在以 Agent Team 的 {role_label} 角色工作。Issue #{issue['issue_no']}。\n\n"
+        f"{issue_context_summary}"
         f"{prior_summary}"
+        f"{previous_role_context}"
         f"{human_summary}"
         f"{retry_summary}"
         f"{recovery_summary}"
         f"{artifact_summary}"
         f"角色边界：{role_boundary_rules.get(role, '请只做当前角色边界内的工作。')}\n\n"
+        f"{decomposition_strategy}"
         f"任务：\n{base_instruction}\n\n"
         "要求：\n"
         "1. 只做当前角色最小必要的工作。\n"
@@ -633,7 +718,8 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         "6. 如需创建新的独立 issue，只能使用 skill `agent-team-issue-authoring`，并通过唯一入口 `python3 /root/.openclaw/workspace-agent-team/scripts/attempt_callback_helper.py create-issues --attempt-id <attempt_id> --callback-token <callback_token> --created-by-role <role> --proposals-json \"[...]\"`。不要在最终 JSON 中夹带 issue proposal。\n"
         "7. `--proposals-json` 必须传 JSON 数组，即使只创建 1 个 issue 也要传数组；每个 proposal 都应包含稳定的 `proposal_key` 用于去重。\n"
         "8. proposal 推荐字段：proposal_key, title, description_md, acceptance_criteria_md, priority, route_role, relation_type(parent_of|blocked_by|related_to), metadata。\n"
-        "9. 最终回复必须是单个 JSON 对象，不要带 markdown、代码块或额外说明。\n\n"
+        "9. 如果你是 CEO 或 PM，且判断这是一个大 issue，请优先拆成多个小 issue，并让当前 issue 负责编排 / 等待子 issue 收口。\n"
+        "10. 最终回复必须是单个 JSON 对象，不要带 markdown、代码块或额外说明。\n\n"
         "最终 JSON 只需要包含这些字段：\n"
         f"marker={marker}\n"
         "status, summary, artifacts, blocking_findings, suggested_next_role, reason, risk_level, needs_human\n\n"
@@ -651,6 +737,7 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         'flow_id': flow_id,
         'callback_token': callback_token,
         'timeout_deadline_ms': int(time.time() * 1000) + DISPATCH_TIMEOUT_MS,
+        'issue_context_path': issue_context_path,
     }
 
 
@@ -1024,6 +1111,7 @@ def main() -> int:
                                 note=f'auto route after {issue.get("role") or "unknown"} terminal callback',
                                 issue_type=str(metadata.get('issue_type') or 'normal'),
                                 risk_level=str(metadata.get('risk_level') or 'normal'),
+                                handoff_payload=pending_handoff,
                             )
                             item['route'] = {
                                 'to_role': next_role,
@@ -1107,7 +1195,8 @@ def main() -> int:
                 append_action({'at': report['ran_at'], 'kind': 'skip_duplicate_dispatch', 'issue_id': issue['issue_id'], 'issue_no': issue['issue_no'], 'role': issue.get('role'), 'reason': duplicate_reason})
                 continue
             issue['metadata_json'] = json.dumps(metadata, ensure_ascii=False)
-            payload = build_worker_payload(issue, last_payload, session_key=str(issue.get('session_key') or ''))
+            issue_context_path = write_issue_context_snapshot(svc, issue['issue_id'])
+            payload = build_worker_payload(issue, last_payload, session_key=str(issue.get('session_key') or ''), issue_context_path=issue_context_path)
             out = svc.dispatch_execution(
                 issue_id=issue['issue_id'],
                 runtime_binding_key=issue['binding_key'],
@@ -1207,6 +1296,7 @@ def main() -> int:
                                     note=f'auto route after {attempt.get("role") or "unknown"} success',
                                     issue_type=str(metadata.get('issue_type') or 'normal'),
                                     risk_level=str(metadata.get('risk_level') or 'normal'),
+                                    handoff_payload=out.get('payload') if isinstance(out.get('payload'), dict) else None,
                                 )
                                 route_item = {
                                     'kind': 'route',

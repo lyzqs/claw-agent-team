@@ -87,7 +87,13 @@ def normalize_handoff_payload(payload: dict[str, Any], *, marker: str, fallback_
     return out
 
 
-def latest_success_handoff(svc: AgentTeamService, issue_id: str, exclude_attempt_id: str | None = None) -> dict[str, Any]:
+def latest_success_handoff(
+    svc: AgentTeamService,
+    issue_id: str,
+    exclude_attempt_id: str | None = None,
+    *,
+    current_role: str | None = None,
+) -> dict[str, Any]:
     rows = svc.db.fetch_all(
         '''SELECT id, attempt_no, result_summary, ended_at_ms, input_snapshot_json, output_snapshot_json
            FROM issue_attempts
@@ -95,9 +101,8 @@ def latest_success_handoff(svc: AgentTeamService, issue_id: str, exclude_attempt
            ORDER BY attempt_no DESC''',
         (issue_id,),
     )
+    fallback: dict[str, Any] = {}
     for row in rows:
-        if exclude_attempt_id and row['id'] == exclude_attempt_id:
-            continue
         input_snapshot = parse_json(row['input_snapshot_json'])
         payload = parse_json(row['output_snapshot_json'])
         wait_result = payload.get('wait_result') if isinstance(payload.get('wait_result'), dict) else {}
@@ -117,8 +122,15 @@ def latest_success_handoff(svc: AgentTeamService, issue_id: str, exclude_attempt
             previous_instruction = compact_text(input_snapshot.get('worker_instruction'), limit=900)
             if previous_instruction and not enriched.get('from_worker_instruction'):
                 enriched['from_worker_instruction'] = previous_instruction
+
+            same_role = bool(current_role and from_role and from_role == str(current_role).strip())
+            excluded_same_attempt = bool(exclude_attempt_id and row['id'] == exclude_attempt_id and same_role)
+            if excluded_same_attempt or same_role:
+                if not fallback:
+                    fallback = enriched
+                continue
             return enriched
-    return {}
+    return fallback
 
 
 def write_issue_context_snapshot(svc: AgentTeamService, issue_id: str) -> str:
@@ -539,10 +551,21 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     flow_id = f"flow_{uuid.uuid4().hex[:12]}"
     callback_token = f"cbtok_{uuid.uuid4().hex[:12]}"
 
-    role_worker_instruction = metadata.get(f'worker_instruction_{role}')
-    role_dispatch_instruction = metadata.get(f'dispatch_instruction_{role}')
-    current_worker_instruction = metadata.get('worker_instruction')
-    current_dispatch_instruction = metadata.get('dispatch_instruction')
+    def extract_clean_instruction(candidate: Any) -> str | None:
+        if not isinstance(candidate, str):
+            return None
+        text = candidate.strip()
+        if not text:
+            return None
+        lowered = text.lower()
+        if '你现在以 agent team 的' in text or '\n任务：\n' in text or '最终 json 只需要包含这些字段' in text:
+            return None
+        return text
+
+    role_worker_instruction = extract_clean_instruction(metadata.get(f'worker_instruction_{role}'))
+    role_dispatch_instruction = extract_clean_instruction(metadata.get(f'dispatch_instruction_{role}'))
+    current_worker_instruction = extract_clean_instruction(metadata.get('worker_instruction'))
+    current_dispatch_instruction = extract_clean_instruction(metadata.get('dispatch_instruction'))
     last_attempt_role = last_attempt_payload.get('attempt_role') if isinstance(last_attempt_payload.get('attempt_role'), str) else None
     reuse_last_instruction = last_attempt_role == role
     explicit_instruction = None
@@ -551,9 +574,8 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         role_worker_instruction,
         current_dispatch_instruction,
         current_worker_instruction,
-        metadata.get('prompt'),
-        last_attempt_payload.get('worker_instruction') if (not current_worker_instruction and reuse_last_instruction) else None,
-        last_attempt_payload.get('prompt') if (not current_dispatch_instruction and reuse_last_instruction) else None,
+        extract_clean_instruction(metadata.get('prompt')),
+        extract_clean_instruction(last_attempt_payload.get('worker_instruction')) if (not current_worker_instruction and reuse_last_instruction) else None,
     ):
         if isinstance(candidate, str) and candidate.strip():
             explicit_instruction = candidate.strip()
@@ -600,22 +622,22 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             "上一角色交接（这是下游继续推进的直接依据，不要忽略）：\n"
             f"- from_role: {prior_handoff.get('from_role') or ''}\n"
             f"- from_attempt_no: {prior_handoff.get('from_attempt_no') or ''}\n"
-            f"- summary: {prior_handoff.get('summary') or prior_handoff.get('reason') or ''}\n"
+            + (f"- result_summary: {prior_handoff.get('from_result_summary')}\n" if prior_handoff.get('from_result_summary') else '')
+            + f"- summary: {prior_handoff.get('summary') or prior_handoff.get('reason') or ''}\n"
             f"- reason: {prior_handoff.get('reason') or ''}\n"
             f"- suggested_next_role: {prior_handoff.get('suggested_next_role') or ''}\n"
             + (f"- artifacts: {artifacts_text}\n" if artifacts_text else '')
             + (f"- blocking_findings: {findings_text}\n" if findings_text else '')
-            + (f"- previous_role_instruction: {compact_text(prior_handoff.get('from_worker_instruction'), limit=700)}\n" if prior_handoff.get('from_worker_instruction') else '')
-            + "\n"
+            + "- 你应优先基于以上交接摘要继续推进；完整原始任务文本已放在 issue_context JSON 与最近一次 attempt 中，避免在这里重复整段正文。\n\n"
         )
 
     previous_role_context = ''
     previous_role = str(last_attempt_payload.get('attempt_role') or '').strip()
-    if previous_role and previous_role != role:
+    if previous_role and previous_role != role and not prior_handoff:
         previous_instruction = compact_text(last_attempt_payload.get('worker_instruction'), limit=1000)
         if previous_instruction:
             previous_role_context = (
-                "上一角色收到的任务上下文摘要（帮助你理解这次交接是从什么背景来的）：\n"
+                "上一角色收到的任务上下文摘要（仅在缺少结构化交接时提供，帮助你补足背景）：\n"
                 f"- from_role: {previous_role}\n"
                 f"{previous_instruction}\n\n"
             )
@@ -634,13 +656,17 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     retry_context = metadata.get('retry_context') if isinstance(metadata.get('retry_context'), dict) else {}
     retry_summary = ''
     if retry_context and retry_context.get('attempt_role') == role:
+        previous_failure = str(retry_context.get('failure_summary') or '').strip()
+        previous_status = str(retry_context.get('status') or '').strip()
+        previous_completion = str(retry_context.get('completion_mode') or '').strip()
         retry_summary = (
             "重试上下文：\n"
             f"- previous attempt_no: {retry_context.get('attempt_no') or ''}\n"
-            f"- previous status: {retry_context.get('status') or ''}\n"
-            f"- previous failure_summary: {retry_context.get('failure_summary') or ''}\n"
-            + (f"- previous completion_mode: {retry_context.get('completion_mode')}\n" if retry_context.get('completion_mode') else '')
-            + "- 尽量延续已有工作，不要把它当成全新 issue\n\n"
+            f"- previous status: {previous_status}\n"
+            + (f"- previous failure_summary: {previous_failure}\n" if previous_failure else '')
+            + (f"- previous completion_mode: {previous_completion}\n" if previous_completion else '')
+            + "- 仅把上一次失败当作排障线索，不要把它原样抄回新的任务描述。\n"
+            + "- 优先延续同一 issue 的已有上下文与工作目录，避免重复从零开始。\n\n"
         )
 
     recovery_summary = ''
@@ -1057,7 +1083,12 @@ def main() -> int:
             last_attempt_id = last_attempt_rows[0]['id'] if last_attempt_rows else None
             last_payload = parse_json(last_attempt_rows[0]['input_snapshot_json']) if last_attempt_rows else {}
             metadata = parse_json(issue.get('metadata_json'))
-            metadata['prior_handoff'] = latest_success_handoff(svc, issue['issue_id'], exclude_attempt_id=last_attempt_id)
+            metadata['prior_handoff'] = latest_success_handoff(
+                svc,
+                issue['issue_id'],
+                exclude_attempt_id=last_attempt_id,
+                current_role=issue.get('role'),
+            )
             last_attempt_ctx = latest_attempt_context(svc, issue['issue_id']) if last_attempt_id else {}
             if last_attempt_ctx:
                 metadata['retry_context'] = last_attempt_ctx

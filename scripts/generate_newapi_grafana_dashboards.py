@@ -74,6 +74,8 @@ class PanelFactory:
         y: int,
         w: int = 12,
         h: int = 8,
+        legend_display_mode: str = "list",
+        tooltip_mode: str = "single",
     ) -> dict:
         return {
             "datasource": self.datasource(),
@@ -89,8 +91,8 @@ class PanelFactory:
             "gridPos": {"h": h, "w": w, "x": x, "y": y},
             "id": self._panel_id(),
             "options": {
-                "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": True},
-                "tooltip": {"mode": "single", "sort": "none"},
+                "legend": {"calcs": [], "displayMode": legend_display_mode, "placement": "bottom", "showLegend": True},
+                "tooltip": {"mode": tooltip_mode, "sort": "none"},
             },
             "pluginVersion": PLUGIN_VERSION,
             "targets": [
@@ -295,28 +297,48 @@ def build_business_overview() -> dict:
             ],
         ),
         factory.timeseries(
-            title="Token / 配额消耗趋势",
+            title="按渠道看 Token 变化",
             unit="short",
             x=12,
             y=10,
+            legend_display_mode="table",
+            tooltip_mode="multi",
             targets=[
-                {"expr": f'sum(rate(newapi_tokens_consumed_total{{{filters}}}[5m])) * 60', "legend": "Token/分钟", "refId": "A"},
-                {"expr": f'sum(rate(newapi_quota_consumed_total{{{filters}}}[5m])) * 60', "legend": "配额/分钟", "refId": "B"},
+                {
+                    "expr": f'topk(8, sum by (channel_name) (rate(newapi_tokens_consumed_total{{{filters}}}[5m])) * 60)',
+                    "legend": "{{channel_name}} Token/分钟",
+                    "refId": "A",
+                }
+            ],
+        ),
+        factory.timeseries(
+            title="按渠道看配额变化",
+            unit="short",
+            x=0,
+            y=18,
+            legend_display_mode="table",
+            tooltip_mode="multi",
+            targets=[
+                {
+                    "expr": f'topk(8, sum by (channel_name) (rate(newapi_quota_consumed_total{{{filters}}}[5m])) * 60)',
+                    "legend": "{{channel_name}} 配额/分钟",
+                    "refId": "A",
+                }
             ],
         ),
         factory.bargauge(
             title="模型请求速率前 10",
             expr=f'topk(10, sum by (model) (rate(newapi_requests_by_model_total{{{filters}}}[5m])))',
             unit="reqps",
-            x=0,
+            x=12,
             y=18,
         ),
         factory.bargauge(
             title="渠道错误率前 10",
             expr=f'topk(10, newapi_channel_error_rate{{job=~"$job",instance=~"$instance",env=~"$env",project=~"$project",channel_name=~"$channel_name"}}) * 100',
             unit="percent",
-            x=12,
-            y=18,
+            x=0,
+            y=26,
         ),
     ]
     return dashboard

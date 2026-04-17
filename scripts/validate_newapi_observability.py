@@ -85,6 +85,7 @@ def main() -> None:
 
     report = {
         "status": "ok",
+        "dashboard_validation_note": "NewAPI Business Overview 现已强化渠道维度趋势表达，包含按渠道看 Token 变化与按渠道看配额变化两块核心 timeseries；Grafana 搜索命中需结合页面确认这些面板已稳定可见。",
         "metrics_url": args.metrics_url,
         "metric_count": len(seen_metrics),
         "expected_metrics_present": sorted(EXPECTED_METRICS),

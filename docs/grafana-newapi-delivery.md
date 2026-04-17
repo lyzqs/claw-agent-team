@@ -54,8 +54,22 @@
 - 校验 exporter 是否暴露了预期 `newapi_*` 指标
 - 校验 Grafana 搜索结果里能发现 NewAPI dashboards
 
-## 覆盖到的规格指标
-本轮已覆盖或桥接以下核心指标：
+## 本轮补充增强（Issue #35）
+
+围绕第二轮“更贴近用户语义”的 follow-up，本轮对 `AT | NewAPI | 业务总览` 补齐了渠道维度的 Token 趋势表达，重点不再只停留在总量 `Token / 配额消耗趋势`，而是新增两块更直观的核心面板：
+
+- `按渠道看 Token 变化`
+- `按渠道看配额变化`
+
+实现特征：
+- 复用已落地的 `newapi_tokens_consumed_total` / `newapi_quota_consumed_total`
+- 统一按 `channel_name` 维度聚合，再用 `topk(8, ...)` 聚焦主要渠道，避免主视图过载
+- 面板使用 timeseries，而不是只给排行型快照
+- 图例使用 `table` 模式、tooltip 使用 `multi` 模式，便于在同一时刻横向比较多个渠道的消耗与波动
+- 原有 `模型请求速率前 10` 与 `渠道错误率前 10` 顺位下沉，让首页更先回答“哪个渠道在消耗、波动或异常”
+
+因此，本次增强没有新增 exporter 采集面，而是在既有指标基础上把渠道维度的人类可读趋势视图补齐到可独立验收水平。
+
 - `newapi_requests_total`
 - `newapi_request_success_total`
 - `newapi_request_error_total`

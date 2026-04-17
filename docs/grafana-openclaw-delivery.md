@@ -205,8 +205,29 @@ python3 scripts/validate_openclaw_observability.py
   - `openclaw-otel-bridge` target 为 `up`
   - `recommended_config_present` 全部为 `true`
 
-## 角色边界判断
-本轮 Dev 已完成：
+## 本轮补充增强（Issue #33）
+
+围绕第二轮“跨看板共性整改”的治理目标，本轮额外对多套 dashboard 做了统一的人类可读性修复，重点不是新增项目级业务指标，而是处理共性的难读表达与潜在误导面板：
+
+### 1. OpenClaw 共性整改
+- `Queue Enqueue 速率` / `Queue Dequeue 速率` 标题统一中文化为 `入队速率` / `出队速率`
+- 将 `Queue Enqueue / Dequeue 趋势` 统一改名为 `入队 / 出队趋势`
+- 将普通用户难以理解的 `Queue Depth 按 Lane` / `Queue Wait 按 Lane` 从 bargauge 快照改为两块更直观的 timeseries：
+  - `各处理通道队列积压趋势`
+  - `各处理通道等待时间趋势`
+- 将 `消息结果分布` 改为更适合趋势阅读的 `按结果看消息量变化`
+- 将 `Webhook 接收量分布` 改为 `Webhook 接收总量趋势`，并对 query 增加 `or vector(0)`，避免在低事件环境里继续制造误导性空态
+- 将 `Webhook 错误数（24h）` stat 改为 `... or vector(0)`，把“当前无错误事件”明确展示为 0，而不是空
+- 将 `Provider / Model Token 分布` / `Provider / Model 成本分布` 标题统一调整为 `当前 Token 最高的 Provider / Model` / `当前成本最高的 Provider / Model`，弱化实现字段口吻，保留其作为补充排行视图的定位
+
+### 2. Agent Team 共性整改
+- `完成模式分布` 从主视图分布面板改为 `完成模式变化` timeseries
+- `人工处理结果分布` 从 bargauge 改为 `人工处理结果变化` timeseries
+- `恢复 / 协调事件` 启用 table 图例 + multi tooltip，强化时间点横向比较可读性
+- 保留 `失败码分布` 作为次级排障视图，不再让 completion_mode / resolution 继续以首页快照分布的形式抢占主视图注意力
+
+这些改动与 #34 / #35 / #36 的项目级增强互补，完成了 PM 在第二轮清单里明确要求的“共性治理”部分。
+
 - OpenClaw metrics bridge 实现
 - Prometheus 接入
 - Grafana dashboards 定义

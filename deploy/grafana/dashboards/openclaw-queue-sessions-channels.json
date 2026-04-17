@@ -74,12 +74,12 @@
           },
           "editorMode": "code",
           "expr": "sum(rate(openclaw_queue_lane_enqueue_total{job=~\"$job\",instance=~\"$instance\",lane=~\"$lane\"}[5m]))",
-          "legendFormat": "Queue Enqueue 速率",
+          "legendFormat": "入队速率",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Queue Enqueue 速率",
+      "title": "入队速率",
       "type": "stat"
     },
     {
@@ -136,12 +136,12 @@
           },
           "editorMode": "code",
           "expr": "sum(rate(openclaw_queue_lane_dequeue_total{job=~\"$job\",instance=~\"$instance\",lane=~\"$lane\"}[5m]))",
-          "legendFormat": "Queue Dequeue 速率",
+          "legendFormat": "出队速率",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Queue Dequeue 速率",
+      "title": "出队速率",
       "type": "stat"
     },
     {
@@ -302,12 +302,12 @@
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -336,7 +336,7 @@
           "refId": "B"
         }
       ],
-      "title": "Queue Enqueue / Dequeue 趋势",
+      "title": "入队 / 出队趋势",
       "type": "timeseries"
     },
     {
@@ -407,10 +407,9 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-GrYlRd"
+            "mode": "palette-classic"
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -432,24 +431,16 @@
       },
       "id": 7,
       "options": {
-        "displayMode": "gradient",
         "legend": {
-          "displayMode": "hidden",
+          "calcs": [],
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": false
+          "showLegend": true
         },
-        "namePlacement": "left",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "sizing": "auto",
-        "valueMode": "color"
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
       "pluginVersion": "11.0.0",
       "targets": [
@@ -459,15 +450,14 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sort_desc(histogram_quantile(0.95, sum by (lane, le) (rate(openclaw_queue_depth_bucket{job=~\"$job\",instance=~\"$instance\",lane=~\"$lane\"}[5m]))))",
-          "instant": true,
-          "legendFormat": "{{lane}}",
-          "range": false,
+          "expr": "histogram_quantile(0.95, sum by (lane, le) (rate(openclaw_queue_depth_bucket{job=~\"$job\",instance=~\"$instance\",lane=~\"$lane\"}[5m])))",
+          "legendFormat": "{{lane}} 积压 P95",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "Queue Depth 按 Lane",
-      "type": "bargauge"
+      "title": "各处理通道队列积压趋势",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -477,10 +467,9 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-GrYlRd"
+            "mode": "palette-classic"
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -502,24 +491,16 @@
       },
       "id": 8,
       "options": {
-        "displayMode": "gradient",
         "legend": {
-          "displayMode": "hidden",
+          "calcs": [],
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": false
+          "showLegend": true
         },
-        "namePlacement": "left",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "sizing": "auto",
-        "valueMode": "color"
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
       "pluginVersion": "11.0.0",
       "targets": [
@@ -529,15 +510,14 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sort_desc(histogram_quantile(0.95, sum by (lane, le) (rate(openclaw_queue_wait_ms_bucket{job=~\"$job\",instance=~\"$instance\",lane=~\"$lane\"}[5m]))))",
-          "instant": true,
-          "legendFormat": "{{lane}}",
-          "range": false,
+          "expr": "histogram_quantile(0.95, sum by (lane, le) (rate(openclaw_queue_wait_ms_bucket{job=~\"$job\",instance=~\"$instance\",lane=~\"$lane\"}[5m])))",
+          "legendFormat": "{{lane}} 等待 P95",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "Queue Wait 按 Lane",
-      "type": "bargauge"
+      "title": "各处理通道等待时间趋势",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -676,7 +656,7 @@
           "refId": "A"
         }
       ],
-      "title": "Channel / Outcome 异常分布",
+      "title": "近24h 各渠道处理结果",
       "type": "bargauge"
     }
   ],

@@ -404,22 +404,9 @@ def build_workflow_flow_health() -> dict:
             thresholds=[{"color": "red", "value": None}, {"color": "yellow", "value": 30}, {"color": "green", "value": 60}],
         ),
         factory.timeseries(
-            title="完成模式分布",
-            unit="none",
-            x=0,
-            y=10,
-            targets=[
-                {
-                    "expr": f'sum by (completion_mode) (agent_team_callback_completion_modes_total{{{role_filters},completion_mode=~"$completion_mode"}})',
-                    "legend": "{{completion_mode}}",
-                    "refId": "A",
-                }
-            ],
-        ),
-        factory.timeseries(
             title="尝试吞吐（小时 / 天）",
             unit="none",
-            x=12,
+            x=0,
             y=10,
             targets=[
                 {
@@ -435,10 +422,27 @@ def build_workflow_flow_health() -> dict:
             ],
         ),
         factory.timeseries(
-            title="恢复 / 协调事件",
+            title="人工处理结果变化",
             unit="none",
             x=12,
+            y=10,
+            legend_display_mode="table",
+            tooltip_mode="multi",
+            targets=[
+                {
+                    "expr": 'sum by (resolution) (agent_team_human_roundtrip_total{project=~"$project",job=~"$job",instance=~"$instance",resolution!="enqueued"})',
+                    "legend": "{{resolution}}",
+                    "refId": "A",
+                }
+            ],
+        ),
+        factory.timeseries(
+            title="恢复 / 协调事件",
+            unit="none",
+            x=0,
             y=18,
+            legend_display_mode="table",
+            tooltip_mode="multi",
             targets=[
                 {
                     "expr": f'sum by (reconcile_type) (agent_team_reconcile_events_total{{{filters}}})',
@@ -447,19 +451,26 @@ def build_workflow_flow_health() -> dict:
                 }
             ],
         ),
-        factory.bargauge(
-            title="人工处理结果分布",
-            expr='sort_desc(sum by (resolution) (agent_team_human_roundtrip_total{project=~"$project",job=~"$job",instance=~"$instance",resolution!="enqueued"}))',
-            unit="short",
-            x=0,
-            y=26,
-            legend="{{resolution}}",
+        factory.timeseries(
+            title="完成模式变化",
+            unit="none",
+            x=12,
+            y=18,
+            legend_display_mode="table",
+            tooltip_mode="multi",
+            targets=[
+                {
+                    "expr": f'sum by (completion_mode) (agent_team_callback_completion_modes_total{{{role_filters},completion_mode=~"$completion_mode"}})',
+                    "legend": "{{completion_mode}}",
+                    "refId": "A",
+                }
+            ],
         ),
         factory.bargauge(
             title="失败码分布",
             expr=f'sort_desc(sum by (failure_code) (agent_team_attempt_failure_total{{{role_filters}}}))',
             unit="short",
-            x=12,
+            x=0,
             y=26,
             legend="{{failure_code}}",
         ),

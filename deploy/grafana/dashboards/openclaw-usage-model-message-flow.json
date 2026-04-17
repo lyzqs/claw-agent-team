@@ -197,7 +197,7 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum(increase(openclaw_webhook_error_total{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[24h]))",
+          "expr": "sum(increase(openclaw_webhook_error_total{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[24h])) or vector(0)",
           "legendFormat": "Webhook 错误数（24h）",
           "range": true,
           "refId": "A"
@@ -586,7 +586,7 @@
           "refId": "A"
         }
       ],
-      "title": "Provider / Model Token 分布",
+      "title": "当前 Token 最高的 Provider / Model",
       "type": "bargauge"
     },
     {
@@ -656,7 +656,7 @@
           "refId": "A"
         }
       ],
-      "title": "Provider / Model 成本分布",
+      "title": "当前成本最高的 Provider / Model",
       "type": "bargauge"
     },
     {
@@ -667,10 +667,9 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-GrYlRd"
+            "mode": "palette-classic"
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -680,7 +679,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -692,24 +691,16 @@
       },
       "id": 11,
       "options": {
-        "displayMode": "gradient",
         "legend": {
-          "displayMode": "hidden",
+          "calcs": [],
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": false
+          "showLegend": true
         },
-        "namePlacement": "left",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "sizing": "auto",
-        "valueMode": "color"
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
       "pluginVersion": "11.0.0",
       "targets": [
@@ -719,15 +710,14 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sort_desc(sum by (outcome) (increase(openclaw_message_processed_total{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[24h])))",
-          "instant": true,
-          "legendFormat": "{{outcome}}",
-          "range": false,
+          "expr": "sum by (outcome) (rate(openclaw_message_processed_total{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[5m]))",
+          "legendFormat": "{{outcome}} 消息/秒",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "消息结果分布",
-      "type": "bargauge"
+      "title": "按结果看消息量变化",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -737,10 +727,9 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-GrYlRd"
+            "mode": "palette-classic"
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -750,7 +739,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -762,24 +751,16 @@
       },
       "id": 12,
       "options": {
-        "displayMode": "gradient",
         "legend": {
-          "displayMode": "hidden",
+          "calcs": [],
+          "displayMode": "list",
           "placement": "bottom",
-          "showLegend": false
+          "showLegend": true
         },
-        "namePlacement": "left",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "sizing": "auto",
-        "valueMode": "color"
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "pluginVersion": "11.0.0",
       "targets": [
@@ -789,15 +770,14 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sort_desc(sum by (webhook) (increase(openclaw_webhook_received_total{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[24h])))",
-          "instant": true,
-          "legendFormat": "{{webhook}}",
-          "range": false,
+          "expr": "sum(rate(openclaw_webhook_received_total{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[5m])) or vector(0)",
+          "legendFormat": "Webhook 接收/秒",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "Webhook 接收量分布",
-      "type": "bargauge"
+      "title": "Webhook 接收总量趋势",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",

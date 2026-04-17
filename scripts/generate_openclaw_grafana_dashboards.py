@@ -307,7 +307,7 @@ def build_usage_model_message_flow() -> dict:
     dashboard["panels"] = [
         factory.stat(title="24h Message Queued", expr='sum(increase(openclaw_message_queued_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h]))', unit="none", x=0, y=0),
         factory.stat(title="24h Message Processed", expr='sum(increase(openclaw_message_processed_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h]))', unit="none", x=6, y=0),
-        factory.stat(title="Webhook 错误数（24h）", expr='sum(increase(openclaw_webhook_error_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h]))', unit="none", x=12, y=0),
+        factory.stat(title="Webhook 错误数（24h）", expr='sum(increase(openclaw_webhook_error_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h])) or vector(0)', unit="none", x=12, y=0),
         factory.stat(title="Context Tokens P95", expr=f'max(histogram_quantile(0.95, sum by (le) (rate(openclaw_context_tokens_bucket{{{runtime_filters}}}[5m]))))', unit="short", x=18, y=0),
         factory.timeseries(
             title="按 Agent 看消息量变化",
@@ -351,7 +351,7 @@ def build_usage_model_message_flow() -> dict:
             ],
         ),
         factory.bargauge(
-            title="Provider / Model Token 分布",
+            title="当前 Token 最高的 Provider / Model",
             expr='topk(10, sum by (provider, model) (increase(openclaw_tokens_total{job=~"$job",instance=~"$instance",channel=~"$channel",provider=~"$provider",model=~"$model"}[24h])))',
             unit="short",
             x=0,
@@ -359,28 +359,32 @@ def build_usage_model_message_flow() -> dict:
             legend='{{provider}} / {{model}}',
         ),
         factory.bargauge(
-            title="Provider / Model 成本分布",
+            title="当前成本最高的 Provider / Model",
             expr='topk(10, sum by (provider, model) (increase(openclaw_cost_usd_total{job=~"$job",instance=~"$instance",channel=~"$channel",provider=~"$provider",model=~"$model"}[24h])))',
             unit="currencyUSD",
             x=12,
             y=21,
             legend='{{provider}} / {{model}}',
         ),
-        factory.bargauge(
-            title="消息结果分布",
-            expr='sort_desc(sum by (outcome) (increase(openclaw_message_processed_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h])))',
-            unit="short",
+        factory.timeseries(
+            title="按结果看消息量变化",
+            unit="ops",
             x=0,
             y=29,
-            legend='{{outcome}}',
+            legend_display_mode="table",
+            tooltip_mode="multi",
+            targets=[
+                {"expr": 'sum by (outcome) (rate(openclaw_message_processed_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[5m]))', "legend": '{{outcome}} 消息/秒', "refId": 'A'},
+            ],
         ),
-        factory.bargauge(
-            title="Webhook 接收量分布",
-            expr='sort_desc(sum by (webhook) (increase(openclaw_webhook_received_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h])))',
-            unit="short",
+        factory.timeseries(
+            title="Webhook 接收总量趋势",
+            unit="ops",
             x=12,
             y=29,
-            legend='{{webhook}}',
+            targets=[
+                {"expr": 'sum(rate(openclaw_webhook_received_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[5m])) or vector(0)', "legend": 'Webhook 接收/秒', "refId": 'A'},
+            ],
         ),
     ]
     return dashboard
@@ -394,15 +398,17 @@ def build_queue_sessions_channels() -> dict:
         ["agent-team-grafana", "openclaw", "queue"],
     )
     dashboard["panels"] = [
-        factory.stat(title="Queue Enqueue 速率", expr='sum(rate(openclaw_queue_lane_enqueue_total{job=~"$job",instance=~"$instance",lane=~"$lane"}[5m]))', unit="ops", x=0, y=0),
-        factory.stat(title="Queue Dequeue 速率", expr='sum(rate(openclaw_queue_lane_dequeue_total{job=~"$job",instance=~"$instance",lane=~"$lane"}[5m]))', unit="ops", x=6, y=0),
+        factory.stat(title="入队速率", expr='sum(rate(openclaw_queue_lane_enqueue_total{job=~"$job",instance=~"$instance",lane=~"$lane"}[5m]))', unit="ops", x=0, y=0),
+        factory.stat(title="出队速率", expr='sum(rate(openclaw_queue_lane_dequeue_total{job=~"$job",instance=~"$instance",lane=~"$lane"}[5m]))', unit="ops", x=6, y=0),
         factory.stat(title="卡住会话年龄 P95", expr='histogram_quantile(0.95, sum by (le, state) (rate(openclaw_session_stuck_age_ms_bucket{job=~"$job",instance=~"$instance"}[5m])))', unit="ms", x=12, y=0),
         factory.stat(title="Run Attempt（24h）", expr='sum(increase(openclaw_run_attempt_total{job=~"$job",instance=~"$instance"}[24h]))', unit="none", x=18, y=0),
         factory.timeseries(
-            title="Queue Enqueue / Dequeue 趋势",
+            title="入队 / 出队趋势",
             unit="ops",
             x=0,
             y=5,
+            legend_display_mode="table",
+            tooltip_mode="multi",
             targets=[
                 {"expr": 'sum by (lane) (rate(openclaw_queue_lane_enqueue_total{job=~"$job",instance=~"$instance",lane=~"$lane"}[5m]))', "legend": '{{lane}} 入队', "refId": 'A'},
                 {"expr": 'sum by (lane) (rate(openclaw_queue_lane_dequeue_total{job=~"$job",instance=~"$instance",lane=~"$lane"}[5m]))', "legend": '{{lane}} 出队', "refId": 'B'},
@@ -417,21 +423,27 @@ def build_queue_sessions_channels() -> dict:
                 {"expr": 'histogram_quantile(0.95, sum by (le, webhook) (rate(openclaw_webhook_duration_ms_bucket{job=~"$job",instance=~"$instance",channel=~"$channel"}[5m])))', "legend": '{{webhook}} P95', "refId": 'A'},
             ],
         ),
-        factory.bargauge(
-            title="Queue Depth 按 Lane",
-            expr='sort_desc(histogram_quantile(0.95, sum by (lane, le) (rate(openclaw_queue_depth_bucket{job=~"$job",instance=~"$instance",lane=~"$lane"}[5m]))))',
+        factory.timeseries(
+            title="各处理通道队列积压趋势",
             unit="none",
             x=0,
             y=13,
-            legend='{{lane}}',
+            legend_display_mode="table",
+            tooltip_mode="multi",
+            targets=[
+                {"expr": 'histogram_quantile(0.95, sum by (lane, le) (rate(openclaw_queue_depth_bucket{job=~"$job",instance=~"$instance",lane=~"$lane"}[5m])))', "legend": '{{lane}} 积压 P95', "refId": 'A'},
+            ],
         ),
-        factory.bargauge(
-            title="Queue Wait 按 Lane",
-            expr='sort_desc(histogram_quantile(0.95, sum by (lane, le) (rate(openclaw_queue_wait_ms_bucket{job=~"$job",instance=~"$instance",lane=~"$lane"}[5m]))))',
+        factory.timeseries(
+            title="各处理通道等待时间趋势",
             unit="ms",
             x=12,
             y=13,
-            legend='{{lane}}',
+            legend_display_mode="table",
+            tooltip_mode="multi",
+            targets=[
+                {"expr": 'histogram_quantile(0.95, sum by (lane, le) (rate(openclaw_queue_wait_ms_bucket{job=~"$job",instance=~"$instance",lane=~"$lane"}[5m])))', "legend": '{{lane}} 等待 P95', "refId": 'A'},
+            ],
         ),
         factory.bargauge(
             title="卡住会话状态分布",
@@ -442,7 +454,7 @@ def build_queue_sessions_channels() -> dict:
             legend='{{state}}',
         ),
         factory.bargauge(
-            title="Channel / Outcome 异常分布",
+            title="近24h 各渠道处理结果",
             expr='topk(10, sum by (channel, outcome) (increase(openclaw_message_processed_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h])))',
             unit="short",
             x=12,

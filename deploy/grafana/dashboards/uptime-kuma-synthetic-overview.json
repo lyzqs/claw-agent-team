@@ -73,7 +73,7 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum(kuma_monitors_up_total{group=\"__all__\"})",
+          "expr": "sum(kuma_monitors_up_total{group!=\"__all__\"}) or vector(0)",
           "legendFormat": "在线监控数",
           "range": true,
           "refId": "A"
@@ -143,7 +143,7 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum(kuma_monitors_down_total{group=\"__all__\"})",
+          "expr": "sum(kuma_monitors_down_total{group!=\"__all__\"}) or vector(0)",
           "legendFormat": "离线监控数",
           "range": true,
           "refId": "A"
@@ -873,7 +873,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Uptime-Kuma | Synthetic | Overview",
+  "title": "AT | Uptime Kuma | 概览",
   "uid": "at-uptime-kuma-synthetic-overview",
   "version": 1,
   "weekStart": ""

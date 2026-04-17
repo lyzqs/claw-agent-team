@@ -578,6 +578,10 @@
                 <input id="searchInput" placeholder="按标题搜索 Issue" />
               </div>
               <div class="filter-group">
+                <label for="projectFilter">项目</label>
+                <select id="projectFilter"></select>
+              </div>
+              <div class="filter-group">
                 <label for="agentFilter">Agent</label>
                 <select id="agentFilter"></select>
               </div>
@@ -1405,6 +1409,7 @@
 
     function getFilteredIssues() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const projectFilter = document.getElementById('projectFilter').value;
       const agentFilter = document.getElementById('agentFilter').value;
       const statusFilter = document.getElementById('statusFilter').value;
       const sort = document.getElementById('sortSelect').value;
@@ -1412,9 +1417,10 @@
         const issue = item.issue;
         const desc = (issue.description_md || '').toLowerCase();
         const matchQ = !q || issue.title.toLowerCase().includes(q) || desc.includes(q);
+        const matchProject = !projectFilter || issue.project_key === projectFilter;
         const matchAgent = !agentFilter || item.current_agent_id === agentFilter;
         const matchStatus = !statusFilter || issue.status === statusFilter;
-        return matchQ && matchAgent && matchStatus;
+        return matchQ && matchProject && matchAgent && matchStatus;
       });
       if (sort === 'issue_no_desc') arr.sort((a,b) => b.issue.issue_no - a.issue.issue_no);
       if (sort === 'issue_no_asc') arr.sort((a,b) => a.issue.issue_no - b.issue.issue_no);
@@ -1423,12 +1429,21 @@
     }
 
     function renderFilters() {
+      const projectSel = document.getElementById('projectFilter');
       const agentSel = document.getElementById('agentFilter');
       const statusSel = document.getElementById('statusFilter');
+      const previousProject = projectSel.value;
+      const previousAgent = agentSel.value;
+      const previousStatus = statusSel.value;
+      const projects = [...new Set(getAllIssuesEnriched().map(x => x.issue.project_key).filter(Boolean))].sort();
       const agents = orderedAgentIds([...new Set(getAllIssuesEnriched().map(x => x.current_agent_id))]);
       const statuses = [...new Set(issuesData.map(x => x.issue.status))].sort();
+      projectSel.innerHTML = `<option value="">全部项目</option>` + projects.map(p => `<option value="${p}">${p}</option>`).join('');
       agentSel.innerHTML = `<option value="">全部 Agent</option>` + agents.map(a => `<option value="${a}">${displayAgentName(a)} · ${a}</option>`).join('');
       statusSel.innerHTML = `<option value="">全部状态</option>` + statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+      if (projects.includes(previousProject)) projectSel.value = previousProject;
+      if (agents.includes(previousAgent)) agentSel.value = previousAgent;
+      if (statuses.includes(previousStatus)) statusSel.value = previousStatus;
     }
 
     function issueCard(issueWrap) {
@@ -1455,6 +1470,35 @@
       `;
     }
 
+    function isRunningIssueStatus(status) {
+      return ['dispatching', 'running'].includes(status);
+    }
+
+    function issueCreatedAt(issueWrap) {
+      return issueWrap?.issue?.created_at_ms || issueWrap?.issue?.updated_at_ms || 0;
+    }
+
+    function sortLaneItems(laneKey, items) {
+      const arr = [...items];
+      if (laneKey === 'closed') {
+        arr.sort((a, b) => {
+          const createdDiff = issueCreatedAt(b) - issueCreatedAt(a);
+          if (createdDiff !== 0) return createdDiff;
+          return (b.issue.issue_no || 0) - (a.issue.issue_no || 0);
+        });
+        return arr;
+      }
+      arr.sort((a, b) => {
+        const aRunning = isRunningIssueStatus(a.issue.status) ? 1 : 0;
+        const bRunning = isRunningIssueStatus(b.issue.status) ? 1 : 0;
+        if (aRunning !== bRunning) return bRunning - aRunning;
+        const updatedDiff = (b.issue.updated_at_ms || 0) - (a.issue.updated_at_ms || 0);
+        if (updatedDiff !== 0) return updatedDiff;
+        return (b.issue.issue_no || 0) - (a.issue.issue_no || 0);
+      });
+      return arr;
+    }
+
     function paginateLane(key, items) {
       const totalPages = Math.max(1, Math.ceil(items.length / lanePageSize));
       if (!lanePages[key] || lanePages[key] > totalPages) lanePages[key] = 1;
@@ -1465,8 +1509,8 @@
 
     function renderStoryboard() {
       const items = getFilteredIssues();
-      const human = items.filter(x => ['waiting_human_info','waiting_human_action','waiting_human_approval'].includes(x.issue.status));
-      const closed = items.filter(x => x.issue.status === 'closed');
+      const human = sortLaneItems('human', items.filter(x => ['waiting_human_info','waiting_human_action','waiting_human_approval'].includes(x.issue.status)));
+      const closed = sortLaneItems('closed', items.filter(x => x.issue.status === 'closed'));
       const activeByAgent = {};
       for (const item of items.filter(x => !['closed','waiting_human_info','waiting_human_action','waiting_human_approval'].includes(x.issue.status))) {
         const k = item.current_agent_id || 'unassigned';
@@ -1485,11 +1529,11 @@
           key: agentId,
           title: displayAgentName(agentId),
           subtitle: `${AGENT_STAGE_HINTS[agentId] || '处理中'} · ${(activeByAgent[agentId] || []).length} 个 · ${agentId}`,
-          items: activeByAgent[agentId] || [],
+          items: sortLaneItems(agentId, activeByAgent[agentId] || []),
         });
       }
       if (activeByAgent.unassigned?.length) {
-        lanes.push({ key: 'unassigned', title: displayAgentName('unassigned'), subtitle: `${AGENT_STAGE_HINTS.unassigned} · ${activeByAgent.unassigned.length} 个`, items: activeByAgent.unassigned });
+        lanes.push({ key: 'unassigned', title: displayAgentName('unassigned'), subtitle: `${AGENT_STAGE_HINTS.unassigned} · ${activeByAgent.unassigned.length} 个`, items: sortLaneItems('unassigned', activeByAgent.unassigned) });
       }
       lanes.push({ key: 'closed', title: '已关闭', subtitle: `${closed.length} 个`, items: closed });
 
@@ -1893,6 +1937,7 @@
       openInfoModal('固定角色 / 实例说明', `${document.getElementById('roleMeta').outerHTML}${document.getElementById('instanceMeta').innerHTML}` || '暂无角色');
     });
     document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
+    document.getElementById('projectFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('agentFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('statusFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('sortSelect').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });

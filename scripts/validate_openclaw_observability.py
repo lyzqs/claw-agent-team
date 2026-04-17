@@ -74,7 +74,7 @@ CONFIG_BATCH = [
     },
     {
         "path": "diagnostics.otel.traces",
-        "value": False,
+        "value": True,
     },
     {
         "path": "diagnostics.otel.logs",
@@ -182,7 +182,7 @@ def main() -> None:
         "diagnostics.enabled": diagnostics_payload.get("enabled") is True,
         "diagnostics.otel.enabled": diagnostics_otel_payload.get("enabled") is True,
         "diagnostics.otel.metrics": diagnostics_otel_payload.get("metrics") is True,
-        "diagnostics.otel.traces": diagnostics_otel_payload.get("traces") is False,
+        "diagnostics.otel.traces": diagnostics_otel_payload.get("traces") is True,
         "diagnostics.otel.logs": diagnostics_otel_payload.get("logs") is False,
         "diagnostics.otel.protocol": diagnostics_otel_payload.get("protocol") == "http/protobuf",
         "diagnostics.otel.serviceName": diagnostics_otel_payload.get("serviceName") == "openclaw-gateway",
@@ -205,7 +205,7 @@ def main() -> None:
         "config_exists": config_exists,
         "recommended_config_present": recommended_config_present,
         "recommended_config_batch": CONFIG_BATCH,
-        "config_validation_note": "当前仓库已补齐可直接写入的 OpenClaw OTel 推荐配置 batch；本机现有 /root/.openclaw/openclaw.json 仍未启用 diagnostics-otel，因此运行态指标是否持续出现仍需 Ops/QA 按 batch 写入并复验。",
+        "config_validation_note": "当前仓库已补齐可直接写入的 OpenClaw OTel 推荐配置 batch；agent 维度聚合依赖 traces 导出，因此推荐配置已切换为 diagnostics.otel.traces=true。本机现有 /root/.openclaw/openclaw.json 仍未启用 diagnostics-otel，因此运行态指标是否持续出现仍需 Ops/QA 按 batch 写入并复验。",
     }
     print(json.dumps(report, ensure_ascii=False, indent=2))
 

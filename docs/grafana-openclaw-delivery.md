@@ -39,7 +39,7 @@
   - `diagnostics.otel.protocol = "http/protobuf"`
   - `diagnostics.otel.serviceName = "openclaw-gateway"`
   - `diagnostics.otel.metrics = true`
-  - `diagnostics.otel.traces = false`
+  - `diagnostics.otel.traces = true`
   - `diagnostics.otel.logs = false`
   - `diagnostics.otel.flushIntervalMs = 60000`
 
@@ -159,6 +159,8 @@ openclaw config set --batch-file ./deploy/grafana/openclaw-otel-config.batch.jso
 openclaw config validate --json
 ```
 
+由于 agent 维度聚合依赖 `/v1/traces` 中的 `openclaw.sessionKey`，本批配置默认会启用 `diagnostics.otel.traces=true`。如果环境侧继续保留 `traces=false`，则 `openclaw_agent_message_processed_total` 与 `openclaw_agent_tokens_total` 无法稳定产出，Grafana 中的 agent 维度趋势面板会持续无数据。
+
 之后按环境策略重载 / 重启 OpenClaw，并检查 bridge / Prometheus / Grafana 是否恢复正常。
 
 ## 最小验证
@@ -204,6 +206,7 @@ python3 scripts/validate_openclaw_observability.py
 - 确认 `validate_openclaw_observability.py` 中：
   - `openclaw-otel-bridge` target 为 `up`
   - `recommended_config_present` 全部为 `true`
+  - `diagnostics.otel.traces` 明确为 `true`
 
 ## 本轮补充增强（Issue #33）
 
@@ -236,6 +239,8 @@ python3 scripts/validate_openclaw_observability.py
 - 对现有 Grafana bundle 的最小回归修复
 
 但当前机器上 **OpenClaw OTel 配置尚未真正写入并重载**，因此“持续真实产流 + 页面验收”还不能由 Dev 单方面宣布完全闭环。
+
+其中需要特别注意：agent 维度趋势依赖 bridge 从 `/v1/traces` 聚合 `sessionKey -> agent`，所以如果 live 环境继续保持 `diagnostics.otel.traces=false`，即使 dashboard 已同步，`openclaw_agent_*` 指标也不会出现。
 
 后续建议：
 - 先由 **Ops** 或具备运行环境权限的一方按 batch 写入 OpenClaw 配置并完成服务重载

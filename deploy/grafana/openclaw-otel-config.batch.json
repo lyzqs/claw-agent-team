@@ -29,7 +29,7 @@
   },
   {
     "path": "diagnostics.otel.traces",
-    "value": false
+    "value": true
   },
   {
     "path": "diagnostics.otel.logs",

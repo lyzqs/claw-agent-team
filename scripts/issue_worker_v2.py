@@ -782,7 +782,11 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
            LEFT JOIN projects p ON p.id = ei.project_id
            WHERE i.status IN ('triaged', 'ready', 'review', 'waiting_recovery_completion', 'waiting_children')
              AND NOT EXISTS (SELECT 1 FROM issue_attempts ia WHERE ia.issue_id = i.id AND ia.status IN ('dispatching','running'))
-           ORDER BY CASE i.priority
+           ORDER BY CASE
+                      WHEN json_extract(i.metadata_json, '$.retry_state.priority_boost') = 'immediate' THEN 0
+                      ELSE 1
+                    END ASC,
+                    CASE i.priority
                       WHEN 'p0' THEN 0
                       WHEN 'p1' THEN 1
                       WHEN 'p2' THEN 2
@@ -790,7 +794,10 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
                       WHEN 'p4' THEN 4
                       ELSE 9
                     END ASC,
-                    i.updated_at_ms ASC,
+                    CASE
+                      WHEN json_extract(i.metadata_json, '$.retry_state.priority_boost') = 'immediate' THEN COALESCE(CAST(json_extract(i.metadata_json, '$.retry_state.last_retryable_failure_at_ms') AS INTEGER), i.updated_at_ms)
+                      ELSE i.updated_at_ms
+                    END DESC,
                     i.issue_no ASC'''
     )
     return [dict(r) for r in rows]
@@ -1219,6 +1226,17 @@ def main() -> int:
                 runtime_binding_key=issue['binding_key'],
                 payload=payload,
             )
+            issue_meta = parse_json(issue.get('metadata_json'))
+            retry_state = dict(issue_meta.get('retry_state') or {}) if isinstance(issue_meta.get('retry_state'), dict) else {}
+            if retry_state.get('priority_boost') == 'immediate':
+                retry_state.pop('priority_boost', None)
+                retry_state['last_retry_dispatched_at_ms'] = int(time.time() * 1000)
+                issue_meta['retry_state'] = retry_state
+                svc.db.conn.execute(
+                    'UPDATE issues SET metadata_json = ?, updated_at_ms = ? WHERE id = ?',
+                    (json.dumps(issue_meta, ensure_ascii=False), int(time.time() * 1000), issue['issue_id']),
+                )
+                svc.db.commit()
             changed = True
             item = {
                 'kind': 'dispatch',

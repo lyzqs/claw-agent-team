@@ -739,26 +739,49 @@ class DispatchService:
         elif state == 'error':
             fail_summary = error_message or 'system_chat_error'
             retryable = is_retryable_system_error(fail_summary)
+            issue_row = self.db.get_one('SELECT metadata_json FROM issues WHERE id = ?', (attempt['issue_id'],))
+            issue_meta = merge_json_object(issue_row['metadata_json'], {})
+            if retryable:
+                retry_state = dict(issue_meta.get('retry_state') or {}) if isinstance(issue_meta.get('retry_state'), dict) else {}
+                retry_state.update({
+                    'priority_boost': 'immediate',
+                    'last_retryable_failure_at_ms': ts,
+                    'last_retryable_failure_reason': fail_summary,
+                    'last_retryable_failure_code': 'system_chat_error',
+                    'retry_count': int(retry_state.get('retry_count') or 0) + 1,
+                })
+                issue_meta['retry_state'] = retry_state
             self.db.conn.execute(
                 'UPDATE issue_attempts SET status = ?, failure_code = ?, failure_summary = ?, ended_at_ms = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
                 ('failed', 'system_chat_error', fail_summary, ts, json.dumps(system_payload, ensure_ascii=False), 'system_chat_error', ts, attempt['id']),
             )
             self.db.conn.execute(
-                'UPDATE issues SET status = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
-                ('ready' if retryable else 'review', fail_summary, ts, attempt['issue_id']),
+                'UPDATE issues SET status = ?, blocker_summary = ?, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
+                ('ready' if retryable else 'review', fail_summary, json.dumps(issue_meta, ensure_ascii=False), ts, attempt['issue_id']),
             )
             action_type = 'execution_failed'
             summary = 'Execution failed via system chat event'
             checkpoint_summary = 'System observer saw error chat event'
         elif state == 'aborted':
             fail_summary = stop_reason or 'system_chat_aborted'
+            issue_row = self.db.get_one('SELECT metadata_json FROM issues WHERE id = ?', (attempt['issue_id'],))
+            issue_meta = merge_json_object(issue_row['metadata_json'], {})
+            retry_state = dict(issue_meta.get('retry_state') or {}) if isinstance(issue_meta.get('retry_state'), dict) else {}
+            retry_state.update({
+                'priority_boost': 'immediate',
+                'last_retryable_failure_at_ms': ts,
+                'last_retryable_failure_reason': fail_summary,
+                'last_retryable_failure_code': 'system_chat_aborted',
+                'retry_count': int(retry_state.get('retry_count') or 0) + 1,
+            })
+            issue_meta['retry_state'] = retry_state
             self.db.conn.execute(
                 'UPDATE issue_attempts SET status = ?, failure_code = ?, failure_summary = ?, ended_at_ms = ?, output_snapshot_json = ?, completion_mode = ?, updated_at_ms = ? WHERE id = ?',
                 ('cancelled', 'system_chat_aborted', fail_summary, ts, json.dumps(system_payload, ensure_ascii=False), 'system_chat_aborted', ts, attempt['id']),
             )
             self.db.conn.execute(
-                'UPDATE issues SET status = ?, blocker_summary = ?, updated_at_ms = ? WHERE id = ?',
-                ('ready', fail_summary, ts, attempt['issue_id']),
+                'UPDATE issues SET status = ?, blocker_summary = ?, metadata_json = ?, updated_at_ms = ? WHERE id = ?',
+                ('ready', fail_summary, json.dumps(issue_meta, ensure_ascii=False), ts, attempt['issue_id']),
             )
             action_type = 'execution_cancelled'
             summary = 'Execution aborted via system chat event'

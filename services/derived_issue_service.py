@@ -62,6 +62,15 @@ class DerivedIssueService:
         )
         existing = merge_json_object(attempt['derived_issues_json'], {})
         existing_items = existing.get('items') if isinstance(existing.get('items'), list) else []
+        source_issue = self.db.get_one(
+            '''SELECT i.priority, i.metadata_json
+               FROM issues i
+               WHERE i.id = ?''',
+            (attempt['issue_id'],),
+        )
+        issue_priority = str(source_issue['priority'] or 'p2').strip().lower()
+        if issue_priority not in {'p0', 'p1', 'p2', 'p3', 'p4'}:
+            issue_priority = 'p2'
         existing_by_key = {
             str(item.get('proposal_key')): item
             for item in existing_items
@@ -94,6 +103,8 @@ class DerivedIssueService:
                 'created_from_attempt_no': attempt['attempt_no'],
                 'created_from_role': created_by_role,
                 'proposal_key': proposal_key,
+                'source_issue_priority': issue_priority,
+                'requested_priority': str(proposal.get('priority') or '').strip().lower() or None,
             })
             issue_metadata = merge_json_object(attempt['metadata_json'], {})
             issue_metadata.setdefault('resume_role', created_by_role or 'ceo')
@@ -105,7 +116,7 @@ class DerivedIssueService:
                 title=title,
                 description_md=str(proposal.get('description_md') or ''),
                 acceptance_criteria_md=str(proposal.get('acceptance_criteria_md') or ''),
-                priority=str(proposal.get('priority') or 'p2'),
+                priority=issue_priority,
                 source_type=source_type if source_type in {'user', 'system', 'detector', 'watchdog', 'human'} else 'system',
                 metadata=metadata,
             )

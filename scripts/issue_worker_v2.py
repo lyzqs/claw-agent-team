@@ -782,7 +782,16 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
            LEFT JOIN projects p ON p.id = ei.project_id
            WHERE i.status IN ('triaged', 'ready', 'review', 'waiting_recovery_completion', 'waiting_children')
              AND NOT EXISTS (SELECT 1 FROM issue_attempts ia WHERE ia.issue_id = i.id AND ia.status IN ('dispatching','running'))
-           ORDER BY i.updated_at_ms ASC'''
+           ORDER BY CASE i.priority
+                      WHEN 'p0' THEN 0
+                      WHEN 'p1' THEN 1
+                      WHEN 'p2' THEN 2
+                      WHEN 'p3' THEN 3
+                      WHEN 'p4' THEN 4
+                      ELSE 9
+                    END ASC,
+                    i.updated_at_ms ASC,
+                    i.issue_no ASC'''
     )
     return [dict(r) for r in rows]
 

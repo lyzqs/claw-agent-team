@@ -370,6 +370,18 @@
       min-height: 0;
     }
     .issue-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--line-strong); }
+    .issue-card.dispatching {
+      border-top-color: #7c3aed;
+      border-color: rgba(124,58,237,.35);
+      background: linear-gradient(180deg, #f6f0ff 0%, #ffffff 100%);
+      box-shadow: 0 10px 24px rgba(124,58,237,.12);
+    }
+    .issue-card.dispatching .issue-title { color:#5b21b6; }
+    .issue-card.running {
+      border-top-color: #0f766e;
+      border-color: rgba(15,118,110,.28);
+      background: linear-gradient(180deg, #ecfeff 0%, #ffffff 100%);
+    }
     .issue-card.ready { border-top-color: var(--blue); }
     .issue-card.review { border-top-color: var(--yellow); }
     .issue-card.closed { border-top-color: var(--green); }
@@ -397,6 +409,16 @@
       cursor:pointer;
       background:#fff;
       transition: box-shadow .12s ease, border-color .12s ease, transform .12s ease;
+    }
+    .issue-list-item.dispatching {
+      border-color: rgba(124,58,237,.30);
+      background: linear-gradient(180deg, #f6f0ff 0%, #ffffff 100%);
+      box-shadow: 0 8px 20px rgba(124,58,237,.10);
+    }
+    .issue-list-item.running {
+      border-color: rgba(15,118,110,.26);
+      background: linear-gradient(180deg, #ecfeff 0%, #ffffff 100%);
+      box-shadow: 0 8px 20px rgba(15,118,110,.08);
     }
     .issue-list-item.active { border-color: rgba(59,130,246,.34); background:#f8fbff; box-shadow: var(--shadow-soft); }
     .issue-list-item:hover { background:#fbfcff; transform: translateY(-1px); }
@@ -584,10 +606,6 @@
               <div class="filter-group">
                 <label for="agentFilter">Agent</label>
                 <select id="agentFilter"></select>
-              </div>
-              <div class="filter-group">
-                <label for="statusFilter">状态</label>
-                <select id="statusFilter"></select>
               </div>
               <div class="filter-group">
                 <label for="sortSelect">排序</label>
@@ -1411,7 +1429,6 @@
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
       const projectFilter = document.getElementById('projectFilter').value;
       const agentFilter = document.getElementById('agentFilter').value;
-      const statusFilter = document.getElementById('statusFilter').value;
       const sort = document.getElementById('sortSelect').value;
       let arr = getAllIssuesEnriched().filter(item => {
         const issue = item.issue;
@@ -1419,8 +1436,7 @@
         const matchQ = !q || issue.title.toLowerCase().includes(q) || desc.includes(q);
         const matchProject = !projectFilter || issue.project_key === projectFilter;
         const matchAgent = !agentFilter || item.current_agent_id === agentFilter;
-        const matchStatus = !statusFilter || issue.status === statusFilter;
-        return matchQ && matchProject && matchAgent && matchStatus;
+        return matchQ && matchProject && matchAgent;
       });
       if (sort === 'issue_no_desc') arr.sort((a,b) => b.issue.issue_no - a.issue.issue_no);
       if (sort === 'issue_no_asc') arr.sort((a,b) => a.issue.issue_no - b.issue.issue_no);
@@ -1431,19 +1447,14 @@
     function renderFilters() {
       const projectSel = document.getElementById('projectFilter');
       const agentSel = document.getElementById('agentFilter');
-      const statusSel = document.getElementById('statusFilter');
       const previousProject = projectSel.value;
       const previousAgent = agentSel.value;
-      const previousStatus = statusSel.value;
       const projects = [...new Set(getAllIssuesEnriched().map(x => x.issue.project_key).filter(Boolean))].sort();
       const agents = orderedAgentIds([...new Set(getAllIssuesEnriched().map(x => x.current_agent_id))]);
-      const statuses = [...new Set(issuesData.map(x => x.issue.status))].sort();
       projectSel.innerHTML = `<option value="">全部项目</option>` + projects.map(p => `<option value="${p}">${p}</option>`).join('');
       agentSel.innerHTML = `<option value="">全部 Agent</option>` + agents.map(a => `<option value="${a}">${displayAgentName(a)} · ${a}</option>`).join('');
-      statusSel.innerHTML = `<option value="">全部状态</option>` + statuses.map(s => `<option value="${s}">${s}</option>`).join('');
       if (projects.includes(previousProject)) projectSel.value = previousProject;
       if (agents.includes(previousAgent)) agentSel.value = previousAgent;
-      if (statuses.includes(previousStatus)) statusSel.value = previousStatus;
     }
 
     function issueCard(issueWrap) {
@@ -1573,8 +1584,9 @@
         root.innerHTML = pageItems.map(item => {
           const issue = item.issue;
           const active = issue.id === selectedIssueId ? 'active' : '';
+          const statusClass = (issue.status || '').replace(/[^a-z_]/g, '_');
           return `
-            <div class="issue-list-item ${active}" data-issue-id="${issue.id}">
+            <div class="issue-list-item ${active} ${statusClass}" data-issue-id="${issue.id}">
               <div><strong>#${issue.issue_no}</strong> ${issue.title}</div>
               <div style="margin-top:6px;">
                 <span class="pill">${issue.status}</span>
@@ -1939,7 +1951,6 @@
     document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('projectFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('agentFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
-    document.getElementById('statusFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('sortSelect').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('prevPageBtn').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderIssueList(); renderIssuePreview(); } });
     document.getElementById('nextPageBtn').addEventListener('click', () => {

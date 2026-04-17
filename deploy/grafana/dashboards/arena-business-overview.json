@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -384,12 +384,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_trade_tickets_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",market_state=~\"$market_state\",setup_type=~\"$setup_type\"})",
-          "legendFormat": "Trade Tickets",
+          "legendFormat": "交易卡片数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Trade Tickets",
+      "title": "交易卡片数",
       "type": "stat"
     },
     {
@@ -446,12 +446,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_pending_trades_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",session_label=~\"$session_label\"})",
-          "legendFormat": "Pending 订单",
+          "legendFormat": "待处理订单",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Pending 订单",
+      "title": "待处理订单",
       "type": "stat"
     },
     {
@@ -508,12 +508,12 @@
           },
           "editorMode": "code",
           "expr": "max(arena_runtime_snapshot_age_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",service_kind=\"runtime\"})",
-          "legendFormat": "Snapshot Age",
+          "legendFormat": "快照延迟",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Snapshot Age",
+      "title": "快照延迟",
       "type": "stat"
     },
     {
@@ -568,7 +568,7 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_candidates_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",market_state=~\"$market_state\"})",
-          "legendFormat": "candidates",
+          "legendFormat": "候选数",
           "range": true,
           "refId": "A"
         },
@@ -579,7 +579,7 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_trade_tickets_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",market_state=~\"$market_state\",setup_type=~\"$setup_type\"})",
-          "legendFormat": "trade_tickets",
+          "legendFormat": "交易卡片",
           "range": true,
           "refId": "B"
         },
@@ -590,12 +590,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_executed_trades_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",market_state=~\"$market_state\",session_label=~\"$session_label\"})",
-          "legendFormat": "executed_trades",
+          "legendFormat": "已执行交易",
           "range": true,
           "refId": "C"
         }
       ],
-      "title": "候选 / Ticket / 执行规模",
+      "title": "候选 / 卡片 / 执行规模",
       "type": "timeseries"
     },
     {
@@ -725,7 +725,7 @@
           "refId": "A"
         }
       ],
-      "title": "Setup Type 分布",
+      "title": "策略类型分布",
       "type": "bargauge"
     },
     {
@@ -795,7 +795,7 @@
           "refId": "A"
         }
       ],
-      "title": "News Score 分布",
+      "title": "新闻评分分布",
       "type": "bargauge"
     }
   ],
@@ -812,7 +812,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -840,7 +840,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -868,7 +868,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -896,7 +896,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -924,7 +924,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -952,7 +952,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -980,7 +980,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -1013,7 +1013,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Arena | Business | Overview",
+  "title": "AT | Arena | 业务总览",
   "uid": "at-arena-business-overview",
   "version": 1,
   "weekStart": ""

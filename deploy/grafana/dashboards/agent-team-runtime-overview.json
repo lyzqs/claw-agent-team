@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -74,12 +74,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_issues_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",issue_status!=\"closed\"})",
-          "legendFormat": "未关闭 Issue 数",
+          "legendFormat": "未关闭事项数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "未关闭 Issue 数",
+      "title": "未关闭事项数",
       "type": "stat"
     },
     {
@@ -136,12 +136,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_agent_queue_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"})",
-          "legendFormat": "Agent 队列",
+          "legendFormat": "智能体待处理队列",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Agent 队列",
+      "title": "智能体待处理队列",
       "type": "stat"
     },
     {
@@ -260,12 +260,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_attempt_running_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"})",
-          "legendFormat": "运行中 Attempt",
+          "legendFormat": "运行中尝试数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "运行中 Attempt",
+      "title": "运行中尝试数",
       "type": "stat"
     },
     {
@@ -462,12 +462,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_ui_api_health{job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "UI API 健康",
+          "legendFormat": "界面 API 健康度",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "UI API 健康",
+      "title": "界面 API 健康度",
       "type": "stat"
     },
     {
@@ -589,7 +589,7 @@
           "refId": "A"
         }
       ],
-      "title": "Issue 状态分布",
+      "title": "事项状态概览",
       "type": "timeseries"
     },
     {
@@ -649,7 +649,7 @@
           "refId": "A"
         }
       ],
-      "title": "Attempt 状态分布",
+      "title": "尝试状态概览",
       "type": "timeseries"
     },
     {
@@ -806,7 +806,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -834,7 +834,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -862,7 +862,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -890,7 +890,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -918,7 +918,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -946,7 +946,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -979,7 +979,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Agent Team | 运行总览",
+  "title": "AT | 智能体团队 | 运行总览",
   "uid": "at-agent-team-runtime-overview",
   "version": 1,
   "weekStart": ""

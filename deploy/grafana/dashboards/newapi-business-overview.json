@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -74,12 +74,12 @@
           },
           "editorMode": "code",
           "expr": "sum(rate(newapi_requests_total{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\",model=~\"$model\",channel_name=~\"$channel_name\",status_family=~\"success|error\"}[5m])) * 60",
-          "legendFormat": "请求量 / min",
+          "legendFormat": "请求量 / 分钟",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "请求量 / min",
+      "title": "请求量 / 分钟",
       "type": "stat"
     },
     {
@@ -206,12 +206,12 @@
           },
           "editorMode": "code",
           "expr": "sum(newapi_tpm{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\",model=~\"$model\",channel_name=~\"$channel_name\"})",
-          "legendFormat": "Token / min",
+          "legendFormat": "Token 消耗 / 分钟",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Token / min",
+      "title": "Token 消耗 / 分钟",
       "type": "stat"
     },
     {
@@ -268,12 +268,12 @@
           },
           "editorMode": "code",
           "expr": "sum(rate(newapi_quota_consumed_total{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\",model=~\"$model\",channel_name=~\"$channel_name\"}[5m])) * 60",
-          "legendFormat": "Quota / min",
+          "legendFormat": "配额消耗 / 分钟",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Quota / min",
+      "title": "配额消耗 / 分钟",
       "type": "stat"
     },
     {
@@ -400,12 +400,12 @@
           },
           "editorMode": "code",
           "expr": "max(newapi_db_connection_health{job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "DB 健康",
+          "legendFormat": "数据库健康",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "DB 健康",
+      "title": "数据库健康",
       "type": "stat"
     },
     {
@@ -520,7 +520,7 @@
           },
           "editorMode": "code",
           "expr": "sum(rate(newapi_tokens_consumed_total{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\",model=~\"$model\",channel_name=~\"$channel_name\"}[5m])) * 60",
-          "legendFormat": "tokens/min",
+          "legendFormat": "Token/分钟",
           "range": true,
           "refId": "A"
         },
@@ -531,12 +531,12 @@
           },
           "editorMode": "code",
           "expr": "sum(rate(newapi_quota_consumed_total{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\",model=~\"$model\",channel_name=~\"$channel_name\"}[5m])) * 60",
-          "legendFormat": "quota/min",
+          "legendFormat": "配额/分钟",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "Token / Quota 消耗趋势",
+      "title": "Token / 配额消耗趋势",
       "type": "timeseries"
     },
     {
@@ -606,7 +606,7 @@
           "refId": "A"
         }
       ],
-      "title": "Top 模型请求速率",
+      "title": "模型请求速率前 10",
       "type": "bargauge"
     },
     {
@@ -676,7 +676,7 @@
           "refId": "A"
         }
       ],
-      "title": "Top 渠道错误率",
+      "title": "渠道错误率前 10",
       "type": "bargauge"
     }
   ],
@@ -693,7 +693,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -721,7 +721,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -749,7 +749,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -777,7 +777,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -805,7 +805,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -833,7 +833,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -866,7 +866,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | NewAPI | Business | Overview",
+  "title": "AT | NewAPI | 业务总览",
   "uid": "at-newapi-business-overview",
   "version": 1,
   "weekStart": ""

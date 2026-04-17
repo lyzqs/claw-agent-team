@@ -171,7 +171,7 @@ class PanelFactory:
 def variable(name: str, label: str, query: str, include_all: bool = True, multi: bool = True) -> dict:
     grafana_all = '$' + '__all'
     return {
-        'current': {'selected': False, 'text': 'All', 'value': grafana_all},
+        'current': {'selected': False, 'text': '全部', 'value': grafana_all},
         'datasource': {'type': 'prometheus', 'uid': DATASOURCE_UID},
         'definition': query,
         'hide': 0,
@@ -199,7 +199,7 @@ def base_dashboard(title: str, uid: str, tags: list[str]) -> dict:
                     'enable': True,
                     'hide': True,
                     'iconColor': 'rgba(0, 211, 255, 1)',
-                    'name': 'Annotations & Alerts',
+                    'name': '注释与告警',
                     'type': 'dashboard',
                 }
             ]
@@ -251,7 +251,7 @@ def build_business_overview() -> dict:
         factory.stat(title='今日执行笔数', expr=f'sum(arena_executed_trades_total{{{trade_filters}}})', unit='none', x=18, y=0),
         factory.stat(title='候选数', expr=f'sum(arena_candidates_total{{{filters}}})', unit='none', x=0, y=5),
         factory.stat(title='交易卡片数', expr=f'sum(arena_trade_tickets_total{{{setup_filters}}})', unit='none', x=6, y=5),
-        factory.stat(title='Pending 订单', expr='sum(arena_pending_trades_total{project=~"$project",job=~"$job",instance=~"$instance",session_label=~"$session_label"})', unit='none', x=12, y=5),
+        factory.stat(title='待处理订单', expr='sum(arena_pending_trades_total{project=~"$project",job=~"$job",instance=~"$instance",session_label=~"$session_label"})', unit='none', x=12, y=5),
         factory.stat(title='快照延迟', expr='max(arena_runtime_snapshot_age_seconds{project=~"$project",job=~"$job",instance=~"$instance",service_kind="runtime"})', unit='s', x=18, y=5),
         factory.timeseries(
             title='候选 / 卡片 / 执行规模',
@@ -304,12 +304,12 @@ def build_runtime_execution_flow() -> dict:
     dashboard['panels'] = [
         factory.stat(title='自动审单队列', expr=f'sum(arena_auto_review_queue_total{{{filters},queue="auto-review"}})', unit='none', x=0, y=0),
         factory.stat(title='看板健康', expr='max(arena_dashboard_http_health{project=~"$project",job=~"$job",instance=~"$instance"})', unit='none', x=6, y=0),
-        factory.stat(title='Runtime 快照延迟', expr='max(arena_runtime_snapshot_age_seconds{project=~"$project",job=~"$job",instance=~"$instance",service_kind="runtime"})', unit='s', x=12, y=0),
+        factory.stat(title='运行快照延迟', expr='max(arena_runtime_snapshot_age_seconds{project=~"$project",job=~"$job",instance=~"$instance",service_kind="runtime"})', unit='s', x=12, y=0),
         factory.stat(title='运行历史延迟', expr='max(arena_runtime_snapshot_age_seconds{project=~"$project",job=~"$job",instance=~"$instance",service_kind="run-history"})', unit='s', x=18, y=0),
         factory.stat(title='平均提交→首见', expr='max(arena_order_lifecycle_latency_seconds{project=~"$project",job=~"$job",instance=~"$instance",phase="submit_to_seen"})', unit='s', x=0, y=5),
         factory.stat(title='平均首见→结算', expr='max(arena_order_lifecycle_latency_seconds{project=~"$project",job=~"$job",instance=~"$instance",phase="seen_to_settled"})', unit='s', x=6, y=5),
-        factory.stat(title='P95 提交→结算', expr='max(arena_order_lifecycle_latency_seconds{project=~"$project",job=~"$job",instance=~"$instance",phase="submit_to_settled_p95"})', unit='s', x=12, y=5),
-        factory.stat(title='Pending 订单', expr='sum(arena_pending_trades_total{project=~"$project",job=~"$job",instance=~"$instance",session_label=~"$session_label"})', unit='none', x=18, y=5),
+        factory.stat(title='P95 提交到结算耗时', expr='max(arena_order_lifecycle_latency_seconds{project=~"$project",job=~"$job",instance=~"$instance",phase="submit_to_settled_p95"})', unit='s', x=12, y=5),
+        factory.stat(title='待处理订单', expr='sum(arena_pending_trades_total{project=~"$project",job=~"$job",instance=~"$instance",session_label=~"$session_label"})', unit='none', x=18, y=5),
         factory.timeseries(
             title='运行事件分布',
             unit='none',
@@ -330,7 +330,7 @@ def build_runtime_execution_flow() -> dict:
             ],
         ),
         factory.bargauge(
-            title='Blocker 类型分布',
+            title='阻塞原因分布',
             expr='sort_desc(arena_ticket_blockers_total{project=~"$project",job=~"$job",instance=~"$instance"})',
             unit='short',
             x=0,
@@ -365,13 +365,13 @@ def build_position_holdings_exits() -> dict:
         factory.stat(title='浮动盈亏', expr='max(arena_portfolio_unrealized_pnl{project=~"$project",job=~"$job",instance=~"$instance"})', unit='currencyCNY', x=0, y=5),
         factory.stat(title='看板健康', expr='max(arena_dashboard_http_health{project=~"$project",job=~"$job",instance=~"$instance"})', unit='none', x=6, y=5),
         factory.timeseries(
-            title='执行 / Pending 走势',
+            title='执行 / 待处理走势',
             unit='none',
             x=0,
             y=10,
             targets=[
                 {'expr': 'sum(arena_executed_trades_total{project=~"$project",job=~"$job",instance=~"$instance",session_label=~"$session_label"})', 'legend': '已执行', 'refId': 'A'},
-                {'expr': 'sum(arena_pending_trades_total{project=~"$project",job=~"$job",instance=~"$instance",session_label=~"$session_label"})', 'legend': 'Pending', 'refId': 'B'},
+                {'expr': 'sum(arena_pending_trades_total{project=~"$project",job=~"$job",instance=~"$instance",session_label=~"$session_label"})', 'legend': '待处理订单', 'refId': 'B'},
             ],
         ),
         factory.timeseries(

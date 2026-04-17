@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -74,12 +74,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_validation_outcomes_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "Validation 样本数",
+          "legendFormat": "验证样本数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Validation 样本数",
+      "title": "验证样本数",
       "type": "stat"
     },
     {
@@ -136,12 +136,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_news_score_distribution{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",score_band=\"positive\"})",
-          "legendFormat": "News Positive 样本",
+          "legendFormat": "正向新闻样本",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "News Positive 样本",
+      "title": "正向新闻样本",
       "type": "stat"
     },
     {
@@ -198,12 +198,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_news_score_distribution{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",score_band=\"negative\"})",
-          "legendFormat": "News Negative 样本",
+          "legendFormat": "负向新闻样本",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "News Negative 样本",
+      "title": "负向新闻样本",
       "type": "stat"
     },
     {
@@ -260,12 +260,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_runtime_events_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",event_type=\"ai-decision\"})",
-          "legendFormat": "AI 决策记录",
+          "legendFormat": "AI 决策次数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "AI 决策记录",
+      "title": "AI 决策次数",
       "type": "stat"
     },
     {
@@ -325,7 +325,7 @@
           "refId": "A"
         }
       ],
-      "title": "Validation Outcome 分布",
+      "title": "验证结果分布",
       "type": "timeseries"
     },
     {
@@ -380,12 +380,12 @@
           },
           "editorMode": "code",
           "expr": "sum by (score_band, hard_risk) (arena_news_score_distribution{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "{{score_band}} / risk={{hard_risk}}",
+          "legendFormat": "{{score_band}} / 风险={{hard_risk}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "News Score 分布",
+      "title": "新闻评分分布",
       "type": "timeseries"
     },
     {
@@ -455,7 +455,7 @@
           "refId": "A"
         }
       ],
-      "title": "Validation Outcomes 排行",
+      "title": "验证结果排行",
       "type": "bargauge"
     },
     {
@@ -520,12 +520,12 @@
           "editorMode": "code",
           "expr": "sort_desc(sum by (hard_risk) (arena_news_score_distribution{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"}))",
           "instant": true,
-          "legendFormat": "hard_risk={{hard_risk}}",
+          "legendFormat": "高风险={{hard_risk}}",
           "range": false,
           "refId": "A"
         }
       ],
-      "title": "News Risk 分布",
+      "title": "高风险新闻分布",
       "type": "bargauge"
     },
     {
@@ -594,7 +594,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -622,7 +622,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -650,7 +650,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -678,7 +678,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -706,7 +706,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -734,7 +734,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -762,7 +762,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -795,7 +795,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Arena | Review | Validation & Iteration",
+  "title": "AT | Arena | 复盘与迭代",
   "uid": "at-arena-review-validation-iteration",
   "version": 1,
   "weekStart": ""

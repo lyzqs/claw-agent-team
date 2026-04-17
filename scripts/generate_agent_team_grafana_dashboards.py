@@ -171,7 +171,7 @@ class PanelFactory:
 def variable(name: str, label: str, query: str, include_all: bool = True, multi: bool = True) -> dict:
     grafana_all = "$" + "__all"
     return {
-        "current": {"selected": False, "text": "All", "value": grafana_all},
+        "current": {"selected": False, "text": "全部", "value": grafana_all},
         "datasource": {"type": "prometheus", "uid": DATASOURCE_UID},
         "definition": query,
         "hide": 0,
@@ -199,7 +199,7 @@ def base_dashboard(title: str, uid: str, tags: list[str]) -> dict:
                     "enable": True,
                     "hide": True,
                     "iconColor": "rgba(0, 211, 255, 1)",
-                    "name": "Annotations & Alerts",
+                    "name": "注释与告警",
                     "type": "dashboard",
                 }
             ]
@@ -241,15 +241,15 @@ def build_runtime_overview() -> dict:
     success_total = f'sum(agent_team_attempt_success_total{{{role_filters},completion_mode=~"$completion_mode"}})'
     failure_total = f'sum(agent_team_attempt_failure_total{{{role_filters}}})'
     dashboard = base_dashboard(
-        title="AT | Agent Team | 运行总览",
+        title="AT | 智能体团队 | 运行总览",
         uid="at-agent-team-runtime-overview",
         tags=["agent-team-grafana", "agent-team", "runtime"],
     )
     dashboard["panels"] = [
-        factory.stat(title="未关闭 Issue 数", expr=f'sum(agent_team_issues_total{{{filters},issue_status!="closed"}})', unit="none", x=0, y=0),
-        factory.stat(title="Agent 队列", expr=f'sum(agent_team_agent_queue_total{{{role_filters}}})', unit="none", x=6, y=0),
+        factory.stat(title="未关闭事项数", expr=f'sum(agent_team_issues_total{{{filters},issue_status!="closed"}})', unit="none", x=0, y=0),
+        factory.stat(title="智能体待处理队列", expr=f'sum(agent_team_agent_queue_total{{{role_filters}}})', unit="none", x=6, y=0),
         factory.stat(title="人工队列", expr=f'sum(agent_team_human_queue_total{{{filters}}}) or vector(0)', unit="none", x=12, y=0),
-        factory.stat(title="运行中 Attempt", expr=f'sum(agent_team_attempt_running_total{{{role_filters}}})', unit="none", x=18, y=0),
+        factory.stat(title="运行中尝试数", expr=f'sum(agent_team_attempt_running_total{{{role_filters}}})', unit="none", x=18, y=0),
         factory.stat(
             title="成功率",
             expr=f'{success_total} / clamp_min(({success_total}) + ({failure_total}), 0.0001) * 100',
@@ -266,10 +266,10 @@ def build_runtime_overview() -> dict:
             y=5,
             thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 5}, {"color": "red", "value": 20}],
         ),
-        factory.stat(title="UI API 健康", expr=f'max(agent_team_ui_api_health{{job=~"$job",instance=~"$instance"}})', unit="none", x=12, y=5),
+        factory.stat(title="界面 API 健康度", expr=f'max(agent_team_ui_api_health{{job=~"$job",instance=~"$instance"}})', unit="none", x=12, y=5),
         factory.stat(title="队列隔离健康", expr=f'min(agent_team_queue_isolation_health{{job=~"$job",instance=~"$instance",check="overall"}})', unit="none", x=18, y=5),
         factory.timeseries(
-            title="Issue 状态分布",
+            title="事项状态概览",
             unit="none",
             x=0,
             y=10,
@@ -282,7 +282,7 @@ def build_runtime_overview() -> dict:
             ],
         ),
         factory.timeseries(
-            title="Attempt 状态分布",
+            title="尝试状态概览",
             unit="none",
             x=12,
             y=10,
@@ -319,19 +319,19 @@ def build_workflow_flow_health() -> dict:
     filters = 'project=~"$project",job=~"$job",instance=~"$instance"'
     role_filters = filters + ',role=~"$role"'
     dashboard = base_dashboard(
-        title="AT | Agent Team | 流转健康",
+        title="AT | 智能体团队 | 流转健康",
         uid="at-agent-team-workflow-flow-health",
         tags=["agent-team-grafana", "agent-team", "workflow"],
     )
     dashboard["panels"] = [
-        factory.stat(title="等待子 Issue", expr=f'sum(agent_team_waiting_children_total{{{filters}}})', unit="none", x=0, y=0),
+        factory.stat(title="等待子事项完成", expr=f'sum(agent_team_waiting_children_total{{{filters}}})', unit="none", x=0, y=0),
         factory.stat(title="等待恢复完成", expr=f'sum(agent_team_waiting_recovery_total{{{filters}}}) or vector(0)', unit="none", x=6, y=0),
         factory.stat(title="重试次数", expr=f'sum(agent_team_attempt_retry_total{{{role_filters}}})', unit="none", x=12, y=0),
         factory.stat(title="陈旧派发", expr=f'sum(agent_team_stale_dispatch_total{{{role_filters}}}) or vector(0)', unit="none", x=18, y=0),
         factory.stat(title="平均闭环时长", expr=f'avg(agent_team_issue_cycle_time_seconds{{{filters},final_status="closed",stat="avg"}})', unit="s", x=0, y=5),
-        factory.stat(title="P95 Attempt 时长", expr=f'max(agent_team_attempt_runtime_seconds{{{role_filters},completion_mode=~"$completion_mode",stat="p95"}})', unit="s", x=6, y=5),
+        factory.stat(title="P95 尝试耗时", expr=f'max(agent_team_attempt_runtime_seconds{{{role_filters},completion_mode=~"$completion_mode",stat="p95"}})', unit="s", x=6, y=5),
         factory.stat(title="人工往返次数", expr=f'sum(agent_team_human_roundtrip_total{{{filters},resolution!="enqueued"}})', unit="none", x=12, y=5),
-        factory.stat(title="已关闭 Issue", expr=f'sum(agent_team_issue_closed_total{{{filters}}})', unit="none", x=18, y=5),
+        factory.stat(title="已关闭事项数", expr=f'sum(agent_team_issue_closed_total{{{filters}}})', unit="none", x=18, y=5),
         factory.timeseries(
             title="完成模式分布",
             unit="none",
@@ -382,19 +382,19 @@ def build_ops_recovery_queue() -> dict:
     factory = PanelFactory()
     filters = 'project=~"$project",job=~"$job",instance=~"$instance"'
     dashboard = base_dashboard(
-        title="AT | Agent Team | 恢复与队列",
+        title="AT | 智能体团队 | 恢复与队列",
         uid="at-agent-team-ops-recovery-queue",
         tags=["agent-team-grafana", "agent-team", "ops"],
     )
     dashboard["panels"] = [
         factory.stat(title="队列隔离检查", expr='min(agent_team_queue_isolation_health{job=~"$job",instance=~"$instance",check!="overall"})', unit="none", x=0, y=0),
-        factory.stat(title="Worker 心跳延迟", expr='max(agent_team_worker_heartbeat_age_seconds{job=~"$job",instance=~"$instance",component="issue-worker"})', unit="s", x=6, y=0, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 60}, {"color": "red", "value": 300}]),
-        factory.stat(title="UI API CPU", expr='max(agent_team_process_cpu_percent{job=~"$job",instance=~"$instance",component="ui-api"})', unit="percent", x=12, y=0),
-        factory.stat(title="Worker 内存", expr='max(agent_team_process_memory_bytes{job=~"$job",instance=~"$instance",component="issue-worker"})', unit="bytes", x=18, y=0),
+        factory.stat(title="工作线程心跳延迟", expr='max(agent_team_worker_heartbeat_age_seconds{job=~"$job",instance=~"$instance",component="issue-worker"})', unit="s", x=6, y=0, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 60}, {"color": "red", "value": 300}]),
+        factory.stat(title="界面 API CPU 占用", expr='max(agent_team_process_cpu_percent{job=~"$job",instance=~"$instance",component="ui-api"})', unit="percent", x=12, y=0),
+        factory.stat(title="工作线程内存占用", expr='max(agent_team_process_memory_bytes{job=~"$job",instance=~"$instance",component="issue-worker"})', unit="bytes", x=18, y=0),
         factory.stat(title="活跃会话条目", expr=f'sum(agent_team_session_registry_entries_total{{{filters}}})', unit="none", x=0, y=5),
         factory.stat(title="观察器延迟", expr='max(agent_team_worker_heartbeat_age_seconds{job=~"$job",instance=~"$instance",component="dispatch-observer"})', unit="s", x=6, y=5, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 60}, {"color": "red", "value": 300}]),
         factory.stat(title="清扫器延迟", expr='max(agent_team_worker_heartbeat_age_seconds{job=~"$job",instance=~"$instance",component="session-sweep"})', unit="s", x=12, y=5, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 300}, {"color": "red", "value": 900}]),
-        factory.stat(title="UI API 可用性", expr='max(agent_team_ui_api_health{job=~"$job",instance=~"$instance"})', unit="none", x=18, y=5),
+        factory.stat(title="界面 API 可用状态", expr='max(agent_team_ui_api_health{job=~"$job",instance=~"$instance"})', unit="none", x=18, y=5),
         factory.timeseries(
             title="各组件心跳延迟",
             unit="s",
@@ -409,7 +409,7 @@ def build_ops_recovery_queue() -> dict:
             ],
         ),
         factory.timeseries(
-            title="Agent Team 进程 CPU",
+            title="智能体团队进程 CPU 趋势",
             unit="percent",
             x=12,
             y=10,
@@ -422,7 +422,7 @@ def build_ops_recovery_queue() -> dict:
             ],
         ),
         factory.timeseries(
-            title="Agent Team 进程内存",
+            title="智能体团队进程内存趋势",
             unit="bytes",
             x=0,
             y=18,

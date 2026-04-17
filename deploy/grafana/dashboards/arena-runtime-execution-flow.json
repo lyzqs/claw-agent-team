@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -74,12 +74,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_auto_review_queue_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",market_state=~\"$market_state\",queue=\"auto-review\"})",
-          "legendFormat": "Auto Review Queue",
+          "legendFormat": "自动审单队列",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Auto Review Queue",
+      "title": "自动审单队列",
       "type": "stat"
     },
     {
@@ -136,12 +136,12 @@
           },
           "editorMode": "code",
           "expr": "max(arena_dashboard_http_health{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "Dashboard Health",
+          "legendFormat": "看板健康",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Dashboard Health",
+      "title": "看板健康",
       "type": "stat"
     },
     {
@@ -198,12 +198,12 @@
           },
           "editorMode": "code",
           "expr": "max(arena_runtime_snapshot_age_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",service_kind=\"runtime\"})",
-          "legendFormat": "Runtime Snapshot Age",
+          "legendFormat": "运行快照延迟",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Runtime Snapshot Age",
+      "title": "运行快照延迟",
       "type": "stat"
     },
     {
@@ -260,12 +260,12 @@
           },
           "editorMode": "code",
           "expr": "max(arena_runtime_snapshot_age_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",service_kind=\"run-history\"})",
-          "legendFormat": "Run History Age",
+          "legendFormat": "运行历史延迟",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Run History Age",
+      "title": "运行历史延迟",
       "type": "stat"
     },
     {
@@ -322,12 +322,12 @@
           },
           "editorMode": "code",
           "expr": "max(arena_order_lifecycle_latency_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",phase=\"submit_to_seen\"})",
-          "legendFormat": "Avg Submit→Seen",
+          "legendFormat": "平均提交→首见",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Avg Submit→Seen",
+      "title": "平均提交→首见",
       "type": "stat"
     },
     {
@@ -384,12 +384,12 @@
           },
           "editorMode": "code",
           "expr": "max(arena_order_lifecycle_latency_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",phase=\"seen_to_settled\"})",
-          "legendFormat": "Avg Seen→Settled",
+          "legendFormat": "平均首见→结算",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Avg Seen→Settled",
+      "title": "平均首见→结算",
       "type": "stat"
     },
     {
@@ -446,12 +446,12 @@
           },
           "editorMode": "code",
           "expr": "max(arena_order_lifecycle_latency_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",phase=\"submit_to_settled_p95\"})",
-          "legendFormat": "P95 Submit→Settled",
+          "legendFormat": "P95 提交到结算耗时",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "P95 Submit→Settled",
+      "title": "P95 提交到结算耗时",
       "type": "stat"
     },
     {
@@ -508,12 +508,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_pending_trades_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",session_label=~\"$session_label\"})",
-          "legendFormat": "Pending Trades",
+          "legendFormat": "待处理订单",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Pending Trades",
+      "title": "待处理订单",
       "type": "stat"
     },
     {
@@ -573,7 +573,7 @@
           "refId": "A"
         }
       ],
-      "title": "Runtime Events",
+      "title": "运行事件分布",
       "type": "timeseries"
     },
     {
@@ -628,7 +628,7 @@
           },
           "editorMode": "code",
           "expr": "arena_runtime_loop_duration_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",stat=\"avg\"}",
-          "legendFormat": "{{stage}} avg",
+          "legendFormat": "{{stage}} 平均",
           "range": true,
           "refId": "A"
         },
@@ -639,12 +639,12 @@
           },
           "editorMode": "code",
           "expr": "arena_runtime_loop_duration_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",stat=\"p95\"}",
-          "legendFormat": "{{stage}} p95",
+          "legendFormat": "{{stage}} P95",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "Runtime Loop Duration by Stage",
+      "title": "各阶段耗时趋势",
       "type": "timeseries"
     },
     {
@@ -714,7 +714,7 @@
           "refId": "A"
         }
       ],
-      "title": "Blocker 类型分布",
+      "title": "阻塞原因分布",
       "type": "bargauge"
     },
     {
@@ -801,7 +801,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -829,7 +829,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -857,7 +857,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -885,7 +885,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -913,7 +913,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -941,7 +941,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -969,7 +969,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -1002,7 +1002,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Arena | Runtime | Execution Flow",
+  "title": "AT | Arena | 运行链路 | 执行流转",
   "uid": "at-arena-runtime-execution-flow",
   "version": 1,
   "weekStart": ""

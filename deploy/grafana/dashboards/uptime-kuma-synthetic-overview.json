@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -206,12 +206,12 @@
           },
           "editorMode": "code",
           "expr": "avg(kuma_group_availability_ratio{group!=\"__all__\"}) * 100",
-          "legendFormat": "24h 平均可用率",
+          "legendFormat": "24 小时平均可用率",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "24h 平均可用率",
+      "title": "24 小时平均可用率",
       "type": "stat"
     },
     {
@@ -400,12 +400,12 @@
           },
           "editorMode": "code",
           "expr": "max(kuma_process_cpu_percent)",
-          "legendFormat": "Kuma 进程 CPU",
+          "legendFormat": "Uptime Kuma 进程 CPU 占用",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Kuma 进程 CPU",
+      "title": "Uptime Kuma 进程 CPU 占用",
       "type": "stat"
     },
     {
@@ -462,12 +462,12 @@
           },
           "editorMode": "code",
           "expr": "max(kuma_process_memory_bytes)",
-          "legendFormat": "Kuma 进程内存",
+          "legendFormat": "Uptime Kuma 进程内存占用",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Kuma 进程内存",
+      "title": "Uptime Kuma 进程内存占用",
       "type": "stat"
     },
     {
@@ -524,12 +524,12 @@
           },
           "editorMode": "code",
           "expr": "max(kuma_socket_polling_health)",
-          "legendFormat": "Socket Polling 健康",
+          "legendFormat": "Socket Polling 健康度",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Socket Polling 健康",
+      "title": "Socket Polling 健康度",
       "type": "stat"
     },
     {
@@ -728,7 +728,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -756,7 +756,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -784,7 +784,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -812,7 +812,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -840,7 +840,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {

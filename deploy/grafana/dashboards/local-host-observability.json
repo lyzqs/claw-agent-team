@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -471,7 +471,7 @@
           "refId": "A"
         }
       ],
-      "title": "Top 10 进程 CPU 占用",
+      "title": "前 10 进程 CPU 占用",
       "type": "bargauge"
     },
     {
@@ -541,7 +541,7 @@
           "refId": "A"
         }
       ],
-      "title": "Top 10 进程驻留内存",
+      "title": "前 10 进程常驻内存",
       "type": "bargauge"
     }
   ],
@@ -562,7 +562,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Host-System | System | Overview",
+  "title": "AT | 主机系统 | 总览",
   "uid": "agent-team-local-observe",
   "version": 1,
   "weekStart": ""

@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -74,12 +74,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_waiting_children_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "等待子 Issue",
+          "legendFormat": "等待子事项完成",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "等待子 Issue",
+      "title": "等待子事项完成",
       "type": "stat"
     },
     {
@@ -384,12 +384,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_attempt_runtime_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\",completion_mode=~\"$completion_mode\",stat=\"p95\"})",
-          "legendFormat": "P95 Attempt 时长",
+          "legendFormat": "P95 尝试耗时",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "P95 Attempt 时长",
+      "title": "P95 尝试耗时",
       "type": "stat"
     },
     {
@@ -508,12 +508,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_issue_closed_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "已关闭 Issue",
+          "legendFormat": "已关闭事项数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "已关闭 Issue",
+      "title": "已关闭事项数",
       "type": "stat"
     },
     {
@@ -790,7 +790,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -818,7 +818,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -846,7 +846,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -874,7 +874,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -902,7 +902,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -930,7 +930,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -963,7 +963,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Agent Team | 流转健康",
+  "title": "AT | 智能体团队 | 流转健康",
   "uid": "at-agent-team-workflow-flow-health",
   "version": 1,
   "weekStart": ""

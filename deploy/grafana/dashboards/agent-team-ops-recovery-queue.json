@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -144,12 +144,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_worker_heartbeat_age_seconds{job=~\"$job\",instance=~\"$instance\",component=\"issue-worker\"})",
-          "legendFormat": "Worker 心跳延迟",
+          "legendFormat": "工作线程心跳延迟",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Worker 心跳延迟",
+      "title": "工作线程心跳延迟",
       "type": "stat"
     },
     {
@@ -206,12 +206,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_process_cpu_percent{job=~\"$job\",instance=~\"$instance\",component=\"ui-api\"})",
-          "legendFormat": "UI API CPU",
+          "legendFormat": "界面 API CPU 占用",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "UI API CPU",
+      "title": "界面 API CPU 占用",
       "type": "stat"
     },
     {
@@ -268,12 +268,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_process_memory_bytes{job=~\"$job\",instance=~\"$instance\",component=\"issue-worker\"})",
-          "legendFormat": "Worker 内存",
+          "legendFormat": "工作线程内存占用",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Worker 内存",
+      "title": "工作线程内存占用",
       "type": "stat"
     },
     {
@@ -532,12 +532,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_ui_api_health{job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "UI API 可用性",
+          "legendFormat": "界面 API 可用状态",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "UI API 可用性",
+      "title": "界面 API 可用状态",
       "type": "stat"
     },
     {
@@ -657,7 +657,7 @@
           "refId": "A"
         }
       ],
-      "title": "Agent Team 进程 CPU",
+      "title": "智能体团队进程 CPU 趋势",
       "type": "timeseries"
     },
     {
@@ -717,7 +717,7 @@
           "refId": "A"
         }
       ],
-      "title": "Agent Team 进程内存",
+      "title": "智能体团队进程内存趋势",
       "type": "timeseries"
     },
     {
@@ -926,7 +926,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -954,7 +954,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -982,7 +982,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -1010,7 +1010,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -1038,7 +1038,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -1066,7 +1066,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -1099,7 +1099,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Agent Team | 恢复与队列",
+  "title": "AT | 智能体团队 | 恢复与队列",
   "uid": "at-agent-team-ops-recovery-queue",
   "version": 1,
   "weekStart": ""

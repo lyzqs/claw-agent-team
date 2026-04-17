@@ -128,7 +128,7 @@ class PanelFactory:
 
 def variable(name: str, label: str, query: str, *, include_all: bool = True, multi: bool = True) -> dict:
     return {
-        "current": {"selected": False, "text": "All", "value": "$__all"},
+        "current": {"selected": False, "text": "全部", "value": "$__all"},
         "datasource": {"type": "prometheus", "uid": DATASOURCE_UID},
         "definition": query,
         "hide": 0,
@@ -156,7 +156,7 @@ def base_dashboard(title: str, uid: str, tags: list[str]) -> dict:
                     "enable": True,
                     "hide": True,
                     "iconColor": "rgba(0, 211, 255, 1)",
-                    "name": "Annotations & Alerts",
+                    "name": "注释与告警",
                     "type": "dashboard",
                 }
             ]
@@ -196,12 +196,12 @@ def build_overview() -> dict:
     dash["panels"] = [
         factory.stat(title="在线监控数", expr='sum(kuma_monitors_up_total{group!="__all__"}) or vector(0)', unit="none", x=0, y=0),
         factory.stat(title="离线监控数", expr='sum(kuma_monitors_down_total{group!="__all__"}) or vector(0)', unit="none", x=6, y=0, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 1}, {"color": "red", "value": 3}]),
-        factory.stat(title="24h 平均可用率", expr='avg(kuma_group_availability_ratio{group!="__all__"}) * 100', unit="percentunit", x=12, y=0),
+        factory.stat(title="24 小时平均可用率", expr='avg(kuma_group_availability_ratio{group!="__all__"}) * 100', unit="percentunit", x=12, y=0),
         factory.stat(title="平均响应时间", expr='avg(kuma_group_avg_response_time_ms{group!="__all__"})', unit="ms", x=18, y=0),
         factory.stat(title="证书剩余最短天数", expr='min(kuma_cert_expiry_days)', unit="dtdurations", x=0, y=5, thresholds=[{"color": "red", "value": None}, {"color": "yellow", "value": 14}, {"color": "green", "value": 30}]),
-        factory.stat(title="Kuma 进程 CPU", expr='max(kuma_process_cpu_percent)', unit="percent", x=6, y=5),
-        factory.stat(title="Kuma 进程内存", expr='max(kuma_process_memory_bytes)', unit="bytes", x=12, y=5),
-        factory.stat(title="Socket Polling 健康", expr='max(kuma_socket_polling_health)', unit="none", x=18, y=5),
+        factory.stat(title="Uptime Kuma 进程 CPU 占用", expr='max(kuma_process_cpu_percent)', unit="percent", x=6, y=5),
+        factory.stat(title="Uptime Kuma 进程内存占用", expr='max(kuma_process_memory_bytes)', unit="bytes", x=12, y=5),
+        factory.stat(title="Socket Polling 健康度", expr='max(kuma_socket_polling_health)', unit="none", x=18, y=5),
         factory.timeseries(
             title="分组可用率",
             unit="percentunit",
@@ -263,10 +263,10 @@ def build_monitor_details() -> dict:
     filter_expr = 'group=~"$group",monitor_type=~"$monitor_type",monitor_name=~"$monitor_name",job=~"$job",instance=~"$instance"'
     dash = base_dashboard("AT | Uptime Kuma | 监控明细", "at-uptime-kuma-synthetic-monitor-details", ["agent-team-grafana", "uptime-kuma", "monitor-details"])
     dash["panels"] = [
-        factory.bargauge(title="响应时间 TopN", expr='topk(15, kuma_monitor_response_time_ms{' + filter_expr + '})', unit="ms", x=0, y=0, legend="{{monitor_name}}"),
-        factory.bargauge(title="最近失败次数 TopN", expr='topk(15, kuma_monitor_failures_total{' + filter_expr + '})', unit="none", x=12, y=0, legend="{{monitor_name}}"),
-        factory.bargauge(title="最近恢复次数 TopN", expr='topk(15, kuma_monitor_recoveries_total{' + filter_expr + '})', unit="none", x=0, y=8, legend="{{monitor_name}}"),
-        factory.bargauge(title="抖动分数 TopN", expr='topk(15, kuma_monitor_flap_score{' + filter_expr + '})', unit="none", x=12, y=8, legend="{{monitor_name}}"),
+        factory.bargauge(title="响应时间前 N", expr='topk(15, kuma_monitor_response_time_ms{' + filter_expr + '})', unit="ms", x=0, y=0, legend="{{monitor_name}}"),
+        factory.bargauge(title="最近失败次数前 N", expr='topk(15, kuma_monitor_failures_total{' + filter_expr + '})', unit="none", x=12, y=0, legend="{{monitor_name}}"),
+        factory.bargauge(title="最近恢复次数前 N", expr='topk(15, kuma_monitor_recoveries_total{' + filter_expr + '})', unit="none", x=0, y=8, legend="{{monitor_name}}"),
+        factory.bargauge(title="抖动分数前 N", expr='topk(15, kuma_monitor_flap_score{' + filter_expr + '})', unit="none", x=12, y=8, legend="{{monitor_name}}"),
         factory.table(title="证书剩余天数", expr='kuma_cert_expiry_days', x=0, y=16, w=12, h=8),
         factory.table(title="当前监控状态与重试策略", expr='kuma_monitor_status{' + filter_expr + '} or kuma_monitor_retry_policy{' + filter_expr + '}', x=12, y=16, w=12, h=8),
     ]

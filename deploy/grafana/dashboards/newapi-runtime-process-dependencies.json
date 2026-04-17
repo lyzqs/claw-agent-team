@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -74,12 +74,12 @@
           },
           "editorMode": "code",
           "expr": "max(newapi_up{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "Exporter / Service 健康",
+          "legendFormat": "导出器 / 服务健康",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Exporter / Service 健康",
+      "title": "导出器 / 服务健康",
       "type": "stat"
     },
     {
@@ -260,12 +260,12 @@
           },
           "editorMode": "code",
           "expr": "max(newapi_process_open_fds{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "Open FDs",
+          "legendFormat": "打开文件句柄数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Open FDs",
+      "title": "打开文件句柄数",
       "type": "stat"
     },
     {
@@ -322,12 +322,12 @@
           },
           "editorMode": "code",
           "expr": "max(newapi_db_connection_health{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "DB 连接健康",
+          "legendFormat": "数据库连接健康",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "DB 连接健康",
+      "title": "数据库连接健康",
       "type": "stat"
     },
     {
@@ -444,7 +444,7 @@
           },
           "editorMode": "code",
           "expr": "max(newapi_process_cpu_percent{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "cpu",
+          "legendFormat": "CPU",
           "range": true,
           "refId": "A"
         }
@@ -504,7 +504,7 @@
           },
           "editorMode": "code",
           "expr": "max(newapi_process_memory_bytes{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "rss",
+          "legendFormat": "常驻内存",
           "range": true,
           "refId": "A"
         }
@@ -564,12 +564,12 @@
           },
           "editorMode": "code",
           "expr": "max(newapi_process_open_fds{env=~\"$env\",project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "open_fds",
+          "legendFormat": "打开文件句柄",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "NewAPI Open FDs 趋势",
+      "title": "NewAPI 打开文件句柄趋势",
       "type": "timeseries"
     },
     {
@@ -657,7 +657,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -685,7 +685,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -713,7 +713,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -741,7 +741,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -769,7 +769,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -797,7 +797,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -830,7 +830,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | NewAPI | Runtime | Process & Dependencies",
+  "title": "AT | NewAPI | 运行健康 | 进程与依赖",
   "uid": "at-newapi-runtime-process-dependencies",
   "version": 1,
   "weekStart": ""

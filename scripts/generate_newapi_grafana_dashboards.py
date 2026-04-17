@@ -181,7 +181,7 @@ class PanelFactory:
 def variable(name: str, label: str, query: str, include_all: bool = True, multi: bool = True) -> dict:
     grafana_all = "$" + "__all"
     return {
-        "current": {"selected": False, "text": "All", "value": grafana_all},
+        "current": {"selected": False, "text": "全部", "value": grafana_all},
         "datasource": {"type": "prometheus", "uid": DATASOURCE_UID},
         "definition": query,
         "hide": 0,
@@ -209,7 +209,7 @@ def base_dashboard(title: str, uid: str, tags: list[str]) -> dict:
                     "enable": True,
                     "hide": True,
                     "iconColor": "rgba(0, 211, 255, 1)",
-                    "name": "Annotations & Alerts",
+                    "name": "注释与告警",
                     "type": "dashboard",
                 }
             ]
@@ -271,7 +271,7 @@ def build_business_overview() -> dict:
             thresholds=[{"color": "red", "value": None}, {"color": "yellow", "value": 95}, {"color": "green", "value": 99}],
         ),
         factory.stat(title="Token 消耗 / 分钟", expr=f'sum(newapi_tpm{{{filters}}})', unit="short", x=12, y=0),
-        factory.stat(title="Quota 消耗 / 分钟", expr=f'sum(rate(newapi_quota_consumed_total{{{filters}}}[5m])) * 60', unit="short", x=18, y=0),
+        factory.stat(title="配额消耗 / 分钟", expr=f'sum(rate(newapi_quota_consumed_total{{{filters}}}[5m])) * 60', unit="short", x=18, y=0),
         factory.stat(
             title="错误率",
             expr=error_rate,
@@ -280,7 +280,7 @@ def build_business_overview() -> dict:
             y=5,
             thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 1}, {"color": "red", "value": 5}],
         ),
-        factory.stat(title="DB 健康", expr=f'max(newapi_db_connection_health{{job=~"$job",instance=~"$instance"}})', unit="none", x=6, y=5),
+        factory.stat(title="数据库健康", expr=f'max(newapi_db_connection_health{{job=~"$job",instance=~"$instance"}})', unit="none", x=6, y=5),
         factory.timeseries(
             title="请求趋势（成功 / 失败）",
             unit="reqps",
@@ -295,24 +295,24 @@ def build_business_overview() -> dict:
             ],
         ),
         factory.timeseries(
-            title="Token / Quota 消耗趋势",
+            title="Token / 配额消耗趋势",
             unit="short",
             x=12,
             y=10,
             targets=[
-                {"expr": f'sum(rate(newapi_tokens_consumed_total{{{filters}}}[5m])) * 60', "legend": "tokens/min", "refId": "A"},
-                {"expr": f'sum(rate(newapi_quota_consumed_total{{{filters}}}[5m])) * 60', "legend": "quota/min", "refId": "B"},
+                {"expr": f'sum(rate(newapi_tokens_consumed_total{{{filters}}}[5m])) * 60', "legend": "Token/分钟", "refId": "A"},
+                {"expr": f'sum(rate(newapi_quota_consumed_total{{{filters}}}[5m])) * 60', "legend": "配额/分钟", "refId": "B"},
             ],
         ),
         factory.bargauge(
-            title="模型请求速率 Top10",
+            title="模型请求速率前 10",
             expr=f'topk(10, sum by (model) (rate(newapi_requests_by_model_total{{{filters}}}[5m])))',
             unit="reqps",
             x=0,
             y=18,
         ),
         factory.bargauge(
-            title="渠道错误率 Top10",
+            title="渠道错误率前 10",
             expr=f'topk(10, newapi_channel_error_rate{{job=~"$job",instance=~"$instance",env=~"$env",project=~"$project",channel_name=~"$channel_name"}}) * 100',
             unit="percent",
             x=12,
@@ -394,32 +394,32 @@ def build_runtime_process_dependencies() -> dict:
         tags=["agent-team-grafana", "newapi", "runtime", "process"],
     )
     dashboard["panels"] = [
-        factory.stat(title="Exporter / 服务健康", expr=f'max(newapi_up{{{filters}}})', unit="none", x=0, y=0),
+        factory.stat(title="导出器 / 服务健康", expr=f'max(newapi_up{{{filters}}})', unit="none", x=0, y=0),
         factory.stat(title="CPU 使用率", expr=f'max(newapi_process_cpu_percent{{{filters}}})', unit="percent", x=6, y=0),
         factory.stat(title="内存占用", expr=f'max(newapi_process_memory_bytes{{{filters}}})', unit="bytes", x=12, y=0),
         factory.stat(title="打开文件句柄数", expr=f'max(newapi_process_open_fds{{{filters}}})', unit="none", x=18, y=0),
-        factory.stat(title="DB 连接健康", expr=f'max(newapi_db_connection_health{{{filters}}})', unit="none", x=0, y=5),
+        factory.stat(title="数据库连接健康", expr=f'max(newapi_db_connection_health{{{filters}}})', unit="none", x=0, y=5),
         factory.stat(title="错误日志开关", expr=f'max(newapi_error_log_enabled{{{filters}}})', unit="none", x=6, y=5),
         factory.timeseries(
             title="NewAPI 进程 CPU 趋势",
             unit="percent",
             x=0,
             y=10,
-            targets=[{"expr": f'max(newapi_process_cpu_percent{{{filters}}})', "legend": "cpu", "refId": "A"}],
+            targets=[{"expr": f'max(newapi_process_cpu_percent{{{filters}}})', "legend": "CPU", "refId": "A"}],
         ),
         factory.timeseries(
             title="NewAPI 进程内存趋势",
             unit="bytes",
             x=12,
             y=10,
-            targets=[{"expr": f'max(newapi_process_memory_bytes{{{filters}}})', "legend": "rss", "refId": "A"}],
+            targets=[{"expr": f'max(newapi_process_memory_bytes{{{filters}}})', "legend": "常驻内存", "refId": "A"}],
         ),
         factory.timeseries(
             title="NewAPI 打开文件句柄趋势",
             unit="none",
             x=0,
             y=18,
-            targets=[{"expr": f'max(newapi_process_open_fds{{{filters}}})', "legend": "open_fds", "refId": "A"}],
+            targets=[{"expr": f'max(newapi_process_open_fds{{{filters}}})', "legend": "打开文件句柄", "refId": "A"}],
         ),
         factory.bargauge(
             title="渠道累计已用额度",

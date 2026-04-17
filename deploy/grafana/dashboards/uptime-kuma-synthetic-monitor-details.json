@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -87,7 +87,7 @@
           "refId": "A"
         }
       ],
-      "title": "响应时间 TopN",
+      "title": "响应时间前 N",
       "type": "bargauge"
     },
     {
@@ -157,7 +157,7 @@
           "refId": "A"
         }
       ],
-      "title": "最近失败次数 TopN",
+      "title": "最近失败次数前 N",
       "type": "bargauge"
     },
     {
@@ -227,7 +227,7 @@
           "refId": "A"
         }
       ],
-      "title": "最近恢复次数 TopN",
+      "title": "最近恢复次数前 N",
       "type": "bargauge"
     },
     {
@@ -297,7 +297,7 @@
           "refId": "A"
         }
       ],
-      "title": "抖动分数 TopN",
+      "title": "抖动分数前 N",
       "type": "bargauge"
     },
     {
@@ -418,7 +418,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -446,7 +446,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -474,7 +474,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -502,7 +502,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -530,7 +530,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {

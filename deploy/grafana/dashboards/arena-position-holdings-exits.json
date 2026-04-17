@@ -10,7 +10,7 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "注释与告警",
         "type": "dashboard"
       }
     ]
@@ -198,12 +198,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_rotation_candidates_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",market_state=~\"$market_state\"})",
-          "legendFormat": "Rotation Candidates",
+          "legendFormat": "轮动候选数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Rotation Candidates",
+      "title": "轮动候选数",
       "type": "stat"
     },
     {
@@ -384,12 +384,12 @@
           },
           "editorMode": "code",
           "expr": "max(arena_dashboard_http_health{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "Dashboard 健康",
+          "legendFormat": "看板健康",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Dashboard 健康",
+      "title": "看板健康",
       "type": "stat"
     },
     {
@@ -444,7 +444,7 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_executed_trades_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",session_label=~\"$session_label\"})",
-          "legendFormat": "executed",
+          "legendFormat": "已执行",
           "range": true,
           "refId": "A"
         },
@@ -455,12 +455,12 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_pending_trades_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",session_label=~\"$session_label\"})",
-          "legendFormat": "pending",
+          "legendFormat": "待处理订单",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "执行 / Pending 走势",
+      "title": "执行 / 待处理走势",
       "type": "timeseries"
     },
     {
@@ -515,7 +515,7 @@
           },
           "editorMode": "code",
           "expr": "max(arena_holdings_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "holdings",
+          "legendFormat": "持仓数",
           "range": true,
           "refId": "A"
         },
@@ -526,7 +526,7 @@
           },
           "editorMode": "code",
           "expr": "sum(arena_exit_playbooks_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",playbook_type=~\"$playbook_type\"})",
-          "legendFormat": "exit_playbooks",
+          "legendFormat": "退出剧本",
           "range": true,
           "refId": "B"
         }
@@ -688,7 +688,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -716,7 +716,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -744,7 +744,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -772,7 +772,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -800,7 +800,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -828,7 +828,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -856,7 +856,7 @@
       {
         "current": {
           "selected": false,
-          "text": "All",
+          "text": "全部",
           "value": "$__all"
         },
         "datasource": {
@@ -889,7 +889,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Arena | Position | Holdings & Exits",
+  "title": "AT | Arena | 仓位与退出",
   "uid": "at-arena-position-holdings-exits",
   "version": 1,
   "weekStart": ""

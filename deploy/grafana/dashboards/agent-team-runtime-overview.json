@@ -74,12 +74,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_issues_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",issue_status!=\"closed\"})",
-          "legendFormat": "Open Issues",
+          "legendFormat": "未关闭 Issue 数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Open Issues",
+      "title": "未关闭 Issue 数",
       "type": "stat"
     },
     {
@@ -136,12 +136,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_agent_queue_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"})",
-          "legendFormat": "Agent Queue",
+          "legendFormat": "Agent 队列",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Agent Queue",
+      "title": "Agent 队列",
       "type": "stat"
     },
     {
@@ -197,13 +197,13 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum(agent_team_human_queue_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "Human Queue",
+          "expr": "sum(agent_team_human_queue_total{project=~\"\",job=~\"\",instance=~\"\"}) or vector(0)",
+          "legendFormat": "人工队列",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Human Queue",
+      "title": "人工队列",
       "type": "stat"
     },
     {
@@ -260,12 +260,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_attempt_running_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"})",
-          "legendFormat": "Running Attempts",
+          "legendFormat": "运行中 Attempt",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Running Attempts",
+      "title": "运行中 Attempt",
       "type": "stat"
     },
     {
@@ -330,12 +330,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_attempt_success_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\",completion_mode=~\"$completion_mode\"}) / clamp_min((sum(agent_team_attempt_success_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\",completion_mode=~\"$completion_mode\"})) + (sum(agent_team_attempt_failure_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"})), 0.0001) * 100",
-          "legendFormat": "Success Rate",
+          "legendFormat": "成功率",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Success Rate",
+      "title": "成功率",
       "type": "stat"
     },
     {
@@ -400,12 +400,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_attempt_failure_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"}) / clamp_min((sum(agent_team_attempt_success_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\",completion_mode=~\"$completion_mode\"})) + (sum(agent_team_attempt_failure_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"})), 0.0001) * 100",
-          "legendFormat": "Failure Rate",
+          "legendFormat": "失败率",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Failure Rate",
+      "title": "失败率",
       "type": "stat"
     },
     {
@@ -462,12 +462,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_ui_api_health{job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "UI API Health",
+          "legendFormat": "UI API 健康",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "UI API Health",
+      "title": "UI API 健康",
       "type": "stat"
     },
     {
@@ -524,12 +524,12 @@
           },
           "editorMode": "code",
           "expr": "min(agent_team_queue_isolation_health{job=~\"$job\",instance=~\"$instance\",check=\"overall\"})",
-          "legendFormat": "Queue Isolation",
+          "legendFormat": "队列隔离健康",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Queue Isolation",
+      "title": "队列隔离健康",
       "type": "stat"
     },
     {
@@ -589,7 +589,7 @@
           "refId": "A"
         }
       ],
-      "title": "Issue Status Distribution",
+      "title": "Issue 状态分布",
       "type": "timeseries"
     },
     {
@@ -649,7 +649,7 @@
           "refId": "A"
         }
       ],
-      "title": "Attempt Status Distribution",
+      "title": "Attempt 状态分布",
       "type": "timeseries"
     },
     {
@@ -719,7 +719,7 @@
           "refId": "A"
         }
       ],
-      "title": "Role Backlog",
+      "title": "角色积压分布",
       "type": "bargauge"
     },
     {
@@ -789,7 +789,7 @@
           "refId": "A"
         }
       ],
-      "title": "Project Backlog",
+      "title": "项目积压分布",
       "type": "bargauge"
     }
   ],
@@ -979,7 +979,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Agent-Team | Runtime | Overview",
+  "title": "AT | Agent Team | 运行总览",
   "uid": "at-agent-team-runtime-overview",
   "version": 1,
   "weekStart": ""

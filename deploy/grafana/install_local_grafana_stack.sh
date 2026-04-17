@@ -282,7 +282,7 @@ Grafana user: ${GRAFANA_ADMIN_USER}
 
 Next suggested checks:
   1. Verify DNS / external firewall allows HTTP to this host.
-  2. Open Grafana and confirm the dashboard "AT | Host-System | System | Overview" is loaded.
+  2. Open Grafana and confirm the dashboard "AT | 主机系统 | 总览" is loaded.
   3. Optionally change nginx to HTTPS after initial smoke test.
 EOF
 }

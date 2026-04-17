@@ -74,12 +74,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_waiting_children_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "Waiting Children",
+          "legendFormat": "等待子 Issue",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Waiting Children",
+      "title": "等待子 Issue",
       "type": "stat"
     },
     {
@@ -135,13 +135,13 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum(agent_team_waiting_recovery_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "Waiting Recovery",
+          "expr": "sum(agent_team_waiting_recovery_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"}) or vector(0)",
+          "legendFormat": "等待恢复完成",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Waiting Recovery",
+      "title": "等待恢复完成",
       "type": "stat"
     },
     {
@@ -198,12 +198,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_attempt_retry_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"})",
-          "legendFormat": "Retries",
+          "legendFormat": "重试次数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Retries",
+      "title": "重试次数",
       "type": "stat"
     },
     {
@@ -259,13 +259,13 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum(agent_team_stale_dispatch_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"})",
-          "legendFormat": "Stale Dispatch",
+          "expr": "sum(agent_team_stale_dispatch_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"}) or vector(0)",
+          "legendFormat": "陈旧派发",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Stale Dispatch",
+      "title": "陈旧派发",
       "type": "stat"
     },
     {
@@ -322,12 +322,12 @@
           },
           "editorMode": "code",
           "expr": "avg(agent_team_issue_cycle_time_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",final_status=\"closed\",stat=\"avg\"})",
-          "legendFormat": "Avg Cycle Time",
+          "legendFormat": "平均闭环时长",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Avg Cycle Time",
+      "title": "平均闭环时长",
       "type": "stat"
     },
     {
@@ -384,12 +384,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_attempt_runtime_seconds{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\",completion_mode=~\"$completion_mode\",stat=\"p95\"})",
-          "legendFormat": "P95 Attempt Runtime",
+          "legendFormat": "P95 Attempt 时长",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "P95 Attempt Runtime",
+      "title": "P95 Attempt 时长",
       "type": "stat"
     },
     {
@@ -446,12 +446,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_human_roundtrip_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",resolution!=\"enqueued\"})",
-          "legendFormat": "Human Roundtrips",
+          "legendFormat": "人工往返次数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Human Roundtrips",
+      "title": "人工往返次数",
       "type": "stat"
     },
     {
@@ -508,12 +508,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_issue_closed_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "Closed Issues",
+          "legendFormat": "已关闭 Issue",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Closed Issues",
+      "title": "已关闭 Issue",
       "type": "stat"
     },
     {
@@ -573,7 +573,7 @@
           "refId": "A"
         }
       ],
-      "title": "Completion Modes",
+      "title": "完成模式分布",
       "type": "timeseries"
     },
     {
@@ -633,7 +633,7 @@
           "refId": "A"
         }
       ],
-      "title": "Reconcile Events",
+      "title": "恢复 / 协调事件",
       "type": "timeseries"
     },
     {
@@ -703,7 +703,7 @@
           "refId": "A"
         }
       ],
-      "title": "Human Resolution Distribution",
+      "title": "人工处理结果分布",
       "type": "bargauge"
     },
     {
@@ -773,7 +773,7 @@
           "refId": "A"
         }
       ],
-      "title": "Attempt Failure Codes",
+      "title": "失败码分布",
       "type": "bargauge"
     }
   ],
@@ -963,7 +963,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Agent-Team | Workflow | Flow Health",
+  "title": "AT | Agent Team | 流转健康",
   "uid": "at-agent-team-workflow-flow-health",
   "version": 1,
   "weekStart": ""

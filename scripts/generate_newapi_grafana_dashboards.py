@@ -256,12 +256,12 @@ def build_business_overview() -> dict:
         f'/ clamp_min(sum(rate(newapi_requests_total{{{filters},status_family=~"success|error"}}[5m])), 0.0001) * 100'
     )
     dashboard = base_dashboard(
-        title="AT | NewAPI | Business | Overview",
+        title="AT | NewAPI | 业务总览",
         uid="at-newapi-business-overview",
         tags=["agent-team-grafana", "newapi", "business"],
     )
     dashboard["panels"] = [
-        factory.stat(title="请求量 / min", expr=total_rate, unit="reqpm", x=0, y=0),
+        factory.stat(title="请求量 / 分钟", expr=total_rate, unit="reqpm", x=0, y=0),
         factory.stat(
             title="成功率",
             expr=success_rate,
@@ -270,8 +270,8 @@ def build_business_overview() -> dict:
             y=0,
             thresholds=[{"color": "red", "value": None}, {"color": "yellow", "value": 95}, {"color": "green", "value": 99}],
         ),
-        factory.stat(title="Token / min", expr=f'sum(newapi_tpm{{{filters}}})', unit="short", x=12, y=0),
-        factory.stat(title="Quota / min", expr=f'sum(rate(newapi_quota_consumed_total{{{filters}}}[5m])) * 60', unit="short", x=18, y=0),
+        factory.stat(title="Token 消耗 / 分钟", expr=f'sum(newapi_tpm{{{filters}}})', unit="short", x=12, y=0),
+        factory.stat(title="Quota 消耗 / 分钟", expr=f'sum(rate(newapi_quota_consumed_total{{{filters}}}[5m])) * 60', unit="short", x=18, y=0),
         factory.stat(
             title="错误率",
             expr=error_rate,
@@ -305,14 +305,14 @@ def build_business_overview() -> dict:
             ],
         ),
         factory.bargauge(
-            title="Top 模型请求速率",
+            title="模型请求速率 Top10",
             expr=f'topk(10, sum by (model) (rate(newapi_requests_by_model_total{{{filters}}}[5m])))',
             unit="reqps",
             x=0,
             y=18,
         ),
         factory.bargauge(
-            title="Top 渠道错误率",
+            title="渠道错误率 Top10",
             expr=f'topk(10, newapi_channel_error_rate{{job=~"$job",instance=~"$instance",env=~"$env",project=~"$project",channel_name=~"$channel_name"}}) * 100',
             unit="percent",
             x=12,
@@ -326,7 +326,7 @@ def build_runtime_channel_health() -> dict:
     factory = PanelFactory()
     filters = 'env=~"$env",project=~"$project",job=~"$job",instance=~"$instance",channel_name=~"$channel_name"'
     dashboard = base_dashboard(
-        title="AT | NewAPI | Runtime | Channel Health",
+        title="AT | NewAPI | 运行健康 | 渠道状态",
         uid="at-newapi-runtime-channel-health",
         tags=["agent-team-grafana", "newapi", "runtime"],
     )
@@ -389,15 +389,15 @@ def build_runtime_process_dependencies() -> dict:
     factory = PanelFactory()
     filters = 'env=~"$env",project=~"$project",job=~"$job",instance=~"$instance"'
     dashboard = base_dashboard(
-        title="AT | NewAPI | Runtime | Process & Dependencies",
+        title="AT | NewAPI | 运行健康 | 进程与依赖",
         uid="at-newapi-runtime-process-dependencies",
         tags=["agent-team-grafana", "newapi", "runtime", "process"],
     )
     dashboard["panels"] = [
-        factory.stat(title="Exporter / Service 健康", expr=f'max(newapi_up{{{filters}}})', unit="none", x=0, y=0),
+        factory.stat(title="Exporter / 服务健康", expr=f'max(newapi_up{{{filters}}})', unit="none", x=0, y=0),
         factory.stat(title="CPU 使用率", expr=f'max(newapi_process_cpu_percent{{{filters}}})', unit="percent", x=6, y=0),
         factory.stat(title="内存占用", expr=f'max(newapi_process_memory_bytes{{{filters}}})', unit="bytes", x=12, y=0),
-        factory.stat(title="Open FDs", expr=f'max(newapi_process_open_fds{{{filters}}})', unit="none", x=18, y=0),
+        factory.stat(title="打开文件句柄数", expr=f'max(newapi_process_open_fds{{{filters}}})', unit="none", x=18, y=0),
         factory.stat(title="DB 连接健康", expr=f'max(newapi_db_connection_health{{{filters}}})', unit="none", x=0, y=5),
         factory.stat(title="错误日志开关", expr=f'max(newapi_error_log_enabled{{{filters}}})', unit="none", x=6, y=5),
         factory.timeseries(
@@ -415,7 +415,7 @@ def build_runtime_process_dependencies() -> dict:
             targets=[{"expr": f'max(newapi_process_memory_bytes{{{filters}}})', "legend": "rss", "refId": "A"}],
         ),
         factory.timeseries(
-            title="NewAPI Open FDs 趋势",
+            title="NewAPI 打开文件句柄趋势",
             unit="none",
             x=0,
             y=18,

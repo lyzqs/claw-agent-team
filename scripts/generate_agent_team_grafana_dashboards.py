@@ -241,17 +241,17 @@ def build_runtime_overview() -> dict:
     success_total = f'sum(agent_team_attempt_success_total{{{role_filters},completion_mode=~"$completion_mode"}})'
     failure_total = f'sum(agent_team_attempt_failure_total{{{role_filters}}})'
     dashboard = base_dashboard(
-        title="AT | Agent-Team | Runtime | Overview",
+        title="AT | Agent Team | 运行总览",
         uid="at-agent-team-runtime-overview",
         tags=["agent-team-grafana", "agent-team", "runtime"],
     )
     dashboard["panels"] = [
-        factory.stat(title="Open Issues", expr=f'sum(agent_team_issues_total{{{filters},issue_status!="closed"}})', unit="none", x=0, y=0),
-        factory.stat(title="Agent Queue", expr=f'sum(agent_team_agent_queue_total{{{role_filters}}})', unit="none", x=6, y=0),
-        factory.stat(title="Human Queue", expr=f'sum(agent_team_human_queue_total{{{filters}}})', unit="none", x=12, y=0),
-        factory.stat(title="Running Attempts", expr=f'sum(agent_team_attempt_running_total{{{role_filters}}})', unit="none", x=18, y=0),
+        factory.stat(title="未关闭 Issue 数", expr=f'sum(agent_team_issues_total{{{filters},issue_status!="closed"}})', unit="none", x=0, y=0),
+        factory.stat(title="Agent 队列", expr=f'sum(agent_team_agent_queue_total{{{role_filters}}})', unit="none", x=6, y=0),
+        factory.stat(title="人工队列", expr=f'sum(agent_team_human_queue_total{{{filters}}}) or vector(0)', unit="none", x=12, y=0),
+        factory.stat(title="运行中 Attempt", expr=f'sum(agent_team_attempt_running_total{{{role_filters}}})', unit="none", x=18, y=0),
         factory.stat(
-            title="Success Rate",
+            title="成功率",
             expr=f'{success_total} / clamp_min(({success_total}) + ({failure_total}), 0.0001) * 100',
             unit="percent",
             x=0,
@@ -259,17 +259,17 @@ def build_runtime_overview() -> dict:
             thresholds=[{"color": "red", "value": None}, {"color": "yellow", "value": 80}, {"color": "green", "value": 95}],
         ),
         factory.stat(
-            title="Failure Rate",
+            title="失败率",
             expr=f'{failure_total} / clamp_min(({success_total}) + ({failure_total}), 0.0001) * 100',
             unit="percent",
             x=6,
             y=5,
             thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 5}, {"color": "red", "value": 20}],
         ),
-        factory.stat(title="UI API Health", expr=f'max(agent_team_ui_api_health{{job=~"$job",instance=~"$instance"}})', unit="none", x=12, y=5),
-        factory.stat(title="Queue Isolation", expr=f'min(agent_team_queue_isolation_health{{job=~"$job",instance=~"$instance",check="overall"}})', unit="none", x=18, y=5),
+        factory.stat(title="UI API 健康", expr=f'max(agent_team_ui_api_health{{job=~"$job",instance=~"$instance"}})', unit="none", x=12, y=5),
+        factory.stat(title="队列隔离健康", expr=f'min(agent_team_queue_isolation_health{{job=~"$job",instance=~"$instance",check="overall"}})', unit="none", x=18, y=5),
         factory.timeseries(
-            title="Issue Status Distribution",
+            title="Issue 状态分布",
             unit="none",
             x=0,
             y=10,
@@ -282,7 +282,7 @@ def build_runtime_overview() -> dict:
             ],
         ),
         factory.timeseries(
-            title="Attempt Status Distribution",
+            title="Attempt 状态分布",
             unit="none",
             x=12,
             y=10,
@@ -295,7 +295,7 @@ def build_runtime_overview() -> dict:
             ],
         ),
         factory.bargauge(
-            title="Role Backlog",
+            title="角色积压分布",
             expr=f'sort_desc(sum by (role) (agent_team_role_backlog_total{{{role_filters},issue_status=~"$issue_status"}}))',
             unit="short",
             x=0,
@@ -303,7 +303,7 @@ def build_runtime_overview() -> dict:
             legend="{{role}}",
         ),
         factory.bargauge(
-            title="Project Backlog",
+            title="项目积压分布",
             expr='sort_desc(sum by (project) (agent_team_project_backlog_total{project=~"$project",issue_status=~"$issue_status",job=~"$job",instance=~"$instance"}))',
             unit="short",
             x=12,
@@ -319,21 +319,21 @@ def build_workflow_flow_health() -> dict:
     filters = 'project=~"$project",job=~"$job",instance=~"$instance"'
     role_filters = filters + ',role=~"$role"'
     dashboard = base_dashboard(
-        title="AT | Agent-Team | Workflow | Flow Health",
+        title="AT | Agent Team | 流转健康",
         uid="at-agent-team-workflow-flow-health",
         tags=["agent-team-grafana", "agent-team", "workflow"],
     )
     dashboard["panels"] = [
-        factory.stat(title="Waiting Children", expr=f'sum(agent_team_waiting_children_total{{{filters}}})', unit="none", x=0, y=0),
-        factory.stat(title="Waiting Recovery", expr=f'sum(agent_team_waiting_recovery_total{{{filters}}})', unit="none", x=6, y=0),
-        factory.stat(title="Retries", expr=f'sum(agent_team_attempt_retry_total{{{role_filters}}})', unit="none", x=12, y=0),
-        factory.stat(title="Stale Dispatch", expr=f'sum(agent_team_stale_dispatch_total{{{role_filters}}})', unit="none", x=18, y=0),
-        factory.stat(title="Avg Cycle Time", expr=f'avg(agent_team_issue_cycle_time_seconds{{{filters},final_status="closed",stat="avg"}})', unit="s", x=0, y=5),
-        factory.stat(title="P95 Attempt Runtime", expr=f'max(agent_team_attempt_runtime_seconds{{{role_filters},completion_mode=~"$completion_mode",stat="p95"}})', unit="s", x=6, y=5),
-        factory.stat(title="Human Roundtrips", expr=f'sum(agent_team_human_roundtrip_total{{{filters},resolution!="enqueued"}})', unit="none", x=12, y=5),
-        factory.stat(title="Closed Issues", expr=f'sum(agent_team_issue_closed_total{{{filters}}})', unit="none", x=18, y=5),
+        factory.stat(title="等待子 Issue", expr=f'sum(agent_team_waiting_children_total{{{filters}}})', unit="none", x=0, y=0),
+        factory.stat(title="等待恢复完成", expr=f'sum(agent_team_waiting_recovery_total{{{filters}}}) or vector(0)', unit="none", x=6, y=0),
+        factory.stat(title="重试次数", expr=f'sum(agent_team_attempt_retry_total{{{role_filters}}})', unit="none", x=12, y=0),
+        factory.stat(title="陈旧派发", expr=f'sum(agent_team_stale_dispatch_total{{{role_filters}}}) or vector(0)', unit="none", x=18, y=0),
+        factory.stat(title="平均闭环时长", expr=f'avg(agent_team_issue_cycle_time_seconds{{{filters},final_status="closed",stat="avg"}})', unit="s", x=0, y=5),
+        factory.stat(title="P95 Attempt 时长", expr=f'max(agent_team_attempt_runtime_seconds{{{role_filters},completion_mode=~"$completion_mode",stat="p95"}})', unit="s", x=6, y=5),
+        factory.stat(title="人工往返次数", expr=f'sum(agent_team_human_roundtrip_total{{{filters},resolution!="enqueued"}})', unit="none", x=12, y=5),
+        factory.stat(title="已关闭 Issue", expr=f'sum(agent_team_issue_closed_total{{{filters}}})', unit="none", x=18, y=5),
         factory.timeseries(
-            title="Completion Modes",
+            title="完成模式分布",
             unit="none",
             x=0,
             y=10,
@@ -346,7 +346,7 @@ def build_workflow_flow_health() -> dict:
             ],
         ),
         factory.timeseries(
-            title="Reconcile Events",
+            title="恢复 / 协调事件",
             unit="none",
             x=12,
             y=10,
@@ -359,7 +359,7 @@ def build_workflow_flow_health() -> dict:
             ],
         ),
         factory.bargauge(
-            title="Human Resolution Distribution",
+            title="人工处理结果分布",
             expr='sort_desc(sum by (resolution) (agent_team_human_roundtrip_total{project=~"$project",job=~"$job",instance=~"$instance",resolution!="enqueued"}))',
             unit="short",
             x=0,
@@ -367,7 +367,7 @@ def build_workflow_flow_health() -> dict:
             legend="{{resolution}}",
         ),
         factory.bargauge(
-            title="Attempt Failure Codes",
+            title="失败码分布",
             expr=f'sort_desc(sum by (failure_code) (agent_team_attempt_failure_total{{{role_filters}}}))',
             unit="short",
             x=12,
@@ -382,21 +382,21 @@ def build_ops_recovery_queue() -> dict:
     factory = PanelFactory()
     filters = 'project=~"$project",job=~"$job",instance=~"$instance"'
     dashboard = base_dashboard(
-        title="AT | Agent-Team | Ops | Recovery & Queue",
+        title="AT | Agent Team | 恢复与队列",
         uid="at-agent-team-ops-recovery-queue",
         tags=["agent-team-grafana", "agent-team", "ops"],
     )
     dashboard["panels"] = [
-        factory.stat(title="Queue Isolation Health", expr='min(agent_team_queue_isolation_health{job=~"$job",instance=~"$instance",check!="overall"})', unit="none", x=0, y=0),
-        factory.stat(title="Worker Heartbeat Age", expr='max(agent_team_worker_heartbeat_age_seconds{job=~"$job",instance=~"$instance",component="issue-worker"})', unit="s", x=6, y=0, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 60}, {"color": "red", "value": 300}]),
+        factory.stat(title="队列隔离检查", expr='min(agent_team_queue_isolation_health{job=~"$job",instance=~"$instance",check!="overall"})', unit="none", x=0, y=0),
+        factory.stat(title="Worker 心跳延迟", expr='max(agent_team_worker_heartbeat_age_seconds{job=~"$job",instance=~"$instance",component="issue-worker"})', unit="s", x=6, y=0, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 60}, {"color": "red", "value": 300}]),
         factory.stat(title="UI API CPU", expr='max(agent_team_process_cpu_percent{job=~"$job",instance=~"$instance",component="ui-api"})', unit="percent", x=12, y=0),
-        factory.stat(title="Worker Memory", expr='max(agent_team_process_memory_bytes{job=~"$job",instance=~"$instance",component="issue-worker"})', unit="bytes", x=18, y=0),
-        factory.stat(title="Active Session Entries", expr=f'sum(agent_team_session_registry_entries_total{{{filters}}})', unit="none", x=0, y=5),
-        factory.stat(title="Dispatch Observer Age", expr='max(agent_team_worker_heartbeat_age_seconds{job=~"$job",instance=~"$instance",component="dispatch-observer"})', unit="s", x=6, y=5, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 60}, {"color": "red", "value": 300}]),
-        factory.stat(title="Session Sweep Age", expr='max(agent_team_worker_heartbeat_age_seconds{job=~"$job",instance=~"$instance",component="session-sweep"})', unit="s", x=12, y=5, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 300}, {"color": "red", "value": 900}]),
-        factory.stat(title="UI API Health", expr='max(agent_team_ui_api_health{job=~"$job",instance=~"$instance"})', unit="none", x=18, y=5),
+        factory.stat(title="Worker 内存", expr='max(agent_team_process_memory_bytes{job=~"$job",instance=~"$instance",component="issue-worker"})', unit="bytes", x=18, y=0),
+        factory.stat(title="活跃会话条目", expr=f'sum(agent_team_session_registry_entries_total{{{filters}}})', unit="none", x=0, y=5),
+        factory.stat(title="观察器延迟", expr='max(agent_team_worker_heartbeat_age_seconds{job=~"$job",instance=~"$instance",component="dispatch-observer"})', unit="s", x=6, y=5, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 60}, {"color": "red", "value": 300}]),
+        factory.stat(title="清扫器延迟", expr='max(agent_team_worker_heartbeat_age_seconds{job=~"$job",instance=~"$instance",component="session-sweep"})', unit="s", x=12, y=5, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 300}, {"color": "red", "value": 900}]),
+        factory.stat(title="UI API 可用性", expr='max(agent_team_ui_api_health{job=~"$job",instance=~"$instance"})', unit="none", x=18, y=5),
         factory.timeseries(
-            title="Worker Heartbeat Age by Component",
+            title="各组件心跳延迟",
             unit="s",
             x=0,
             y=10,
@@ -409,7 +409,7 @@ def build_ops_recovery_queue() -> dict:
             ],
         ),
         factory.timeseries(
-            title="Agent Team Process CPU",
+            title="Agent Team 进程 CPU",
             unit="percent",
             x=12,
             y=10,
@@ -422,7 +422,7 @@ def build_ops_recovery_queue() -> dict:
             ],
         ),
         factory.timeseries(
-            title="Agent Team Process Memory",
+            title="Agent Team 进程内存",
             unit="bytes",
             x=0,
             y=18,
@@ -435,7 +435,7 @@ def build_ops_recovery_queue() -> dict:
             ],
         ),
         factory.bargauge(
-            title="Session Registry Entries by Role",
+            title="各角色会话条目",
             expr=f'sort_desc(sum by (role) (agent_team_session_registry_entries_total{{{filters}}}))',
             unit="short",
             x=12,
@@ -443,7 +443,7 @@ def build_ops_recovery_queue() -> dict:
             legend="{{role}}",
         ),
         factory.bargauge(
-            title="Queue Isolation Checks",
+            title="队列隔离检查项",
             expr='sort_desc(agent_team_queue_isolation_health{job=~"$job",instance=~"$instance"})',
             unit="none",
             x=0,
@@ -451,7 +451,7 @@ def build_ops_recovery_queue() -> dict:
             legend="{{check}}",
         ),
         factory.table(
-            title="Queue Risk Snapshot",
+            title="队列风险快照",
             expr=(
                 'agent_team_agent_queue_total{project=~"$project",job=~"$job",instance=~"$instance",role=~"$role"} '
                 'or agent_team_human_queue_total{project=~"$project",job=~"$job",instance=~"$instance"} '

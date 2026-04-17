@@ -74,12 +74,12 @@
           },
           "editorMode": "code",
           "expr": "min(agent_team_queue_isolation_health{job=~\"$job\",instance=~\"$instance\",check!=\"overall\"})",
-          "legendFormat": "Queue Isolation Health",
+          "legendFormat": "队列隔离检查",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Queue Isolation Health",
+      "title": "队列隔离检查",
       "type": "stat"
     },
     {
@@ -144,12 +144,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_worker_heartbeat_age_seconds{job=~\"$job\",instance=~\"$instance\",component=\"issue-worker\"})",
-          "legendFormat": "Worker Heartbeat Age",
+          "legendFormat": "Worker 心跳延迟",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Worker Heartbeat Age",
+      "title": "Worker 心跳延迟",
       "type": "stat"
     },
     {
@@ -268,12 +268,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_process_memory_bytes{job=~\"$job\",instance=~\"$instance\",component=\"issue-worker\"})",
-          "legendFormat": "Worker Memory",
+          "legendFormat": "Worker 内存",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Worker Memory",
+      "title": "Worker 内存",
       "type": "stat"
     },
     {
@@ -330,12 +330,12 @@
           },
           "editorMode": "code",
           "expr": "sum(agent_team_session_registry_entries_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "Active Session Entries",
+          "legendFormat": "活跃会话条目",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Active Session Entries",
+      "title": "活跃会话条目",
       "type": "stat"
     },
     {
@@ -400,12 +400,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_worker_heartbeat_age_seconds{job=~\"$job\",instance=~\"$instance\",component=\"dispatch-observer\"})",
-          "legendFormat": "Dispatch Observer Age",
+          "legendFormat": "观察器延迟",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Dispatch Observer Age",
+      "title": "观察器延迟",
       "type": "stat"
     },
     {
@@ -470,12 +470,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_worker_heartbeat_age_seconds{job=~\"$job\",instance=~\"$instance\",component=\"session-sweep\"})",
-          "legendFormat": "Session Sweep Age",
+          "legendFormat": "清扫器延迟",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Session Sweep Age",
+      "title": "清扫器延迟",
       "type": "stat"
     },
     {
@@ -532,12 +532,12 @@
           },
           "editorMode": "code",
           "expr": "max(agent_team_ui_api_health{job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "UI API Health",
+          "legendFormat": "UI API 可用性",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "UI API Health",
+      "title": "UI API 可用性",
       "type": "stat"
     },
     {
@@ -597,7 +597,7 @@
           "refId": "A"
         }
       ],
-      "title": "Worker Heartbeat Age by Component",
+      "title": "各组件心跳延迟",
       "type": "timeseries"
     },
     {
@@ -657,7 +657,7 @@
           "refId": "A"
         }
       ],
-      "title": "Agent Team Process CPU",
+      "title": "Agent Team 进程 CPU",
       "type": "timeseries"
     },
     {
@@ -717,7 +717,7 @@
           "refId": "A"
         }
       ],
-      "title": "Agent Team Process Memory",
+      "title": "Agent Team 进程内存",
       "type": "timeseries"
     },
     {
@@ -787,7 +787,7 @@
           "refId": "A"
         }
       ],
-      "title": "Session Registry Entries by Role",
+      "title": "各角色会话条目",
       "type": "bargauge"
     },
     {
@@ -857,7 +857,7 @@
           "refId": "A"
         }
       ],
-      "title": "Queue Isolation Checks",
+      "title": "队列隔离检查项",
       "type": "bargauge"
     },
     {
@@ -909,7 +909,7 @@
           "refId": "A"
         }
       ],
-      "title": "Queue Risk Snapshot",
+      "title": "队列风险快照",
       "type": "table"
     }
   ],
@@ -1099,7 +1099,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "AT | Agent-Team | Ops | Recovery & Queue",
+  "title": "AT | Agent Team | 恢复与队列",
   "uid": "at-agent-team-ops-recovery-queue",
   "version": 1,
   "weekStart": ""

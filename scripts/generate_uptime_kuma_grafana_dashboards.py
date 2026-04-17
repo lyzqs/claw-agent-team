@@ -192,10 +192,10 @@ def base_dashboard(title: str, uid: str, tags: list[str]) -> dict:
 def build_overview() -> dict:
     factory = PanelFactory()
     group_filter = 'group=~"$group",monitor_type=~"$monitor_type",monitor_name=~"$monitor_name",job=~"$job",instance=~"$instance"'
-    dash = base_dashboard("AT | Uptime-Kuma | Synthetic | Overview", "at-uptime-kuma-synthetic-overview", ["agent-team-grafana", "uptime-kuma", "synthetic"])
+    dash = base_dashboard("AT | Uptime Kuma | 概览", "at-uptime-kuma-synthetic-overview", ["agent-team-grafana", "uptime-kuma", "synthetic"])
     dash["panels"] = [
-        factory.stat(title="在线监控数", expr='sum(kuma_monitors_up_total{group="__all__"})', unit="none", x=0, y=0),
-        factory.stat(title="离线监控数", expr='sum(kuma_monitors_down_total{group="__all__"})', unit="none", x=6, y=0, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 1}, {"color": "red", "value": 3}]),
+        factory.stat(title="在线监控数", expr='sum(kuma_monitors_up_total{group!="__all__"}) or vector(0)', unit="none", x=0, y=0),
+        factory.stat(title="离线监控数", expr='sum(kuma_monitors_down_total{group!="__all__"}) or vector(0)', unit="none", x=6, y=0, thresholds=[{"color": "green", "value": None}, {"color": "yellow", "value": 1}, {"color": "red", "value": 3}]),
         factory.stat(title="24h 平均可用率", expr='avg(kuma_group_availability_ratio{group!="__all__"}) * 100', unit="percentunit", x=12, y=0),
         factory.stat(title="平均响应时间", expr='avg(kuma_group_avg_response_time_ms{group!="__all__"})', unit="ms", x=18, y=0),
         factory.stat(title="证书剩余最短天数", expr='min(kuma_cert_expiry_days)', unit="dtdurations", x=0, y=5, thresholds=[{"color": "red", "value": None}, {"color": "yellow", "value": 14}, {"color": "green", "value": 30}]),
@@ -234,7 +234,7 @@ def build_overview() -> dict:
 
 def build_group_health() -> dict:
     factory = PanelFactory()
-    dash = base_dashboard("AT | Uptime-Kuma | Synthetic | Group Health", "at-uptime-kuma-synthetic-group-health", ["agent-team-grafana", "uptime-kuma", "group-health"])
+    dash = base_dashboard("AT | Uptime Kuma | 分组健康", "at-uptime-kuma-synthetic-group-health", ["agent-team-grafana", "uptime-kuma", "group-health"])
     dash["panels"] = [
         factory.bargauge(title="分组在线监控数", expr='sort_desc(kuma_monitors_up_total{group!="__all__"})', unit="none", x=0, y=0, legend="{{group}}"),
         factory.bargauge(title="分组离线监控数", expr='sort_desc(kuma_monitors_down_total{group!="__all__"})', unit="none", x=12, y=0, legend="{{group}}"),
@@ -261,7 +261,7 @@ def build_group_health() -> dict:
 def build_monitor_details() -> dict:
     factory = PanelFactory()
     filter_expr = 'group=~"$group",monitor_type=~"$monitor_type",monitor_name=~"$monitor_name",job=~"$job",instance=~"$instance"'
-    dash = base_dashboard("AT | Uptime-Kuma | Synthetic | Monitor Details", "at-uptime-kuma-synthetic-monitor-details", ["agent-team-grafana", "uptime-kuma", "monitor-details"])
+    dash = base_dashboard("AT | Uptime Kuma | 监控明细", "at-uptime-kuma-synthetic-monitor-details", ["agent-team-grafana", "uptime-kuma", "monitor-details"])
     dash["panels"] = [
         factory.bargauge(title="响应时间 TopN", expr='topk(15, kuma_monitor_response_time_ms{' + filter_expr + '})', unit="ms", x=0, y=0, legend="{{monitor_name}}"),
         factory.bargauge(title="最近失败次数 TopN", expr='topk(15, kuma_monitor_failures_total{' + filter_expr + '})', unit="none", x=12, y=0, legend="{{monitor_name}}"),

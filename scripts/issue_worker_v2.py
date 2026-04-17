@@ -709,10 +709,10 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
 
     prompt = (
         f"你现在以 Agent Team 的 {role_label} 角色工作。Issue #{issue['issue_no']}。\n\n"
+        f"{retry_summary}"
         f"{issue_context_summary}"
         f"{prior_summary}"
         f"{human_summary}"
-        f"{retry_summary}"
         f"{recovery_summary}"
         f"{artifact_summary}"
         f"角色边界：{role_boundary_rules.get(role, '请只做当前角色边界内的工作。')}\n\n"

@@ -197,7 +197,7 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum(agent_team_human_queue_total{project=~\"\",job=~\"\",instance=~\"\"}) or vector(0)",
+          "expr": "sum(agent_team_human_queue_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"}) or vector(0)",
           "legendFormat": "人工队列",
           "range": true,
           "refId": "A"

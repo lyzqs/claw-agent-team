@@ -445,13 +445,13 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum(agent_team_human_roundtrip_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",resolution!=\"enqueued\"})",
-          "legendFormat": "人工往返次数",
+          "expr": "sum(agent_team_attempt_completed_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\",window=\"24h\"})",
+          "legendFormat": "24 小时完成尝试数",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "人工往返次数",
+      "title": "24 小时完成尝试数",
       "type": "stat"
     },
     {
@@ -469,12 +469,20 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "green",
+                "value": 60
               }
             ]
           },
-          "unit": "none"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -507,13 +515,13 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum(agent_team_issue_closed_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
-          "legendFormat": "已关闭事项数",
+          "expr": "sum(agent_team_issue_closed_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"24h\"}) / clamp_min((sum(agent_team_issue_closed_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"24h\"})) + (sum(agent_team_project_backlog_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",issue_status=\"ready\"})), 0.0001) * 100",
+          "legendFormat": "Ready 到关闭转化率（24h）",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "已关闭事项数",
+      "title": "Ready 到关闭转化率（24h）",
       "type": "stat"
     },
     {
@@ -627,6 +635,77 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
+          "expr": "sum by (role) (agent_team_attempt_completed_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\",window=\"1h\"})",
+          "legendFormat": "{{role}} 完成/小时",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-local-main"
+          },
+          "editorMode": "code",
+          "expr": "sum by (role) (agent_team_attempt_completed_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\",window=\"24h\"})",
+          "legendFormat": "{{role}} 完成/天",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "尝试吞吐（小时 / 天）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-local-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-local-main"
+          },
+          "editorMode": "code",
           "expr": "sum by (reconcile_type) (agent_team_reconcile_events_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\"})",
           "legendFormat": "{{reconcile_type}}",
           "range": true,
@@ -665,9 +744,9 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 26
       },
-      "id": 11,
+      "id": 12,
       "options": {
         "displayMode": "gradient",
         "legend": {
@@ -735,9 +814,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 26
       },
-      "id": 12,
+      "id": 13,
       "options": {
         "displayMode": "gradient",
         "legend": {

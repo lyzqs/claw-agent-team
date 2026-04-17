@@ -269,37 +269,63 @@ def build_runtime_overview() -> dict:
         factory.stat(title="界面 API 健康度", expr=f'max(agent_team_ui_api_health{{job=~"$job",instance=~"$instance"}})', unit="none", x=12, y=5),
         factory.stat(title="队列隔离健康", expr=f'min(agent_team_queue_isolation_health{{job=~"$job",instance=~"$instance",check="overall"}})', unit="none", x=18, y=5),
         factory.timeseries(
-            title="事项状态概览",
+            title="事项创建 / 关闭趋势（小时）",
             unit="none",
             x=0,
             y=10,
             targets=[
                 {
-                    "expr": f'sum by (issue_status) (agent_team_issues_total{{{issue_filters}}})',
-                    "legend": "{{issue_status}}",
+                    "expr": f'sum by (project) (agent_team_issue_created_window_total{{{filters},window="1h"}})',
+                    "legend": "{{project}} 创建/小时",
                     "refId": "A",
-                }
+                },
+                {
+                    "expr": f'sum by (project) (agent_team_issue_closed_window_total{{{filters},window="1h"}})',
+                    "legend": "{{project}} 关闭/小时",
+                    "refId": "B",
+                },
             ],
         ),
         factory.timeseries(
-            title="尝试状态概览",
+            title="事项创建 / 关闭趋势（天）",
             unit="none",
             x=12,
             y=10,
             targets=[
                 {
-                    "expr": f'sum by (attempt_status) (agent_team_attempts_total{{{role_filters}}})',
-                    "legend": "{{attempt_status}}",
+                    "expr": f'sum by (project) (agent_team_issue_created_window_total{{{filters},window="24h"}})',
+                    "legend": "{{project}} 创建/天",
                     "refId": "A",
-                }
+                },
+                {
+                    "expr": f'sum by (project) (agent_team_issue_closed_window_total{{{filters},window="24h"}})',
+                    "legend": "{{project}} 关闭/天",
+                    "refId": "B",
+                },
             ],
+        ),
+        factory.bargauge(
+            title="事项状态概览",
+            expr=f'sort_desc(sum by (issue_status) (agent_team_issues_total{{{issue_filters}}}))',
+            unit="short",
+            x=0,
+            y=18,
+            legend="{{issue_status}}",
+        ),
+        factory.bargauge(
+            title="尝试状态概览",
+            expr=f'sort_desc(sum by (attempt_status) (agent_team_attempts_total{{{role_filters}}}))',
+            unit="short",
+            x=12,
+            y=18,
+            legend="{{attempt_status}}",
         ),
         factory.bargauge(
             title="角色积压分布",
             expr=f'sort_desc(sum by (role) (agent_team_role_backlog_total{{{role_filters},issue_status=~"$issue_status"}}))',
             unit="short",
             x=0,
-            y=18,
+            y=26,
             legend="{{role}}",
         ),
         factory.bargauge(
@@ -307,7 +333,7 @@ def build_runtime_overview() -> dict:
             expr='sort_desc(sum by (project) (agent_team_project_backlog_total{project=~"$project",issue_status=~"$issue_status",job=~"$job",instance=~"$instance"}))',
             unit="short",
             x=12,
-            y=18,
+            y=26,
             legend="{{project}}",
         ),
     ]
@@ -323,6 +349,8 @@ def build_workflow_flow_health() -> dict:
         uid="at-agent-team-workflow-flow-health",
         tags=["agent-team-grafana", "agent-team", "workflow"],
     )
+    ready_backlog = f'sum(agent_team_project_backlog_total{{{filters},issue_status="ready"}})'
+    closed_24h = f'sum(agent_team_issue_closed_window_total{{{filters},window="24h"}})'
     dashboard["panels"] = [
         factory.stat(title="等待子事项完成", expr=f'sum(agent_team_waiting_children_total{{{filters}}})', unit="none", x=0, y=0),
         factory.stat(title="等待恢复完成", expr=f'sum(agent_team_waiting_recovery_total{{{filters}}}) or vector(0)', unit="none", x=6, y=0),
@@ -330,8 +358,15 @@ def build_workflow_flow_health() -> dict:
         factory.stat(title="陈旧派发", expr=f'sum(agent_team_stale_dispatch_total{{{role_filters}}}) or vector(0)', unit="none", x=18, y=0),
         factory.stat(title="平均闭环时长", expr=f'avg(agent_team_issue_cycle_time_seconds{{{filters},final_status="closed",stat="avg"}})', unit="s", x=0, y=5),
         factory.stat(title="P95 尝试耗时", expr=f'max(agent_team_attempt_runtime_seconds{{{role_filters},completion_mode=~"$completion_mode",stat="p95"}})', unit="s", x=6, y=5),
-        factory.stat(title="人工往返次数", expr=f'sum(agent_team_human_roundtrip_total{{{filters},resolution!="enqueued"}})', unit="none", x=12, y=5),
-        factory.stat(title="已关闭事项数", expr=f'sum(agent_team_issue_closed_total{{{filters}}})', unit="none", x=18, y=5),
+        factory.stat(title="24 小时完成尝试数", expr=f'sum(agent_team_attempt_completed_window_total{{{role_filters},window="24h"}})', unit="none", x=12, y=5),
+        factory.stat(
+            title="Ready 到关闭转化率（24h）",
+            expr=f'{closed_24h} / clamp_min(({closed_24h}) + ({ready_backlog}), 0.0001) * 100',
+            unit="percent",
+            x=18,
+            y=5,
+            thresholds=[{"color": "red", "value": None}, {"color": "yellow", "value": 30}, {"color": "green", "value": 60}],
+        ),
         factory.timeseries(
             title="完成模式分布",
             unit="none",
@@ -346,10 +381,28 @@ def build_workflow_flow_health() -> dict:
             ],
         ),
         factory.timeseries(
-            title="恢复 / 协调事件",
+            title="尝试吞吐（小时 / 天）",
             unit="none",
             x=12,
             y=10,
+            targets=[
+                {
+                    "expr": f'sum by (role) (agent_team_attempt_completed_window_total{{{role_filters},window="1h"}})',
+                    "legend": "{{role}} 完成/小时",
+                    "refId": "A",
+                },
+                {
+                    "expr": f'sum by (role) (agent_team_attempt_completed_window_total{{{role_filters},window="24h"}})',
+                    "legend": "{{role}} 完成/天",
+                    "refId": "B",
+                },
+            ],
+        ),
+        factory.timeseries(
+            title="恢复 / 协调事件",
+            unit="none",
+            x=12,
+            y=18,
             targets=[
                 {
                     "expr": f'sum by (reconcile_type) (agent_team_reconcile_events_total{{{filters}}})',
@@ -363,7 +416,7 @@ def build_workflow_flow_health() -> dict:
             expr='sort_desc(sum by (resolution) (agent_team_human_roundtrip_total{project=~"$project",job=~"$job",instance=~"$instance",resolution!="enqueued"}))',
             unit="short",
             x=0,
-            y=18,
+            y=26,
             legend="{{resolution}}",
         ),
         factory.bargauge(
@@ -371,7 +424,7 @@ def build_workflow_flow_health() -> dict:
             expr=f'sort_desc(sum by (failure_code) (agent_team_attempt_failure_total{{{role_filters}}}))',
             unit="short",
             x=12,
-            y=18,
+            y=26,
             legend="{{failure_code}}",
         ),
     ]

@@ -44,6 +44,10 @@ WAITING_HUMAN_STATUS_TO_TYPE = {
     "waiting_human_action": "action",
     "waiting_human_approval": "approval",
 }
+THROUGHPUT_WINDOWS = {
+    "1h": 60 * 60.0,
+    "24h": 24 * 60 * 60.0,
+}
 
 
 @dataclass
@@ -214,13 +218,16 @@ class AgentTeamCollector:
         attempt_running_total = Gauge("agent_team_attempt_running_total", "Current running attempt count", [*base_keys, "layer", "project", "role"], registry=registry)
         waiting_children_total = Gauge("agent_team_waiting_children_total", "Current waiting_children issue count", [*base_keys, "layer", "project"], registry=registry)
         waiting_recovery_total = Gauge("agent_team_waiting_recovery_total", "Current waiting_recovery_completion issue count", [*base_keys, "layer", "project"], registry=registry)
+        issue_created_window_total = Gauge("agent_team_issue_created_window_total", "Issues created within rolling windows", [*base_keys, "layer", "project", "window"], registry=registry)
         issue_closed_total = Gauge("agent_team_issue_closed_total", "Issue closed event count", [*base_keys, "layer", "project", "resolution"], registry=registry)
+        issue_closed_window_total = Gauge("agent_team_issue_closed_window_total", "Issues closed within rolling windows", [*base_keys, "layer", "project", "window"], registry=registry)
         attempt_retry_total = Gauge("agent_team_attempt_retry_total", "Retry attempt count", [*base_keys, "layer", "project", "role"], registry=registry)
         reconcile_events_total = Gauge("agent_team_reconcile_events_total", "Reconcile event count", [*base_keys, "layer", "project", "reconcile_type"], registry=registry)
         human_roundtrip_total = Gauge("agent_team_human_roundtrip_total", "Human queue roundtrip count", [*base_keys, "layer", "project", "human_type", "resolution"], registry=registry)
         callback_completion_modes_total = Gauge("agent_team_callback_completion_modes_total", "Completion mode distribution", [*base_keys, "layer", "project", "role", "completion_mode"], registry=registry)
         issue_cycle_time_seconds = Gauge("agent_team_issue_cycle_time_seconds", "Issue cycle time aggregate", [*base_keys, "layer", "project", "final_status", "stat"], registry=registry)
         attempt_runtime_seconds = Gauge("agent_team_attempt_runtime_seconds", "Attempt runtime aggregate", [*base_keys, "layer", "project", "role", "completion_mode", "stat"], registry=registry)
+        attempt_completed_window_total = Gauge("agent_team_attempt_completed_window_total", "Attempts completed within rolling windows", [*base_keys, "layer", "project", "role", "window", "completion_mode"], registry=registry)
         role_backlog_total = Gauge("agent_team_role_backlog_total", "Open backlog by role and status", [*base_keys, "layer", "project", "role", "issue_status"], registry=registry)
         project_backlog_total = Gauge("agent_team_project_backlog_total", "Open backlog by project and status", [*base_keys, "layer", "project", "issue_status"], registry=registry)
         worker_heartbeat_age_seconds = Gauge("agent_team_worker_heartbeat_age_seconds", "Heartbeat/report age in seconds", [*base_keys, "layer", "component"], registry=registry)
@@ -287,15 +294,31 @@ class AgentTeamCollector:
             human_queue_counts: Counter[tuple[str, str]] = Counter()
             waiting_children_counts: Counter[str] = Counter()
             waiting_recovery_counts: Counter[str] = Counter()
+            issue_created_window_counts: Counter[tuple[str, str]] = Counter()
+            issue_closed_window_counts: Counter[tuple[str, str]] = Counter()
             role_backlog_counts: Counter[tuple[str, str, str]] = Counter()
             project_backlog_counts: Counter[tuple[str, str]] = Counter()
             issue_cycle_buckets: defaultdict[tuple[str, str], list[float]] = defaultdict(list)
+            known_projects: set[str] = set()
 
             for row in issue_rows:
                 project = str(row["project_key"])
                 status = str(row["status"])
                 role = str(row["role"] or "unassigned")
+                known_projects.add(project)
                 issue_status_counts[(project, status)] += 1
+                created_at_ms = int(row["created_at_ms"] or 0)
+                if created_at_ms > 0:
+                    created_age = max(now_seconds - (created_at_ms / 1000.0), 0.0)
+                    for window, seconds in THROUGHPUT_WINDOWS.items():
+                        if created_age <= seconds:
+                            issue_created_window_counts[(project, window)] += 1
+                closed_at_ms = int(row["closed_at_ms"] or 0)
+                if closed_at_ms > 0:
+                    closed_age = max(now_seconds - (closed_at_ms / 1000.0), 0.0)
+                    for window, seconds in THROUGHPUT_WINDOWS.items():
+                        if closed_age <= seconds:
+                            issue_closed_window_counts[(project, window)] += 1
                 if status in {"ready", "dispatching", "running", "blocked", "review", "waiting_recovery_completion", "waiting_children"}:
                     agent_queue_counts[(project, role)] += 1
                 human_type = infer_human_type_from_status(status)
@@ -308,8 +331,8 @@ class AgentTeamCollector:
                 if status != "closed":
                     role_backlog_counts[(project, role, status)] += 1
                     project_backlog_counts[(project, status)] += 1
-                if row["closed_at_ms"]:
-                    duration = max((int(row["closed_at_ms"]) - int(row["created_at_ms"])) / 1000.0, 0.0)
+                if closed_at_ms > 0:
+                    duration = max((closed_at_ms - created_at_ms) / 1000.0, 0.0)
                     issue_cycle_buckets[(project, status)].append(duration)
 
             for (project, status), count in sorted(issue_status_counts.items()):
@@ -322,6 +345,14 @@ class AgentTeamCollector:
                 waiting_children_total.labels(**self.base_labels, layer="L3", project=project).set(float(count))
             for project, count in sorted(waiting_recovery_counts.items()):
                 waiting_recovery_total.labels(**self.base_labels, layer="L3", project=project).set(float(count))
+            for project in sorted(known_projects):
+                for window in THROUGHPUT_WINDOWS:
+                    issue_created_window_total.labels(**self.base_labels, layer="L3", project=project, window=window).set(
+                        float(issue_created_window_counts.get((project, window), 0))
+                    )
+                    issue_closed_window_total.labels(**self.base_labels, layer="L3", project=project, window=window).set(
+                        float(issue_closed_window_counts.get((project, window), 0))
+                    )
             for (project, role, status), count in sorted(role_backlog_counts.items()):
                 role_backlog_total.labels(**self.base_labels, layer="L3", project=project, role=role, issue_status=status).set(float(count))
             for (project, status), count in sorted(project_backlog_counts.items()):
@@ -356,6 +387,7 @@ class AgentTeamCollector:
             retry_counts: Counter[tuple[str, str]] = Counter()
             completion_mode_counts: Counter[tuple[str, str, str]] = Counter()
             attempt_runtime_buckets: defaultdict[tuple[str, str, str], list[float]] = defaultdict(list)
+            attempt_completed_window_counts: Counter[tuple[str, str, str, str]] = Counter()
             stale_dispatch_counts: Counter[tuple[str, str]] = Counter()
 
             for row in attempt_rows:
@@ -374,9 +406,14 @@ class AgentTeamCollector:
                 if int(row["attempt_no"] or 0) > 1:
                     retry_counts[(project, role)] += 1
                 completion_mode_counts[(project, role, completion_mode)] += 1
-                if row["ended_at_ms"]:
-                    start_ms = int(row["started_at_ms"] or row["created_at_ms"] or row["ended_at_ms"])
-                    duration = max((int(row["ended_at_ms"]) - start_ms) / 1000.0, 0.0)
+                ended_at_ms = int(row["ended_at_ms"] or 0)
+                if ended_at_ms > 0:
+                    end_age = max(now_seconds - (ended_at_ms / 1000.0), 0.0)
+                    for window, seconds in THROUGHPUT_WINDOWS.items():
+                        if end_age <= seconds:
+                            attempt_completed_window_counts[(project, role, window, completion_mode)] += 1
+                    start_ms = int(row["started_at_ms"] or row["created_at_ms"] or ended_at_ms)
+                    duration = max((ended_at_ms - start_ms) / 1000.0, 0.0)
                     attempt_runtime_buckets[(project, role, completion_mode)].append(duration)
                 if status == "dispatching":
                     updated_age = max(now_seconds - (int(row["created_at_ms"] or 0) / 1000.0), 0.0)
@@ -395,6 +432,15 @@ class AgentTeamCollector:
                 attempt_retry_total.labels(**self.base_labels, layer="L3", project=project, role=role).set(float(count))
             for (project, role, completion_mode), count in sorted(completion_mode_counts.items()):
                 callback_completion_modes_total.labels(**self.base_labels, layer="L3", project=project, role=role, completion_mode=completion_mode).set(float(count))
+            for (project, role, window, completion_mode), count in sorted(attempt_completed_window_counts.items()):
+                attempt_completed_window_total.labels(
+                    **self.base_labels,
+                    layer="L3",
+                    project=project,
+                    role=role,
+                    window=window,
+                    completion_mode=completion_mode,
+                ).set(float(count))
             for (project, role, completion_mode), values in sorted(attempt_runtime_buckets.items()):
                 attempt_runtime_seconds.labels(**self.base_labels, layer="L3", project=project, role=role, completion_mode=completion_mode, stat="avg").set(float(statistics.fmean(values)))
                 attempt_runtime_seconds.labels(**self.base_labels, layer="L3", project=project, role=role, completion_mode=completion_mode, stat="p95").set(percentile(values, 0.95))

@@ -583,13 +583,24 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum by (issue_status) (agent_team_issues_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",issue_status=~\"$issue_status\"})",
-          "legendFormat": "{{issue_status}}",
+          "expr": "sum by (project) (agent_team_issue_created_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"1h\"})",
+          "legendFormat": "{{project}} 创建/小时",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-local-main"
+          },
+          "editorMode": "code",
+          "expr": "sum by (project) (agent_team_issue_closed_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"1h\"})",
+          "legendFormat": "{{project}} 关闭/小时",
+          "range": true,
+          "refId": "B"
         }
       ],
-      "title": "事项状态概览",
+      "title": "事项创建 / 关闭趋势（小时）",
       "type": "timeseries"
     },
     {
@@ -643,13 +654,24 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum by (attempt_status) (agent_team_attempts_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"})",
-          "legendFormat": "{{attempt_status}}",
+          "expr": "sum by (project) (agent_team_issue_created_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"24h\"})",
+          "legendFormat": "{{project}} 创建/天",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-local-main"
+          },
+          "editorMode": "code",
+          "expr": "sum by (project) (agent_team_issue_closed_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"24h\"})",
+          "legendFormat": "{{project}} 关闭/天",
+          "range": true,
+          "refId": "B"
         }
       ],
-      "title": "尝试状态概览",
+      "title": "事项创建 / 关闭趋势（天）",
       "type": "timeseries"
     },
     {
@@ -684,6 +706,146 @@
         "y": 18
       },
       "id": 11,
+      "options": {
+        "displayMode": "gradient",
+        "legend": {
+          "displayMode": "hidden",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-local-main"
+          },
+          "editorMode": "code",
+          "expr": "sort_desc(sum by (issue_status) (agent_team_issues_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",issue_status=~\"$issue_status\"}))",
+          "instant": true,
+          "legendFormat": "{{issue_status}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "事项状态概览",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-local-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 12,
+      "options": {
+        "displayMode": "gradient",
+        "legend": {
+          "displayMode": "hidden",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-local-main"
+          },
+          "editorMode": "code",
+          "expr": "sort_desc(sum by (attempt_status) (agent_team_attempts_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",role=~\"$role\"}))",
+          "instant": true,
+          "legendFormat": "{{attempt_status}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "尝试状态概览",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-local-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "id": 13,
       "options": {
         "displayMode": "gradient",
         "legend": {
@@ -751,9 +913,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 26
       },
-      "id": 12,
+      "id": 14,
       "options": {
         "displayMode": "gradient",
         "legend": {

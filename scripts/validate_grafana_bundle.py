@@ -32,6 +32,8 @@ EXPECTED_DASHBOARDS = {
             "agent_team_attempt_running_total",
             "agent_team_attempt_success_total",
             "agent_team_attempt_failure_total",
+            "agent_team_issue_created_window_total",
+            "agent_team_issue_closed_window_total",
             "agent_team_role_backlog_total",
             "agent_team_project_backlog_total",
         ],
@@ -47,6 +49,7 @@ EXPECTED_DASHBOARDS = {
             "agent_team_reconcile_events_total",
             "agent_team_human_roundtrip_total",
             "agent_team_attempt_failure_total",
+            "agent_team_attempt_completed_window_total",
         ],
     },
     "agent-team-ops-recovery-queue.json": {

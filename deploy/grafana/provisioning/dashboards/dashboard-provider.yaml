@@ -3,7 +3,7 @@ apiVersion: 1
 providers:
   - name: agent-team-grafana-local-observability
     orgId: 1
-    folder: AT | 10 平台 | 主机系统
+    folder: AT | 10 Platform | Host-System
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
@@ -13,7 +13,7 @@ providers:
 
   - name: agent-team-grafana-agent-team
     orgId: 1
-    folder: AT | 20 项目 | Agent Team
+    folder: AT | 20 Project | Agent-Team
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
@@ -23,7 +23,7 @@ providers:
 
   - name: agent-team-grafana-newapi
     orgId: 1
-    folder: AT | 21 项目 | NewAPI
+    folder: AT | 21 Project | NewAPI
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
@@ -33,7 +33,7 @@ providers:
 
   - name: agent-team-grafana-arena
     orgId: 1
-    folder: AT | 22 项目 | Arena
+    folder: AT | 22 Project | Arena
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
@@ -43,7 +43,7 @@ providers:
 
   - name: agent-team-grafana-uptime-kuma
     orgId: 1
-    folder: AT | 30 运维 | Uptime Kuma
+    folder: AT | 30 Ops | Uptime-Kuma
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30

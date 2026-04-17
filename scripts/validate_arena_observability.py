@@ -36,6 +36,7 @@ EXPECTED_GRAFANA_DASHBOARD_UIDS = {
     'at-arena-position-holdings-exits',
     'at-arena-review-validation-iteration',
 }
+EXPECTED_GRAFANA_FOLDER_TITLE = 'AT | 22 Project | Arena'
 EXPECTED_PROMETHEUS_JOB = 'arena-exporter'
 
 
@@ -102,6 +103,17 @@ def main() -> None:
     missing_dashboard_uids = sorted(EXPECTED_GRAFANA_DASHBOARD_UIDS - grafana_hit_uids)
     if missing_dashboard_uids:
         raise ValueError(f'grafana missing arena dashboards: {missing_dashboard_uids}')
+    bad_folder_hits = [
+        {
+            'uid': item.get('uid'),
+            'title': item.get('title'),
+            'folderTitle': item.get('folderTitle'),
+        }
+        for item in grafana_hits
+        if item.get('uid') in EXPECTED_GRAFANA_DASHBOARD_UIDS and item.get('folderTitle') != EXPECTED_GRAFANA_FOLDER_TITLE
+    ]
+    if bad_folder_hits:
+        raise ValueError(f'grafana arena dashboards loaded under unexpected folder: {bad_folder_hits}')
 
     report = {
         'status': 'ok',
@@ -113,6 +125,7 @@ def main() -> None:
         'arena_targets': arena_targets,
         'grafana_search_hits': grafana_hits,
         'expected_grafana_dashboard_uids': sorted(EXPECTED_GRAFANA_DASHBOARD_UIDS),
+        'expected_grafana_folder_title': EXPECTED_GRAFANA_FOLDER_TITLE,
     }
     print(json.dumps(report, ensure_ascii=False, indent=2))
 

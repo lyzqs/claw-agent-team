@@ -173,13 +173,13 @@ EXPECTED_DASHBOARDS = {
         ],
     },
 }
-EXPECTED_PROVIDER_FOLDERS = [
-    {"AT | 10 Platform | Host-System", "AT | 10 平台 | 主机系统"},
-    {"AT | 20 Project | Agent-Team", "AT | 20 项目 | Agent Team"},
-    {"AT | 21 Project | NewAPI", "AT | 21 项目 | NewAPI"},
-    {"AT | 22 Project | Arena", "AT | 22 项目 | Arena"},
-    {"AT | 30 Ops | Uptime-Kuma", "AT | 30 运维 | Uptime Kuma"},
-]
+EXPECTED_PROVIDER_FOLDERS = {
+    "AT | 10 Platform | Host-System",
+    "AT | 20 Project | Agent-Team",
+    "AT | 21 Project | NewAPI",
+    "AT | 22 Project | Arena",
+    "AT | 30 Ops | Uptime-Kuma",
+}
 
 
 def load_yaml(path: Path) -> object:
@@ -266,9 +266,9 @@ def main() -> None:
 
     providers_yaml = load_yaml(BUNDLE_ROOT / "provisioning" / "dashboards" / "dashboard-provider.yaml")
     folders = {item["folder"] for item in providers_yaml.get("providers", [])}
-    for aliases in EXPECTED_PROVIDER_FOLDERS:
-        if folders.isdisjoint(aliases):
-            raise ValueError(f"dashboard provider missing folder alias set: {sorted(aliases)}")
+    for folder in EXPECTED_PROVIDER_FOLDERS:
+        if folder not in folders:
+            raise ValueError(f"dashboard provider missing folder: {folder}")
 
     print(json.dumps(report, ensure_ascii=False, indent=2))
 

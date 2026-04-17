@@ -770,6 +770,80 @@ class AgentTeamService:
             'initialized_sessions': role_sessions,
         }
 
+    def update_project(
+        self,
+        *,
+        project_key: str,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> dict[str, Any]:
+        project = self.db.get_one(
+            'SELECT id, project_key, name, description, metadata_json FROM projects WHERE project_key = ?',
+            (project_key,),
+        )
+        next_name = str(name).strip() if name is not None else str(project['name'] or '')
+        next_description = str(description).strip() if description is not None else str(project['description'] or '')
+        if not next_name:
+            raise ValidationError('project name is required')
+
+        metadata = merge_json_object(project['metadata_json'], None)
+        metadata['project_context_md'] = next_description
+        ts = now_ms()
+        self.db.conn.execute(
+            '''UPDATE projects
+               SET name = ?, description = ?, metadata_json = ?, updated_at_ms = ?
+               WHERE id = ?''',
+            (
+                next_name,
+                next_description,
+                json.dumps(metadata, ensure_ascii=False),
+                ts,
+                project['id'],
+            ),
+        )
+        self.db.conn.execute(
+            '''UPDATE employee_instances
+               SET display_name = CASE
+                   WHEN employee_key = ? THEN ?
+                   WHEN employee_key = ? THEN ?
+                   WHEN employee_key = ? THEN ?
+                   WHEN employee_key = ? THEN ?
+                   ELSE display_name
+               END,
+                   metadata_json = json_set(COALESCE(metadata_json, '{}'), '$.project_name', ?, '$.project_context_md', ?),
+                   updated_at_ms = ?
+               WHERE project_id = ?''',
+            (
+                f'{project_key}.pm', f'{next_name} PM',
+                f'{project_key}.dev', f'{next_name} Dev',
+                f'{project_key}.qa', f'{next_name} QA',
+                f'{project_key}.ops', f'{next_name} Ops',
+                next_name,
+                next_description,
+                ts,
+                project['id'],
+            ),
+        )
+        self.db.conn.execute(
+            '''UPDATE runtime_bindings
+               SET metadata_json = json_set(COALESCE(metadata_json, '{}'), '$.project_name', ?, '$.project_context_md', ?),
+                   updated_at_ms = ?
+               WHERE employee_id IN (SELECT id FROM employee_instances WHERE project_id = ?)''',
+            (
+                next_name,
+                next_description,
+                ts,
+                project['id'],
+            ),
+        )
+        self.db.commit()
+        return {
+            'project_key': project_key,
+            'name': next_name,
+            'description': next_description,
+            'updated_at_ms': ts,
+        }
+
     def delete_project(
         self,
         *,

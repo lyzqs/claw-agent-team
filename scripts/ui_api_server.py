@@ -168,6 +168,12 @@ class Handler(BaseHTTPRequestHandler):
                     created_by_employee_key=payload.get('created_by_employee_key', 'shared.ceo'),
                     initialize_sessions=bool(payload.get('initialize_sessions', True)),
                 )
+            elif parsed.path == '/api/update-project':
+                out = svc.update_project(
+                    project_key=payload.get('project_key', ''),
+                    name=payload.get('name'),
+                    description=payload.get('description'),
+                )
             elif parsed.path == '/api/delete-project':
                 out = svc.delete_project(
                     project_key=payload.get('project_key', ''),

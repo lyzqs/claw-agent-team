@@ -821,7 +821,7 @@
         </div>
         <button id="closeProjectManagerModalBtn" class="secondary">关闭</button>
       </div>
-      <div class="analytics-grid" style="grid-template-columns:1fr 1fr; gap:16px;">
+      <div class="analytics-grid" style="grid-template-columns:1fr 1fr 1fr; gap:16px;">
         <div class="modal-section">
           <h3>新增项目</h3>
           <div class="entry-form">
@@ -831,6 +831,21 @@
             <div class="entry-note">默认行为：自动创建四个项目角色实例，绑定到固定 5 个 Agent 中对应角色，并初始化 PM / Dev / QA / Ops session。</div>
             <div class="entry-actions">
               <button id="createProjectBtn">创建项目</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-section">
+          <h3>修改项目描述</h3>
+          <div class="entry-form">
+            <div class="filter-group">
+              <label for="editProjectSelect">选择项目</label>
+              <select id="editProjectSelect"></select>
+            </div>
+            <input id="editProjectName" placeholder="项目名称" />
+            <textarea id="editProjectDesc" placeholder="更新项目背景、目标、边界、上下文"></textarea>
+            <div class="entry-note">会同步更新项目本身，以及项目实例 / runtime metadata 中保存的项目上下文。</div>
+            <div class="entry-actions">
+              <button id="updateProjectBtn" class="secondary">保存项目信息</button>
             </div>
           </div>
         </div>
@@ -1328,13 +1343,37 @@
       if (out.ok) {
         const sessions = Object.keys(out.result.initialized_sessions || {}).join(' / ');
         showToast(`项目已创建：${out.result.project_key}${sessions ? `，已初始化 ${sessions.toUpperCase()} session` : ''}`);
-        closeProjectManagerModal();
         document.getElementById('newProjectName').value = '';
         document.getElementById('newProjectKey').value = '';
         document.getElementById('newProjectDesc').value = '';
         await loadData();
       } else {
         showToast(`创建项目失败: ${out.error || 'unknown error'}`, true);
+      }
+    }
+
+    async function updateProject() {
+      const projectKey = document.getElementById('editProjectSelect').value;
+      const name = document.getElementById('editProjectName').value.trim();
+      const description = document.getElementById('editProjectDesc').value.trim();
+      if (!projectKey) {
+        showToast('请先选择项目', true);
+        return;
+      }
+      if (!name) {
+        showToast('项目名称不能为空', true);
+        return;
+      }
+      const out = await apiPost('/api/update-project', {
+        project_key: projectKey,
+        name,
+        description,
+      });
+      if (out.ok) {
+        showToast(`项目已更新：${projectKey}`);
+        await loadData({ preserveView: true });
+      } else {
+        showToast(`更新项目失败: ${out.error || 'unknown error'}`, true);
       }
     }
 
@@ -1539,8 +1578,10 @@
     function renderProjectSelectOptions() {
       const issueSelect = document.getElementById('newIssueProject');
       const scheduledSelect = document.getElementById('scheduledIssueProject');
+      const editSelect = document.getElementById('editProjectSelect');
       const deleteSelect = document.getElementById('deleteProjectSelect');
-      const projects = (boardData?.project_view || []).map(p => p.project_key).filter(Boolean);
+      const projectRows = boardData?.project_view || [];
+      const projects = projectRows.map(p => p.project_key).filter(Boolean);
       if (issueSelect) {
         const previous = issueSelect.value;
         issueSelect.innerHTML = projects.length
@@ -1563,6 +1604,17 @@
           scheduledSelect.value = projects[0];
         }
       }
+      if (editSelect) {
+        const previousEdit = editSelect.value;
+        editSelect.innerHTML = projects.length
+          ? projects.map(key => `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`).join('')
+          : '<option value="">暂无项目</option>';
+        if (projects.includes(previousEdit)) {
+          editSelect.value = previousEdit;
+        } else if (projects.length) {
+          editSelect.value = projects[0];
+        }
+      }
       if (deleteSelect) {
         const previousDelete = deleteSelect.value;
         const deletable = projects.filter(key => key !== 'agent-team-core');
@@ -1575,6 +1627,17 @@
           deleteSelect.value = deletable[0];
         }
       }
+      fillProjectEditForm();
+    }
+
+    function fillProjectEditForm() {
+      const editSelect = document.getElementById('editProjectSelect');
+      const nameInput = document.getElementById('editProjectName');
+      const descInput = document.getElementById('editProjectDesc');
+      if (!editSelect || !nameInput || !descInput) return;
+      const item = (boardData?.project_view || []).find(p => p.project_key === editSelect.value);
+      nameInput.value = item?.name || '';
+      descInput.value = item?.description || '';
     }
 
     function renderScheduledIssueListModal() {
@@ -2228,6 +2291,7 @@
     document.getElementById('runScheduledIssueNowBtn').addEventListener('click', runScheduledIssueNow);
     document.getElementById('openScheduledIssueCreateFromListBtn').addEventListener('click', () => openScheduledIssueModal());
     document.getElementById('createProjectBtn').addEventListener('click', createProject);
+    document.getElementById('updateProjectBtn').addEventListener('click', updateProject);
     document.getElementById('deleteProjectBtn').addEventListener('click', deleteProject);
     document.getElementById('runBtn').addEventListener('click', async () => {
       const out = await toggleWorkflow('running');
@@ -2265,6 +2329,7 @@
     document.getElementById('scheduledMonthDay').addEventListener('input', buildCronPreview);
     document.getElementById('scheduledEveryMinutes').addEventListener('input', buildCronPreview);
     document.getElementById('scheduledCronExpr').addEventListener('input', buildCronPreview);
+    document.getElementById('editProjectSelect').addEventListener('change', fillProjectEditForm);
     document.getElementById('projectFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('agentFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('sortSelect').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });

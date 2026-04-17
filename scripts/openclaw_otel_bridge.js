@@ -6,6 +6,8 @@ const { opentelemetry } = require('/usr/lib/node_modules/openclaw/node_modules/@
 
 const ExportMetricsServiceRequest = opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest;
 const ExportMetricsServiceResponse = opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceResponse;
+const ExportTraceServiceRequest = opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
+const ExportTraceServiceResponse = opentelemetry.proto.collector.trace.v1.ExportTraceServiceResponse;
 
 const ATTRIBUTE_MAP = {
   'openclaw.channel': 'channel',
@@ -151,12 +153,33 @@ function labelsFromAttributes(attributes) {
   return labels;
 }
 
+function attributesMap(attributes) {
+  const mapped = {};
+  for (const attr of attributes || []) {
+    const key = String(attr.key || '');
+    if (!key) continue;
+    mapped[key] = anyValueToString(attr.value);
+  }
+  return mapped;
+}
+
+function resolveAgentIdFromSessionKey(sessionKey) {
+  const raw = String(sessionKey || '').trim().toLowerCase();
+  const match = raw.match(/^agent:([^:]+):/);
+  if (match && match[1]) return match[1];
+  if (raw === 'main') return 'main';
+  return raw ? 'unknown' : 'unknown';
+}
+
 function mergeLabels(base, extra) {
   return Object.assign({}, base, extra);
 }
 
 function layerForMetric(metricName) {
   if (/^openclaw\.(tokens|cost\.usd|run\.duration_ms|context\.tokens|message\.|webhook\.)$/.test(metricName)) {
+    return 'L3';
+  }
+  if (/^openclaw\.agent\.(tokens|message\.processed)$/.test(metricName)) {
     return 'L3';
   }
   return 'L2';
@@ -211,6 +234,19 @@ class MetricsStore {
     metric.type = type;
     metric.help = help;
     metric.samples.set(labelsKey(labels), { labels, value });
+  }
+
+  addSimple(name, type, help, labels, value) {
+    if (!this.simpleMetrics.has(name)) {
+      this.simpleMetrics.set(name, { type, help, samples: new Map() });
+    }
+    const metric = this.simpleMetrics.get(name);
+    metric.type = type;
+    metric.help = help;
+    const key = labelsKey(labels);
+    const existing = metric.samples.get(key);
+    const nextValue = (existing ? Number(existing.value) : 0) + Number(value || 0);
+    metric.samples.set(key, { labels, value: nextValue });
   }
 
   setHistogram(baseName, help, labels, bucketSamples, sumValue, countValue) {
@@ -323,6 +359,51 @@ function processMetric(store, config, metric, resourceLabels) {
   }
 }
 
+function aggregateAgentMetricsFromTrace(store, config, span, resourceLabels) {
+  const attrs = attributesMap(span.attributes || []);
+  const sessionKey = attrs['openclaw.sessionKey'] || '';
+  const agent = resolveAgentIdFromSessionKey(sessionKey);
+  if (!agent || agent === 'unknown') return;
+
+  const baseLabels = mergeLabels(makeBaseLabels(config, 'openclaw.agent.message.processed'), resourceLabels);
+  const commonLabels = Object.assign({}, baseLabels, { agent });
+
+  if (span.name === 'openclaw.message.processed') {
+    const outcome = attrs['openclaw.outcome'] || 'unknown';
+    const channel = attrs['openclaw.channel'] || 'unknown';
+    store.addSimple(
+      'openclaw_agent_message_processed_total',
+      'counter',
+      'Messages processed aggregated by agent from OpenClaw trace spans',
+      Object.assign({}, commonLabels, { outcome, channel }),
+      1,
+    );
+  }
+
+  if (span.name === 'openclaw.model.usage') {
+    const provider = attrs['openclaw.provider'] || 'unknown';
+    const model = attrs['openclaw.model'] || 'unknown';
+    const tokenAttrs = [
+      ['input', attrs['openclaw.tokens.input']],
+      ['output', attrs['openclaw.tokens.output']],
+      ['cache_read', attrs['openclaw.tokens.cache_read']],
+      ['cache_write', attrs['openclaw.tokens.cache_write']],
+      ['total', attrs['openclaw.tokens.total']],
+    ];
+    for (const [tokenType, rawValue] of tokenAttrs) {
+      const value = Number(rawValue || 0);
+      if (!Number.isFinite(value) || value === 0) continue;
+      store.addSimple(
+        'openclaw_agent_tokens_total',
+        'counter',
+        'Token usage aggregated by agent from OpenClaw model usage spans',
+        Object.assign({}, commonLabels, { provider, model, token_type: tokenType }),
+        value,
+      );
+    }
+  }
+}
+
 function handleExport(store, config, buffer) {
   const decoded = ExportMetricsServiceRequest.decode(buffer);
   for (const resourceMetric of decoded.resourceMetrics || []) {
@@ -337,10 +418,23 @@ function handleExport(store, config, buffer) {
   store.lastExportTimestampSeconds = Date.now() / 1000;
 }
 
+function handleTraceExport(store, config, buffer) {
+  const decoded = ExportTraceServiceRequest.decode(buffer);
+  for (const resourceSpan of decoded.resourceSpans || []) {
+    const resourceLabels = labelsFromAttributes(resourceSpan.resource?.attributes || []);
+    for (const scopeSpan of resourceSpan.scopeSpans || []) {
+      for (const span of scopeSpan.spans || []) {
+        aggregateAgentMetricsFromTrace(store, config, span, resourceLabels);
+      }
+    }
+  }
+}
+
 function main() {
   const config = parseArgs(process.argv.slice(2));
   const store = new MetricsStore(config);
-  const responseBuffer = Buffer.from(ExportMetricsServiceResponse.encode(ExportMetricsServiceResponse.create({})).finish());
+  const metricsResponseBuffer = Buffer.from(ExportMetricsServiceResponse.encode(ExportMetricsServiceResponse.create({})).finish());
+  const tracesResponseBuffer = Buffer.from(ExportTraceServiceResponse.encode(ExportTraceServiceResponse.create({})).finish());
 
   const server = http.createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/metrics') {
@@ -360,17 +454,27 @@ function main() {
       return;
     }
 
-    if (req.method === 'POST' && req.url === '/v1/metrics') {
+    if (req.method === 'POST' && (req.url === '/v1/metrics' || req.url === '/v1/traces')) {
       const chunks = [];
       req.on('data', (chunk) => chunks.push(chunk));
       req.on('end', () => {
         try {
-          handleExport(store, config, Buffer.concat(chunks));
+          const body = Buffer.concat(chunks);
+          if (req.url === '/v1/metrics') {
+            handleExport(store, config, body);
+            res.writeHead(200, {
+              'Content-Type': 'application/x-protobuf',
+              'Content-Length': metricsResponseBuffer.length,
+            });
+            res.end(metricsResponseBuffer);
+            return;
+          }
+          handleTraceExport(store, config, body);
           res.writeHead(200, {
             'Content-Type': 'application/x-protobuf',
-            'Content-Length': responseBuffer.length,
+            'Content-Length': tracesResponseBuffer.length,
           });
-          res.end(responseBuffer);
+          res.end(tracesResponseBuffer);
         } catch (error) {
           store.ingestErrors += 1;
           res.writeHead(400, { 'Content-Type': 'application/json' });

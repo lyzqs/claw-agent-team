@@ -64,7 +64,19 @@ class PanelFactory:
             "type": "stat",
         }
 
-    def timeseries(self, *, title: str, targets: list[dict], unit: str, x: int, y: int, w: int = 12, h: int = 8) -> dict:
+    def timeseries(
+        self,
+        *,
+        title: str,
+        targets: list[dict],
+        unit: str,
+        x: int,
+        y: int,
+        w: int = 12,
+        h: int = 8,
+        legend_display_mode: str = "list",
+        tooltip_mode: str = "single",
+    ) -> dict:
         return {
             "datasource": self.datasource(),
             "fieldConfig": {
@@ -79,8 +91,8 @@ class PanelFactory:
             "gridPos": {"h": h, "w": w, "x": x, "y": y},
             "id": self._panel_id(),
             "options": {
-                "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": True},
-                "tooltip": {"mode": "single", "sort": "none"},
+                "legend": {"calcs": [], "displayMode": legend_display_mode, "placement": "bottom", "showLegend": True},
+                "tooltip": {"mode": tooltip_mode, "sort": "none"},
             },
             "pluginVersion": PLUGIN_VERSION,
             "targets": [
@@ -155,6 +167,27 @@ def variable(name: str, label: str, query: str) -> dict:
         "query": {"qryType": 1, "query": query, "refId": "StandardVariableQuery"},
         "refresh": 1,
         "regex": "",
+        "skipUrlSync": False,
+        "sort": 1,
+        "type": "query",
+    }
+
+
+def agent_variable() -> dict:
+    grafana_all = "$" + "__all"
+    return {
+        "current": {"selected": False, "text": "全部", "value": grafana_all},
+        "datasource": {"type": "prometheus", "uid": DATASOURCE_UID},
+        "definition": 'label_values(openclaw_agent_message_processed_total, agent)',
+        "hide": 0,
+        "includeAll": True,
+        "label": "agent",
+        "multi": True,
+        "name": "agent",
+        "options": [],
+        "query": {"qryType": 1, "query": 'label_values(openclaw_agent_message_processed_total, agent)', "refId": "StandardVariableQuery"},
+        "refresh": 1,
+        "regex": "/^(?!unknown$).+/",
         "skipUrlSync": False,
         "sort": 1,
         "type": "query",
@@ -264,21 +297,45 @@ def build_runtime_overview() -> dict:
 def build_usage_model_message_flow() -> dict:
     factory = PanelFactory()
     runtime_filters = 'job=~"$job",instance=~"$instance",channel=~"$channel",provider=~"$provider",model=~"$model"'
+    agent_filters = 'job=~"$job",instance=~"$instance",agent=~"$agent"'
     dashboard = base_dashboard(
         "AT | OpenClaw | Usage | Model & Message Flow",
         "at-openclaw-usage-model-message-flow",
         ["agent-team-grafana", "openclaw", "usage"],
     )
+    dashboard["templating"]["list"].insert(4, agent_variable())
     dashboard["panels"] = [
         factory.stat(title="24h Message Queued", expr='sum(increase(openclaw_message_queued_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h]))', unit="none", x=0, y=0),
         factory.stat(title="24h Message Processed", expr='sum(increase(openclaw_message_processed_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h]))', unit="none", x=6, y=0),
         factory.stat(title="Webhook 错误数（24h）", expr='sum(increase(openclaw_webhook_error_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h]))', unit="none", x=12, y=0),
         factory.stat(title="Context Tokens P95", expr=f'max(histogram_quantile(0.95, sum by (le) (rate(openclaw_context_tokens_bucket{{{runtime_filters}}}[5m]))))', unit="short", x=18, y=0),
         factory.timeseries(
+            title="按 Agent 看消息量变化",
+            unit="ops",
+            x=0,
+            y=5,
+            legend_display_mode="table",
+            tooltip_mode="multi",
+            targets=[
+                {"expr": 'topk(8, sum by (agent) (rate(openclaw_agent_message_processed_total{job=~"$job",instance=~"$instance",agent=~"$agent"}[5m])))', "legend": '{{agent}} 消息/秒', "refId": 'A'},
+            ],
+        ),
+        factory.timeseries(
+            title="按 Agent 看 Token 变化",
+            unit="short",
+            x=12,
+            y=5,
+            legend_display_mode="table",
+            tooltip_mode="multi",
+            targets=[
+                {"expr": 'topk(8, sum by (agent) (rate(openclaw_agent_tokens_total{job=~"$job",instance=~"$instance",agent=~"$agent",token_type="total"}[5m])))', "legend": '{{agent}} Token/秒', "refId": 'A'},
+            ],
+        ),
+        factory.timeseries(
             title="Token / 成本趋势",
             unit="short",
             x=0,
-            y=5,
+            y=13,
             targets=[
                 {"expr": 'sum(rate(openclaw_tokens_total{job=~"$job",instance=~"$instance",channel=~"$channel",provider=~"$provider",model=~"$model"}[5m]))', "legend": 'Token/秒', "refId": 'A'},
                 {"expr": 'sum(rate(openclaw_cost_usd_total{job=~"$job",instance=~"$instance",channel=~"$channel",provider=~"$provider",model=~"$model"}[5m]))', "legend": '成本USD/秒', "refId": 'B'},
@@ -288,7 +345,7 @@ def build_usage_model_message_flow() -> dict:
             title="消息耗时趋势",
             unit="ms",
             x=12,
-            y=5,
+            y=13,
             targets=[
                 {"expr": 'histogram_quantile(0.95, sum by (le, outcome) (rate(openclaw_message_duration_ms_bucket{job=~"$job",instance=~"$instance",channel=~"$channel"}[5m])))', "legend": '{{outcome}} P95', "refId": 'A'},
             ],
@@ -298,7 +355,7 @@ def build_usage_model_message_flow() -> dict:
             expr='topk(10, sum by (provider, model) (increase(openclaw_tokens_total{job=~"$job",instance=~"$instance",channel=~"$channel",provider=~"$provider",model=~"$model"}[24h])))',
             unit="short",
             x=0,
-            y=13,
+            y=21,
             legend='{{provider}} / {{model}}',
         ),
         factory.bargauge(
@@ -306,7 +363,7 @@ def build_usage_model_message_flow() -> dict:
             expr='topk(10, sum by (provider, model) (increase(openclaw_cost_usd_total{job=~"$job",instance=~"$instance",channel=~"$channel",provider=~"$provider",model=~"$model"}[24h])))',
             unit="currencyUSD",
             x=12,
-            y=13,
+            y=21,
             legend='{{provider}} / {{model}}',
         ),
         factory.bargauge(
@@ -314,7 +371,7 @@ def build_usage_model_message_flow() -> dict:
             expr='sort_desc(sum by (outcome) (increase(openclaw_message_processed_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h])))',
             unit="short",
             x=0,
-            y=21,
+            y=29,
             legend='{{outcome}}',
         ),
         factory.bargauge(
@@ -322,7 +379,7 @@ def build_usage_model_message_flow() -> dict:
             expr='sort_desc(sum by (webhook) (increase(openclaw_webhook_received_total{job=~"$job",instance=~"$instance",channel=~"$channel"}[24h])))',
             unit="short",
             x=12,
-            y=21,
+            y=29,
             legend='{{webhook}}',
         ),
     ]

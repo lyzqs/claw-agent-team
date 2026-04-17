@@ -20,6 +20,10 @@
   - `openclaw_otel_bridge_points_total`
 - 对 OpenClaw 原始属性做低风险标签映射，保留：
   - `channel / provider / model / outcome / source / lane / state / reason / attempt / webhook / context / token_type`
+- 同时支持消费 `OTLP/HTTP` traces，在 bridge 内基于 span 上的 `openclaw.sessionKey` 聚合出 agent 维度指标：
+  - `openclaw_agent_message_processed_total`
+  - `openclaw_agent_tokens_total`
+- `agent` 标签来源于 `sessionKey` 的 `agent:<agentId>:...` 规范前缀解析，避免要求 Grafana 侧直接理解 sessionKey 原文
 - 明确过滤高基数标签，避免把 `sessionKey / sessionId / chatId / messageId / error / traceId / spanId` 直接打进 Prometheus
 
 ### 2. OpenClaw 配置批量写入模板
@@ -78,6 +82,8 @@ openclaw config validate --json
 覆盖内容包括：
 - token / cost / run duration
 - message queued / processed / duration
+- 新增按 `agent` 维度查看消息量变化
+- 新增按 `agent` 维度查看 token 变化
 - queue enqueue / dequeue / depth / wait
 - session state / stuck / stuck age
 - webhook received / error / duration
@@ -110,6 +116,8 @@ openclaw config validate --json
 本轮桥接与面板已覆盖或接入以下核心指标：
 - `openclaw_tokens_total`
 - `openclaw_cost_usd_total`
+- `openclaw_agent_message_processed_total`
+- `openclaw_agent_tokens_total`
 - `openclaw_run_duration_ms_bucket`
 - `openclaw_context_tokens_bucket`
 - `openclaw_message_queued_total`
@@ -178,6 +186,10 @@ python3 scripts/validate_openclaw_observability.py
   - dashboard 生成产物
   - 验证脚本
   - 安装脚本中被 OpenClaw 改动误伤的 uptime-kuma 安装路径
+- Issue #34 follow-up 进一步补齐：
+  - bridge 对 OTLP traces 的 `/v1/traces` 接收与 agent 聚合导出
+  - `openclaw_agent_message_processed_total` / `openclaw_agent_tokens_total` 两个 agent 维度聚合指标
+  - OpenClaw Usage 看板中的 `按 Agent 看消息量变化` / `按 Agent 看 Token 变化` 两块核心趋势面板
 
 ### 4. 手工检查建议
 - 打开 Grafana
@@ -186,6 +198,7 @@ python3 scripts/validate_openclaw_observability.py
 - 确认面板中出现：
   - token / cost / run duration
   - message processed / queue wait / queue depth / stuck session
+  - 按 Agent 看消息量变化 / 按 Agent 看 Token 变化
   - provider-model 分布 / webhook / lane / outcome 分布
   - OpenClaw 进程 CPU / 内存
 - 确认 `validate_openclaw_observability.py` 中：

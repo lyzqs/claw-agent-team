@@ -288,7 +288,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -299,6 +299,126 @@
         "y": 5
       },
       "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-local-main"
+          },
+          "editorMode": "code",
+          "expr": "topk(8, sum by (agent) (rate(openclaw_agent_message_processed_total{job=~\"$job\",instance=~\"$instance\",agent=~\"$agent\"}[5m])))",
+          "legendFormat": "{{agent}} 消息/秒",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "按 Agent 看消息量变化",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-local-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-local-main"
+          },
+          "editorMode": "code",
+          "expr": "topk(8, sum by (agent) (rate(openclaw_agent_tokens_total{job=~\"$job\",instance=~\"$instance\",agent=~\"$agent\",token_type=\"total\"}[5m])))",
+          "legendFormat": "{{agent}} Token/秒",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "按 Agent 看 Token 变化",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-local-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 7,
       "options": {
         "legend": {
           "calcs": [],
@@ -367,9 +487,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 5
+        "y": 13
       },
-      "id": 6,
+      "id": 8,
       "options": {
         "legend": {
           "calcs": [],
@@ -428,9 +548,9 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 21
       },
-      "id": 7,
+      "id": 9,
       "options": {
         "displayMode": "gradient",
         "legend": {
@@ -498,9 +618,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 21
       },
-      "id": 8,
+      "id": 10,
       "options": {
         "displayMode": "gradient",
         "legend": {
@@ -568,9 +688,9 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 21
+        "y": 29
       },
-      "id": 9,
+      "id": 11,
       "options": {
         "displayMode": "gradient",
         "legend": {
@@ -638,9 +758,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 21
+        "y": 29
       },
-      "id": 10,
+      "id": 12,
       "options": {
         "displayMode": "gradient",
         "legend": {
@@ -798,6 +918,34 @@
         },
         "refresh": 1,
         "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "全部",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus-local-main"
+        },
+        "definition": "label_values(openclaw_agent_message_processed_total, agent)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "agent",
+        "multi": true,
+        "name": "agent",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(openclaw_agent_message_processed_total, agent)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "/^(?!unknown$).+/",
         "skipUrlSync": false,
         "sort": 1,
         "type": "query"

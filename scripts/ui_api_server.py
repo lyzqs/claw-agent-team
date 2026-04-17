@@ -79,6 +79,16 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == '/api/workflow-control':
             self._json(200, {'ok': True, 'result': load_control()})
             return
+        if parsed.path == '/api/scheduled-issues':
+            svc = AgentTeamService()
+            try:
+                out = svc.list_scheduled_issues()
+                self._json(200, {'ok': True, 'result': out})
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+            finally:
+                svc.close()
+            return
         if parsed.path == '/api/human-queue':
             svc = AgentTeamService()
             try:
@@ -195,6 +205,30 @@ class Handler(BaseHTTPRequestHandler):
                     'created': created,
                     'triaged': triaged,
                 }
+            elif parsed.path == '/api/scheduled-issues/create':
+                out = svc.create_scheduled_issue(
+                    project_key=payload.get('project_key', 'agent-team-core'),
+                    owner_employee_key=payload.get('owner_employee_key'),
+                    title=payload['title'],
+                    description_md=payload.get('description', ''),
+                    acceptance_criteria_md=payload.get('acceptance', ''),
+                    priority=payload.get('priority', 'p2'),
+                    route_role=payload.get('route_role', 'pm'),
+                    source_type=payload.get('source_type', 'system'),
+                    dispatch_instruction=payload.get('dispatch_instruction', ''),
+                    schedule_kind=payload.get('schedule_kind', 'daily'),
+                    schedule_config=payload.get('schedule_config') or {},
+                    enabled=bool(payload.get('enabled', True)),
+                )
+            elif parsed.path == '/api/scheduled-issues/update':
+                out = svc.update_scheduled_issue(
+                    scheduled_issue_id=payload['scheduled_issue_id'],
+                    patch=payload,
+                )
+            elif parsed.path == '/api/scheduled-issues/delete':
+                out = svc.delete_scheduled_issue(scheduled_issue_id=payload['scheduled_issue_id'])
+            elif parsed.path == '/api/scheduled-issues/run-now':
+                out = svc.run_scheduled_issue_now(scheduled_issue_id=payload['scheduled_issue_id'])
             elif parsed.path == '/api/close':
                 out = svc.close_issue(issue_id=payload['issue_id'], resolution=payload.get('resolution', 'completed'))
             elif parsed.path == '/api/attempt-callback':

@@ -147,6 +147,55 @@ def ensure_issue_status_schema(conn: sqlite3.Connection) -> None:
     conn.execute('DROP TABLE issues__old_schema')
 
 
+def ensure_scheduled_issue_schema(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        '''CREATE TABLE IF NOT EXISTS scheduled_issues (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          owner_employee_id TEXT REFERENCES employee_instances(id) ON DELETE SET NULL,
+          title TEXT NOT NULL,
+          description_md TEXT,
+          acceptance_criteria_md TEXT,
+          priority TEXT NOT NULL DEFAULT 'p2'
+            CHECK (priority IN ('p0', 'p1', 'p2', 'p3', 'p4')),
+          route_role TEXT NOT NULL
+            CHECK (route_role IN ('pm', 'dev', 'qa', 'ops', 'ceo')),
+          source_type TEXT NOT NULL DEFAULT 'system'
+            CHECK (source_type IN ('user', 'system', 'detector', 'watchdog', 'human')),
+          dispatch_instruction TEXT,
+          schedule_kind TEXT NOT NULL
+            CHECK (schedule_kind IN ('hourly', 'daily', 'weekly', 'monthly', 'interval', 'one_time')),
+          schedule_config_json TEXT NOT NULL,
+          timezone TEXT NOT NULL DEFAULT 'UTC',
+          enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+          next_run_at_ms INTEGER,
+          last_run_at_ms INTEGER,
+          last_issue_id TEXT REFERENCES issues(id) ON DELETE SET NULL,
+          last_issue_no INTEGER,
+          last_error TEXT,
+          metadata_json TEXT,
+          created_at_ms INTEGER NOT NULL,
+          updated_at_ms INTEGER NOT NULL
+        )'''
+    )
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_scheduled_issues_due ON scheduled_issues(enabled, next_run_at_ms)')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_scheduled_issues_project ON scheduled_issues(project_id, updated_at_ms DESC)')
+    conn.execute(
+        '''CREATE TABLE IF NOT EXISTS scheduled_issue_runs (
+          id TEXT PRIMARY KEY,
+          scheduled_issue_id TEXT NOT NULL REFERENCES scheduled_issues(id) ON DELETE CASCADE,
+          status TEXT NOT NULL
+            CHECK (status IN ('created', 'manual_created', 'failed', 'skipped')),
+          issue_id TEXT REFERENCES issues(id) ON DELETE SET NULL,
+          issue_no INTEGER,
+          error_message TEXT,
+          details_json TEXT,
+          created_at_ms INTEGER NOT NULL
+        )'''
+    )
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_scheduled_issue_runs_schedule_created ON scheduled_issue_runs(scheduled_issue_id, created_at_ms DESC)')
+
+
 class AgentTeamDB:
     def __init__(self, db_path: Path = DB_PATH):
         if not db_path.exists():
@@ -156,6 +205,7 @@ class AgentTeamDB:
         self.conn.row_factory = sqlite3.Row
         ensure_issue_status_schema(self.conn)
         ensure_attempt_callback_schema(self.conn)
+        ensure_scheduled_issue_schema(self.conn)
         self.conn.commit()
 
     def close(self) -> None:

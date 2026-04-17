@@ -523,6 +523,10 @@
               <span>创建 Issue</span>
               <span>＋</span>
             </button>
+            <button id="openScheduledIssueBtn" class="panel-link">
+              <span>定时 Issue</span>
+              <span>⏰</span>
+            </button>
             <button id="openCreateProjectBtn" class="panel-link">
               <span>新增项目</span>
               <span>＋</span>
@@ -558,6 +562,11 @@
             <div id="roleMeta" class="chips-wrap" style="display:none;"></div>
             <div id="instanceMeta" class="card-sub" style="display:none;"></div>
           </div>
+        </div>
+
+        <div class="card rail-card">
+          <div class="k">定时 Issue</div>
+          <div id="scheduledIssuePanel" class="card-sub"></div>
         </div>
       </aside>
 
@@ -683,6 +692,103 @@
         <div class="entry-actions">
           <button id="createIssueBtn">创建 Issue</button>
           <button id="createCeoIssueBtn" class="secondary">发给 CEO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="scheduledIssueModal" class="modal-backdrop">
+    <div class="modal" style="width:min(860px, 100%);">
+      <div class="modal-top">
+        <div>
+          <h2 id="scheduledIssueModalTitle">创建定时 Issue</h2>
+          <div class="muted">按小时 / 每天 / 每周 / 每月 / 间隔 / 一次性自动新增 issue</div>
+        </div>
+        <button id="closeScheduledIssueModalBtn" class="secondary">关闭</button>
+      </div>
+      <div class="entry-form">
+        <input id="scheduledIssueTitle" placeholder="输入定时 issue 标题" />
+        <textarea id="scheduledIssueDesc" placeholder="描述要做什么、背景是什么"></textarea>
+        <textarea id="scheduledIssueAcceptance" placeholder="验收标准（可选）"></textarea>
+        <div class="filters" style="margin-bottom:0; grid-template-columns: repeat(4, minmax(0, 1fr));">
+          <div class="filter-group">
+            <label for="scheduledIssueProject">项目</label>
+            <select id="scheduledIssueProject"></select>
+          </div>
+          <div class="filter-group">
+            <label for="scheduledIssuePriority">优先级</label>
+            <select id="scheduledIssuePriority">
+              <option value="p1">p1</option>
+              <option value="p2" selected>p2</option>
+              <option value="p3">p3</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="scheduledIssueRouteRole">入口角色</label>
+            <select id="scheduledIssueRouteRole">
+              <option value="pm" selected>PM</option>
+              <option value="dev">Dev</option>
+              <option value="qa">QA</option>
+              <option value="ops">Ops</option>
+              <option value="ceo">CEO</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="scheduledIssueKind">定时类型</label>
+            <select id="scheduledIssueKind">
+              <option value="hourly">每小时</option>
+              <option value="daily" selected>每天</option>
+              <option value="weekly">每周</option>
+              <option value="monthly">每月</option>
+              <option value="interval">固定间隔</option>
+              <option value="one_time">一次性</option>
+            </select>
+          </div>
+        </div>
+        <div class="filters" style="margin-bottom:0; grid-template-columns: repeat(4, minmax(0, 1fr));">
+          <div class="filter-group">
+            <label for="scheduledMinute">分钟</label>
+            <input id="scheduledMinute" type="number" min="0" max="59" value="0" />
+          </div>
+          <div class="filter-group">
+            <label for="scheduledHour">小时</label>
+            <input id="scheduledHour" type="number" min="0" max="23" value="9" />
+          </div>
+          <div class="filter-group">
+            <label for="scheduledWeekday">星期</label>
+            <select id="scheduledWeekday">
+              <option value="0">周一</option>
+              <option value="1">周二</option>
+              <option value="2">周三</option>
+              <option value="3">周四</option>
+              <option value="4">周五</option>
+              <option value="5">周六</option>
+              <option value="6">周日</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="scheduledMonthDay">每月日期</label>
+            <input id="scheduledMonthDay" type="number" min="1" max="31" value="1" />
+          </div>
+        </div>
+        <div class="filters" style="margin-bottom:0; grid-template-columns: repeat(2, minmax(0, 1fr));">
+          <div class="filter-group">
+            <label for="scheduledEveryMinutes">间隔分钟</label>
+            <input id="scheduledEveryMinutes" type="number" min="1" value="60" />
+          </div>
+          <div class="filter-group">
+            <label for="scheduledRunAt">一次性执行时间 (UTC)</label>
+            <input id="scheduledRunAt" type="datetime-local" />
+          </div>
+        </div>
+        <textarea id="scheduledIssueInstruction" placeholder="可选：给首个处理角色的额外说明"></textarea>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475467;">
+          <input id="scheduledIssueEnabled" type="checkbox" checked /> 启用后自动创建 issue
+        </label>
+        <div class="entry-actions">
+          <button id="saveScheduledIssueBtn">保存定时 Issue</button>
+          <button id="deleteScheduledIssueBtn" class="danger" style="display:none;">删除</button>
+          <button id="runScheduledIssueNowBtn" class="secondary" style="display:none;">立即执行一次</button>
         </div>
       </div>
     </div>
@@ -815,6 +921,7 @@
     };
 
     let humanActionState = { issueId: null, resolution: '', issueNo: '', title: '' };
+    let scheduledIssueState = { editingId: null };
 
     function showToast(msg, isError=false) {
       const el = document.getElementById('toast');
@@ -843,6 +950,13 @@
       const d = new Date(ms);
       if (Number.isNaN(d.getTime())) return String(ms);
       return d.toLocaleString('zh-CN', { hour12: false });
+    }
+
+    function formatScheduledRun(item) {
+      if (!item) return '—';
+      const next = item.next_run_at_ms ? formatTime(item.next_run_at_ms) : '—';
+      const kindMap = { hourly: '每小时', daily: '每天', weekly: '每周', monthly: '每月', interval: '固定间隔', one_time: '一次性' };
+      return `${kindMap[item.schedule_kind] || item.schedule_kind} · 下次 ${next}`;
     }
 
     function isPaused() { return workflowControl?.mode === 'paused'; }
@@ -1054,6 +1168,66 @@
           </div>
         </div>
       `).join('');
+    }
+
+    function buildScheduledIssuePayload() {
+      const kind = document.getElementById('scheduledIssueKind').value;
+      const payload = {
+        title: document.getElementById('scheduledIssueTitle').value.trim(),
+        description: document.getElementById('scheduledIssueDesc').value.trim(),
+        acceptance: document.getElementById('scheduledIssueAcceptance').value.trim(),
+        project_key: document.getElementById('scheduledIssueProject').value,
+        priority: document.getElementById('scheduledIssuePriority').value,
+        route_role: document.getElementById('scheduledIssueRouteRole').value,
+        schedule_kind: kind,
+        dispatch_instruction: document.getElementById('scheduledIssueInstruction').value.trim(),
+        enabled: document.getElementById('scheduledIssueEnabled').checked,
+        schedule_config: {},
+      };
+      if (kind === 'hourly') payload.schedule_config = { minute: Number(document.getElementById('scheduledMinute').value || 0) };
+      if (kind === 'daily') payload.schedule_config = { hour: Number(document.getElementById('scheduledHour').value || 9), minute: Number(document.getElementById('scheduledMinute').value || 0) };
+      if (kind === 'weekly') payload.schedule_config = { weekday: Number(document.getElementById('scheduledWeekday').value || 0), hour: Number(document.getElementById('scheduledHour').value || 9), minute: Number(document.getElementById('scheduledMinute').value || 0) };
+      if (kind === 'monthly') payload.schedule_config = { day: Number(document.getElementById('scheduledMonthDay').value || 1), hour: Number(document.getElementById('scheduledHour').value || 9), minute: Number(document.getElementById('scheduledMinute').value || 0) };
+      if (kind === 'interval') payload.schedule_config = { every_minutes: Number(document.getElementById('scheduledEveryMinutes').value || 60) };
+      if (kind === 'one_time') {
+        const dt = document.getElementById('scheduledRunAt').value;
+        payload.schedule_config = { run_at_ms: dt ? new Date(dt).getTime() : null };
+      }
+      return payload;
+    }
+
+    async function saveScheduledIssue() {
+      const payload = buildScheduledIssuePayload();
+      if (!payload.title) {
+        showToast('请先填写定时 issue 标题', true);
+        return;
+      }
+      const path = scheduledIssueState.editingId ? '/api/scheduled-issues/update' : '/api/scheduled-issues/create';
+      if (scheduledIssueState.editingId) payload.scheduled_issue_id = scheduledIssueState.editingId;
+      const out = await apiPost(path, payload);
+      showToast(out.ok ? (scheduledIssueState.editingId ? '定时 Issue 已更新' : '定时 Issue 已创建') : `保存失败: ${out.error || 'unknown error'}`, !out.ok);
+      if (out.ok) {
+        closeScheduledIssueModal();
+        await loadData({ preserveView: true });
+      }
+    }
+
+    async function deleteScheduledIssue() {
+      if (!scheduledIssueState.editingId) return;
+      if (!confirm('确认删除这个定时 Issue？')) return;
+      const out = await apiPost('/api/scheduled-issues/delete', { scheduled_issue_id: scheduledIssueState.editingId });
+      showToast(out.ok ? '定时 Issue 已删除' : `删除失败: ${out.error || 'unknown error'}`, !out.ok);
+      if (out.ok) {
+        closeScheduledIssueModal();
+        await loadData({ preserveView: true });
+      }
+    }
+
+    async function runScheduledIssueNow() {
+      if (!scheduledIssueState.editingId) return;
+      const out = await apiPost('/api/scheduled-issues/run-now', { scheduled_issue_id: scheduledIssueState.editingId });
+      showToast(out.ok ? `已立即创建 Issue #${out.result.created_issue.issue_no}` : `执行失败: ${out.error || 'unknown error'}`, !out.ok);
+      if (out.ok) await loadData({ preserveView: true });
     }
 
     async function createIssue(routeMode = 'pm') {
@@ -1324,6 +1498,7 @@
 
     function renderProjectSelectOptions() {
       const issueSelect = document.getElementById('newIssueProject');
+      const scheduledSelect = document.getElementById('scheduledIssueProject');
       const deleteSelect = document.getElementById('deleteProjectSelect');
       const projects = (boardData?.project_view || []).map(p => p.project_key).filter(Boolean);
       if (issueSelect) {
@@ -1335,6 +1510,17 @@
           issueSelect.value = previous;
         } else if (projects.length) {
           issueSelect.value = projects[0];
+        }
+      }
+      if (scheduledSelect) {
+        const previousScheduled = scheduledSelect.value;
+        scheduledSelect.innerHTML = projects.length
+          ? projects.map(key => `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`).join('')
+          : '<option value="">暂无项目</option>';
+        if (projects.includes(previousScheduled)) {
+          scheduledSelect.value = previousScheduled;
+        } else if (projects.length) {
+          scheduledSelect.value = projects[0];
         }
       }
       if (deleteSelect) {
@@ -1358,6 +1544,60 @@
 
     function closeDeleteProjectModal() {
       document.getElementById('deleteProjectModal').classList.remove('show');
+    }
+
+    function renderScheduledIssuePanel() {
+      const root = document.getElementById('scheduledIssuePanel');
+      const items = boardData?.scheduled_issues || [];
+      if (!root) return;
+      if (!items.length) {
+        root.innerHTML = '<div class="queue-empty">当前没有定时 Issue。你可以新增按小时 / 每天 / 每周 / 每月 / 间隔 / 一次性自动创建的 Issue。</div>';
+        return;
+      }
+      root.innerHTML = `<div class="entry-note">共 ${items.length} 条定时 Issue。到期后会由 worker 自动创建新 issue。</div>` + items.map(item => `
+        <div class="queue-item">
+          <h4>${escapeHtml(item.title)}</h4>
+          <div class="queue-meta">
+            <span class="pill">${escapeHtml(item.project_key || '')}</span>
+            <span class="pill">${escapeHtml(item.priority || 'p2')}</span>
+            <span class="pill">${escapeHtml(item.route_role || 'pm')}</span>
+            <span class="pill">${item.enabled ? 'enabled' : 'disabled'}</span>
+          </div>
+          <div><strong>计划:</strong> ${escapeHtml(formatScheduledRun(item))}</div>
+          <div style="margin-top:6px;"><strong>上次创建:</strong> ${item.last_issue_no ? `#${item.last_issue_no}` : '—'}${item.last_error ? ` · 错误: ${escapeHtml(item.last_error)}` : ''}</div>
+          <div class="queue-actions">
+            <button class="secondary" onclick="window.editScheduledIssue('${item.id}')">编辑</button>
+            <button class="success" onclick="window.runScheduledIssue('${item.id}')">立即执行一次</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderScheduledIssuePanel() {
+      const root = document.getElementById('scheduledIssuePanel');
+      const items = boardData?.scheduled_issues || [];
+      if (!root) return;
+      if (!items.length) {
+        root.innerHTML = '<div class="queue-empty">当前没有定时 Issue。你可以新增按小时 / 每天 / 每周 / 每月 / 间隔 / 一次性自动创建的 Issue。</div>';
+        return;
+      }
+      root.innerHTML = `<div class="entry-note">共 ${items.length} 条定时 Issue。到期后会由 worker 自动创建新 issue。</div>` + items.map(item => `
+        <div class="queue-item">
+          <h4>${escapeHtml(item.title)}</h4>
+          <div class="queue-meta">
+            <span class="pill">${escapeHtml(item.project_key || '')}</span>
+            <span class="pill">${escapeHtml(item.priority || 'p2')}</span>
+            <span class="pill">${escapeHtml(item.route_role || 'pm')}</span>
+            <span class="pill">${item.enabled ? 'enabled' : 'disabled'}</span>
+          </div>
+          <div><strong>计划:</strong> ${escapeHtml(formatScheduledRun(item))}</div>
+          <div style="margin-top:6px;"><strong>上次创建:</strong> ${item.last_issue_no ? `#${item.last_issue_no}` : '—'}${item.last_error ? ` · 错误: ${escapeHtml(item.last_error)}` : ''}</div>
+          <div class="queue-actions">
+            <button class="secondary" onclick="window.editScheduledIssue('${item.id}')">编辑</button>
+            <button class="success" onclick="window.runScheduledIssue('${item.id}')">立即执行一次</button>
+          </div>
+        </div>
+      `).join('');
     }
 
     function renderSummary() {
@@ -1833,6 +2073,36 @@
       document.getElementById('createIssueModal').classList.remove('show');
     }
 
+    function openScheduledIssueModal(item = null) {
+      scheduledIssueState = { editingId: item?.id || null };
+      renderProjectSelectOptions();
+      document.getElementById('scheduledIssueModalTitle').textContent = item ? '编辑定时 Issue' : '创建定时 Issue';
+      document.getElementById('scheduledIssueTitle').value = item?.title || '';
+      document.getElementById('scheduledIssueDesc').value = item?.description_md || '';
+      document.getElementById('scheduledIssueAcceptance').value = item?.acceptance_criteria_md || '';
+      document.getElementById('scheduledIssueProject').value = item?.project_key || document.getElementById('scheduledIssueProject').value;
+      document.getElementById('scheduledIssuePriority').value = item?.priority || 'p2';
+      document.getElementById('scheduledIssueRouteRole').value = item?.route_role || 'pm';
+      document.getElementById('scheduledIssueKind').value = item?.schedule_kind || 'daily';
+      const cfg = item?.schedule_config || {};
+      document.getElementById('scheduledMinute').value = cfg.minute ?? 0;
+      document.getElementById('scheduledHour').value = cfg.hour ?? 9;
+      document.getElementById('scheduledWeekday').value = cfg.weekday ?? 0;
+      document.getElementById('scheduledMonthDay').value = cfg.day ?? 1;
+      document.getElementById('scheduledEveryMinutes').value = cfg.every_minutes ?? 60;
+      document.getElementById('scheduledRunAt').value = cfg.run_at_ms ? new Date(cfg.run_at_ms).toISOString().slice(0,16) : '';
+      document.getElementById('scheduledIssueInstruction').value = item?.dispatch_instruction || '';
+      document.getElementById('scheduledIssueEnabled').checked = item ? Boolean(item.enabled) : true;
+      document.getElementById('deleteScheduledIssueBtn').style.display = item ? '' : 'none';
+      document.getElementById('runScheduledIssueNowBtn').style.display = item ? '' : 'none';
+      document.getElementById('scheduledIssueModal').classList.add('show');
+    }
+
+    function closeScheduledIssueModal() {
+      document.getElementById('scheduledIssueModal').classList.remove('show');
+      scheduledIssueState = { editingId: null };
+    }
+
     window.closeIssue = async function(issueId) {
       if (!confirm('确认关闭这个 Issue？')) return;
       const out = await doClose(issueId);
@@ -1860,6 +2130,15 @@
       const out = await apiPost('/api/delete-project', { project_key: projectKey });
       showToast(out.ok ? `已删除项目：${projectKey}` : `删除项目失败: ${out.error || 'unknown error'}`, !out.ok);
       if (out.ok) await loadData();
+    };
+    window.editScheduledIssue = function(scheduledIssueId) {
+      const item = (boardData?.scheduled_issues || []).find(x => x.id === scheduledIssueId);
+      if (item) openScheduledIssueModal(item);
+    };
+    window.runScheduledIssue = async function(scheduledIssueId) {
+      const out = await apiPost('/api/scheduled-issues/run-now', { scheduled_issue_id: scheduledIssueId });
+      showToast(out.ok ? `已立即创建 Issue #${out.result.created_issue.issue_no}` : `执行失败: ${out.error || 'unknown error'}`, !out.ok);
+      if (out.ok) await loadData({ preserveView: true });
     };
 
     async function loadData(options = {}) {
@@ -1892,6 +2171,7 @@
         renderSummary();
         renderProjectSelectOptions();
         renderHumanQueuePanel();
+        renderScheduledIssuePanel();
         renderAnalytics();
         renderFilters();
         if (!preserveView) {
@@ -1915,11 +2195,15 @@
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
     document.getElementById('reloadBtn').addEventListener('click', () => loadData({ preserveView: true }));
     document.getElementById('openCreateIssueBtn').addEventListener('click', openCreateIssueModal);
+    document.getElementById('openScheduledIssueBtn').addEventListener('click', () => openScheduledIssueModal());
     document.getElementById('openCreateProjectBtn').addEventListener('click', openCreateProjectModal);
     document.getElementById('openDeleteProjectBtn').addEventListener('click', openDeleteProjectModal);
     document.getElementById('openHumanQueueBtn').addEventListener('click', () => openInfoModal('待你确认', document.getElementById('humanQueuePanel').innerHTML || '当前没有待确认事项'));
     document.getElementById('createIssueBtn').addEventListener('click', () => createIssue(document.getElementById('newIssueRoute').value || 'pm'));
     document.getElementById('createCeoIssueBtn').addEventListener('click', () => createIssue('ceo'));
+    document.getElementById('saveScheduledIssueBtn').addEventListener('click', saveScheduledIssue);
+    document.getElementById('deleteScheduledIssueBtn').addEventListener('click', deleteScheduledIssue);
+    document.getElementById('runScheduledIssueNowBtn').addEventListener('click', runScheduledIssueNow);
     document.getElementById('createProjectBtn').addEventListener('click', createProject);
     document.getElementById('deleteProjectBtn').addEventListener('click', deleteProject);
     document.getElementById('runBtn').addEventListener('click', async () => {
@@ -1932,6 +2216,7 @@
     });
     document.getElementById('closeModalBtn').addEventListener('click', closeIssueModal);
     document.getElementById('closeCreateIssueModalBtn').addEventListener('click', closeCreateIssueModal);
+    document.getElementById('closeScheduledIssueModalBtn').addEventListener('click', closeScheduledIssueModal);
     document.getElementById('closeCreateProjectModalBtn').addEventListener('click', closeCreateProjectModal);
     document.getElementById('closeDeleteProjectModalBtn').addEventListener('click', closeDeleteProjectModal);
     document.getElementById('closeHumanActionModalBtn').addEventListener('click', closeHumanActionModal);
@@ -1940,6 +2225,7 @@
     document.getElementById('humanActionModal').addEventListener('click', (e) => { if (e.target.id === 'humanActionModal') closeHumanActionModal(); });
     document.getElementById('modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') closeIssueModal(); });
     document.getElementById('createIssueModal').addEventListener('click', (e) => { if (e.target.id === 'createIssueModal') closeCreateIssueModal(); });
+    document.getElementById('scheduledIssueModal').addEventListener('click', (e) => { if (e.target.id === 'scheduledIssueModal') closeScheduledIssueModal(); });
     document.getElementById('createProjectModal').addEventListener('click', (e) => { if (e.target.id === 'createProjectModal') closeCreateProjectModal(); });
     document.getElementById('deleteProjectModal').addEventListener('click', (e) => { if (e.target.id === 'deleteProjectModal') closeDeleteProjectModal(); });
     document.getElementById('toggleProjectMetaBtn').addEventListener('click', () => {

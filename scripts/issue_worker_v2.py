@@ -50,6 +50,10 @@ def now_iso() -> str:
     return _dt.datetime.now(_dt.UTC).isoformat().replace('+00:00', 'Z')
 
 
+def now_ms() -> int:
+    return int(time.time() * 1000)
+
+
 def parse_json(raw: str | None) -> dict[str, Any]:
     if not raw:
         return {}
@@ -1048,6 +1052,18 @@ def main() -> int:
                     append_action({'at': report['ran_at'], 'kind': 'parent_progressed', **item})
         except Exception as e:
             report['errors'].append({'message': f'dependency reconcile failed: {e}'})
+
+        try:
+            schedule_report = svc.run_due_scheduled_issues(now_ts=now_ms(), limit=10)
+            report['scheduled_issues'] = schedule_report
+            if (schedule_report.get('created') or schedule_report.get('failed')):
+                changed = True
+                for item in schedule_report.get('created') or []:
+                    append_action({'at': report['ran_at'], 'kind': 'scheduled_issue_created', **item})
+                for item in schedule_report.get('failed') or []:
+                    append_action({'at': report['ran_at'], 'kind': 'scheduled_issue_failed', **item})
+        except Exception as e:
+            report['errors'].append({'message': f'scheduled issue runner failed: {e}'})
 
         ready_items = fetch_ready_candidates(svc)
         dispatched_this_run = 0

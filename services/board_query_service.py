@@ -150,6 +150,16 @@ class BoardQueryService:
     def get_board_snapshot(self) -> dict[str, Any]:
         agent_queue = self.db.fetch_all('SELECT * FROM v_agent_queue ORDER BY updated_at_ms DESC')
         human_queue = self.db.fetch_all('SELECT * FROM v_human_queue ORDER BY updated_at_ms DESC')
+        scheduled_items = self.db.fetch_all(
+            '''SELECT si.id, si.title, si.priority, si.route_role, si.schedule_kind, si.schedule_config_json,
+                      si.enabled, si.next_run_at_ms, si.last_run_at_ms, si.last_issue_id, si.last_issue_no,
+                      si.last_error, si.updated_at_ms, p.project_key, p.name AS project_name,
+                      oe.employee_key AS owner_employee_key
+               FROM scheduled_issues si
+               JOIN projects p ON p.id = si.project_id
+               LEFT JOIN employee_instances oe ON oe.id = si.owner_employee_id
+               ORDER BY si.updated_at_ms DESC, si.created_at_ms DESC'''
+        )
         employees = self.db.fetch_all(
             '''SELECT ei.employee_key,
                       ei.display_name,
@@ -179,6 +189,13 @@ class BoardQueryService:
             'project_view': [dict(r) for r in projects],
             'agent_queue': [dict(r) for r in agent_queue],
             'human_queue': [dict(r) for r in human_queue],
+            'scheduled_issues': [
+                {
+                    **dict(r),
+                    'schedule_config': parse_schedule_config(r['schedule_config_json']) if isinstance(r['schedule_config_json'], str) else {},
+                }
+                for r in scheduled_items
+            ],
             'employee_view': [dict(r) for r in employees],
             'agent_workload': self.get_agent_workload()['items'],
         }

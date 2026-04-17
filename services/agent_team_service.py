@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import calendar
 import json
 import re
 import subprocess
 import uuid
 from dataclasses import dataclass
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 from typing import Any
 
@@ -126,6 +128,82 @@ def merge_json_object(raw: str | None, patch: dict[str, Any] | None) -> dict[str
     if patch:
         base.update(patch)
     return base
+
+
+def parse_schedule_config(raw: str | None) -> dict[str, Any]:
+    if not raw:
+        return {}
+    try:
+        value = json.loads(raw)
+        return value if isinstance(value, dict) else {}
+    except Exception:
+        return {}
+
+
+def dt_from_ms(ts: int | None) -> datetime | None:
+    if ts is None:
+        return None
+    return datetime.fromtimestamp(int(ts) / 1000, tz=UTC)
+
+
+def _next_month_anchor(dt: datetime, day: int, hour: int, minute: int) -> datetime:
+    year = dt.year
+    month = dt.month
+    while True:
+        days = calendar.monthrange(year, month)[1]
+        safe_day = min(max(day, 1), days)
+        candidate = datetime(year, month, safe_day, hour, minute, tzinfo=UTC)
+        if candidate > dt:
+            return candidate
+        month += 1
+        if month > 12:
+            year += 1
+            month = 1
+
+
+def compute_next_scheduled_run(*, schedule_kind: str, schedule_config: dict[str, Any], now_dt: datetime, last_run_at_ms: int | None = None) -> datetime | None:
+    kind = str(schedule_kind or '').strip()
+    if kind == 'hourly':
+        minute = max(0, min(int(schedule_config.get('minute', 0) or 0), 59))
+        candidate = now_dt.replace(minute=minute, second=0, microsecond=0)
+        if candidate <= now_dt:
+            candidate += timedelta(hours=1)
+        return candidate
+    if kind == 'daily':
+        hour = max(0, min(int(schedule_config.get('hour', 9) or 9), 23))
+        minute = max(0, min(int(schedule_config.get('minute', 0) or 0), 59))
+        candidate = now_dt.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if candidate <= now_dt:
+            candidate += timedelta(days=1)
+        return candidate
+    if kind == 'weekly':
+        weekday = max(0, min(int(schedule_config.get('weekday', 0) or 0), 6))
+        hour = max(0, min(int(schedule_config.get('hour', 9) or 9), 23))
+        minute = max(0, min(int(schedule_config.get('minute', 0) or 0), 59))
+        days_ahead = (weekday - now_dt.weekday()) % 7
+        candidate = now_dt.replace(hour=hour, minute=minute, second=0, microsecond=0) + timedelta(days=days_ahead)
+        if candidate <= now_dt:
+            candidate += timedelta(days=7)
+        return candidate
+    if kind == 'monthly':
+        day = max(1, min(int(schedule_config.get('day', 1) or 1), 31))
+        hour = max(0, min(int(schedule_config.get('hour', 9) or 9), 23))
+        minute = max(0, min(int(schedule_config.get('minute', 0) or 0), 59))
+        return _next_month_anchor(now_dt, day, hour, minute)
+    if kind == 'interval':
+        every_minutes = max(1, int(schedule_config.get('every_minutes', 60) or 60))
+        anchor_dt = dt_from_ms(last_run_at_ms) or now_dt
+        candidate = anchor_dt + timedelta(minutes=every_minutes)
+        if candidate <= now_dt:
+            candidate = now_dt + timedelta(minutes=every_minutes)
+        return candidate.replace(second=0, microsecond=0)
+    if kind == 'one_time':
+        run_at_ms = schedule_config.get('run_at_ms')
+        if run_at_ms is None:
+            return None
+        candidate = dt_from_ms(int(run_at_ms))
+        return candidate if candidate and candidate > now_dt else None
+    raise ValidationError(f'unsupported schedule kind: {schedule_kind}')
 
 
 def default_next_role_for(role: str | None) -> str:
@@ -960,6 +1038,332 @@ class AgentTeamService:
             proposals=proposals,
             created_by_role=created_by_role,
         )
+
+    def _project_id_by_key(self, project_key: str) -> str:
+        row = self.db.get_one('SELECT id FROM projects WHERE project_key = ?', (project_key,))
+        return str(row['id'])
+
+    def _employee_id_by_key(self, employee_key: str) -> str:
+        row = self.db.get_one('SELECT id FROM employee_instances WHERE employee_key = ?', (employee_key,))
+        return str(row['id'])
+
+    def _default_owner_employee_key(self, project_key: str) -> str:
+        row = self.db.conn.execute(
+            '''SELECT ei.employee_key
+               FROM employee_instances ei
+               JOIN role_templates rt ON rt.id = ei.role_template_id
+               LEFT JOIN projects p ON p.id = ei.project_id
+               WHERE (rt.template_key = 'pm' AND p.project_key = ?)
+                  OR rt.template_key = 'ceo'
+               ORDER BY CASE rt.template_key WHEN 'pm' THEN 0 ELSE 1 END, ei.employee_key ASC
+               LIMIT 1''',
+            (project_key,),
+        ).fetchone()
+        if not row:
+            raise ValidationError(f'missing default owner for project={project_key}')
+        return str(row[0])
+
+    def _normalize_schedule_config(self, *, schedule_kind: str, schedule_config: dict[str, Any]) -> dict[str, Any]:
+        kind = str(schedule_kind or '').strip()
+        cfg = dict(schedule_config or {})
+        if kind == 'hourly':
+            return {'minute': max(0, min(int(cfg.get('minute', 0) or 0), 59))}
+        if kind == 'daily':
+            return {
+                'hour': max(0, min(int(cfg.get('hour', 9) or 9), 23)),
+                'minute': max(0, min(int(cfg.get('minute', 0) or 0), 59)),
+            }
+        if kind == 'weekly':
+            return {
+                'weekday': max(0, min(int(cfg.get('weekday', 0) or 0), 6)),
+                'hour': max(0, min(int(cfg.get('hour', 9) or 9), 23)),
+                'minute': max(0, min(int(cfg.get('minute', 0) or 0), 59)),
+            }
+        if kind == 'monthly':
+            return {
+                'day': max(1, min(int(cfg.get('day', 1) or 1), 31)),
+                'hour': max(0, min(int(cfg.get('hour', 9) or 9), 23)),
+                'minute': max(0, min(int(cfg.get('minute', 0) or 0), 59)),
+            }
+        if kind == 'interval':
+            return {'every_minutes': max(1, int(cfg.get('every_minutes', 60) or 60))}
+        if kind == 'one_time':
+            run_at_ms = cfg.get('run_at_ms')
+            if run_at_ms is None:
+                raise ValidationError('one_time schedule requires run_at_ms')
+            return {'run_at_ms': int(run_at_ms)}
+        raise ValidationError(f'unsupported schedule kind: {schedule_kind}')
+
+    def list_scheduled_issues(self, *, project_key: str | None = None) -> dict[str, Any]:
+        sql = '''SELECT si.*, p.project_key, p.name AS project_name, oe.employee_key AS owner_employee_key
+                 FROM scheduled_issues si
+                 JOIN projects p ON p.id = si.project_id
+                 LEFT JOIN employee_instances oe ON oe.id = si.owner_employee_id'''
+        params: list[Any] = []
+        if project_key:
+            sql += ' WHERE p.project_key = ?'
+            params.append(project_key)
+        sql += ' ORDER BY si.updated_at_ms DESC, si.created_at_ms DESC'
+        rows = self.db.fetch_all(sql, tuple(params))
+        items = []
+        for row in rows:
+            item = dict(row)
+            item['schedule_config'] = parse_schedule_config(item.get('schedule_config_json'))
+            item['recent_runs'] = [
+                dict(r)
+                for r in self.db.fetch_all(
+                    '''SELECT id, status, issue_id, issue_no, error_message, details_json, created_at_ms
+                       FROM scheduled_issue_runs
+                       WHERE scheduled_issue_id = ?
+                       ORDER BY created_at_ms DESC
+                       LIMIT 10''',
+                    (item['id'],),
+                )
+            ]
+            items.append(item)
+        return {'items': items, 'total': len(items)}
+
+    def create_scheduled_issue(
+        self,
+        *,
+        project_key: str,
+        title: str,
+        description_md: str = '',
+        acceptance_criteria_md: str = '',
+        priority: str = 'p2',
+        route_role: str = 'pm',
+        source_type: str = 'system',
+        dispatch_instruction: str = '',
+        schedule_kind: str,
+        schedule_config: dict[str, Any],
+        owner_employee_key: str | None = None,
+        enabled: bool = True,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        project_id = self._project_id_by_key(project_key)
+        owner_key = owner_employee_key or self._default_owner_employee_key(project_key)
+        owner_id = self._employee_id_by_key(owner_key)
+        normalized_cfg = self._normalize_schedule_config(schedule_kind=schedule_kind, schedule_config=schedule_config)
+        now_dt = datetime.now(UTC)
+        next_run = compute_next_scheduled_run(
+            schedule_kind=schedule_kind,
+            schedule_config=normalized_cfg,
+            now_dt=now_dt,
+            last_run_at_ms=None,
+        ) if enabled else None
+        ts = now_ms()
+        schedule_id = uid('sched')
+        meta = dict(metadata or {})
+        meta.setdefault('created_via', 'agent_team_ui')
+        self.db.conn.execute(
+            '''INSERT INTO scheduled_issues (
+                id, project_id, owner_employee_id, title, description_md, acceptance_criteria_md,
+                priority, route_role, source_type, dispatch_instruction, schedule_kind,
+                schedule_config_json, timezone, enabled, next_run_at_ms, metadata_json,
+                created_at_ms, updated_at_ms
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UTC', ?, ?, ?, ?, ?)''',
+            (
+                schedule_id,
+                project_id,
+                owner_id,
+                title,
+                description_md,
+                acceptance_criteria_md,
+                priority,
+                route_role,
+                source_type,
+                dispatch_instruction,
+                schedule_kind,
+                json.dumps(normalized_cfg, ensure_ascii=False),
+                1 if enabled else 0,
+                int(next_run.timestamp() * 1000) if next_run else None,
+                json.dumps(meta, ensure_ascii=False),
+                ts,
+                ts,
+            ),
+        )
+        self.db.commit()
+        return {
+            'scheduled_issue_id': schedule_id,
+            'project_key': project_key,
+            'owner_employee_key': owner_key,
+            'next_run_at_ms': int(next_run.timestamp() * 1000) if next_run else None,
+            'enabled': enabled,
+        }
+
+    def update_scheduled_issue(self, *, scheduled_issue_id: str, patch: dict[str, Any]) -> dict[str, Any]:
+        row = self.db.get_one('SELECT * FROM scheduled_issues WHERE id = ?', (scheduled_issue_id,))
+        current = dict(row)
+        project_key_row = self.db.get_one('SELECT project_key FROM projects WHERE id = ?', (current['project_id'],))
+        project_key = str(project_key_row['project_key'])
+        owner_key = patch.get('owner_employee_key') or (
+            self.db.get_one('SELECT employee_key FROM employee_instances WHERE id = ?', (current['owner_employee_id'],))['employee_key']
+            if current.get('owner_employee_id') else self._default_owner_employee_key(project_key)
+        )
+        owner_id = self._employee_id_by_key(str(owner_key))
+        schedule_kind = str(patch.get('schedule_kind') or current['schedule_kind'])
+        schedule_config = self._normalize_schedule_config(
+            schedule_kind=schedule_kind,
+            schedule_config=patch.get('schedule_config') or parse_schedule_config(current.get('schedule_config_json')),
+        )
+        enabled = bool(current['enabled']) if 'enabled' not in patch else bool(patch.get('enabled'))
+        last_run_at_ms = patch.get('last_run_at_ms', current.get('last_run_at_ms'))
+        next_run = compute_next_scheduled_run(
+            schedule_kind=schedule_kind,
+            schedule_config=schedule_config,
+            now_dt=datetime.now(UTC),
+            last_run_at_ms=last_run_at_ms,
+        ) if enabled else None
+        metadata = merge_json_object(current.get('metadata_json'), patch.get('metadata') if isinstance(patch.get('metadata'), dict) else None)
+        ts = now_ms()
+        self.db.conn.execute(
+            '''UPDATE scheduled_issues
+               SET owner_employee_id = ?, title = ?, description_md = ?, acceptance_criteria_md = ?,
+                   priority = ?, route_role = ?, source_type = ?, dispatch_instruction = ?,
+                   schedule_kind = ?, schedule_config_json = ?, enabled = ?, next_run_at_ms = ?,
+                   metadata_json = ?, updated_at_ms = ?
+             WHERE id = ?''',
+            (
+                owner_id,
+                patch.get('title', current['title']),
+                patch.get('description_md', current.get('description_md') or ''),
+                patch.get('acceptance_criteria_md', current.get('acceptance_criteria_md') or ''),
+                patch.get('priority', current['priority']),
+                patch.get('route_role', current['route_role']),
+                patch.get('source_type', current['source_type']),
+                patch.get('dispatch_instruction', current.get('dispatch_instruction') or ''),
+                schedule_kind,
+                json.dumps(schedule_config, ensure_ascii=False),
+                1 if enabled else 0,
+                int(next_run.timestamp() * 1000) if next_run else None,
+                json.dumps(metadata, ensure_ascii=False),
+                ts,
+                scheduled_issue_id,
+            ),
+        )
+        self.db.commit()
+        return {
+            'scheduled_issue_id': scheduled_issue_id,
+            'enabled': enabled,
+            'next_run_at_ms': int(next_run.timestamp() * 1000) if next_run else None,
+        }
+
+    def delete_scheduled_issue(self, *, scheduled_issue_id: str) -> dict[str, Any]:
+        row = self.db.get_one('SELECT id, title FROM scheduled_issues WHERE id = ?', (scheduled_issue_id,))
+        self.db.conn.execute('DELETE FROM scheduled_issues WHERE id = ?', (scheduled_issue_id,))
+        self.db.commit()
+        return {'scheduled_issue_id': row['id'], 'title': row['title'], 'deleted': True}
+
+    def _create_issue_from_schedule(self, row: dict[str, Any] | Any, *, manual: bool = False, now_ts: int | None = None) -> dict[str, Any]:
+        record = dict(row)
+        ts = int(now_ts or now_ms())
+        project_row = self.db.get_one('SELECT project_key FROM projects WHERE id = ?', (record['project_id'],))
+        project_key = str(project_row['project_key'])
+        owner_row = self.db.get_one('SELECT employee_key FROM employee_instances WHERE id = ?', (record['owner_employee_id'],))
+        owner_employee_key = str(owner_row['employee_key'])
+        metadata = merge_json_object(
+            record.get('metadata_json'),
+            {
+                'source': 'scheduled_issue',
+                'scheduled_issue_id': record['id'],
+                'created_via': 'scheduled_issue_runner',
+                'dispatch_instruction': record.get('dispatch_instruction') or '',
+            },
+        )
+        created = self.create_issue(
+            project_key=project_key,
+            owner_employee_key=owner_employee_key,
+            title=str(record['title']),
+            description_md=str(record.get('description_md') or ''),
+            acceptance_criteria_md=str(record.get('acceptance_criteria_md') or ''),
+            priority=str(record['priority']),
+            source_type=str(record['source_type']),
+            metadata=metadata,
+        )
+        assign_employee_key = pick_employee_key(self, project_key=project_key, role=str(record['route_role']))
+        triaged = self.triage_issue(issue_id=created['issue_id'], assign_employee_key=assign_employee_key)
+        run_id = uid('schedrun')
+        self.db.conn.execute(
+            '''INSERT INTO scheduled_issue_runs (
+                id, scheduled_issue_id, status, issue_id, issue_no, error_message, details_json, created_at_ms
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+            (
+                run_id,
+                record['id'],
+                'manual_created' if manual else 'created',
+                created['issue_id'],
+                created['issue_no'],
+                None,
+                json.dumps({'assigned_employee_key': assign_employee_key, 'triaged': triaged}, ensure_ascii=False),
+                ts,
+            ),
+        )
+        schedule_config = parse_schedule_config(record.get('schedule_config_json'))
+        next_run = compute_next_scheduled_run(
+            schedule_kind=str(record['schedule_kind']),
+            schedule_config=schedule_config,
+            now_dt=datetime.now(UTC),
+            last_run_at_ms=ts,
+        ) if bool(record['enabled']) and str(record['schedule_kind']) != 'one_time' else None
+        enabled = bool(record['enabled']) and str(record['schedule_kind']) != 'one_time'
+        self.db.conn.execute(
+            '''UPDATE scheduled_issues
+               SET last_run_at_ms = ?, last_issue_id = ?, last_issue_no = ?, last_error = NULL,
+                   enabled = ?, next_run_at_ms = ?, updated_at_ms = ?
+             WHERE id = ?''',
+            (
+                ts,
+                created['issue_id'],
+                created['issue_no'],
+                1 if enabled else 0,
+                int(next_run.timestamp() * 1000) if next_run else None,
+                ts,
+                record['id'],
+            ),
+        )
+        self.db.commit()
+        return {
+            'scheduled_issue_id': record['id'],
+            'run_id': run_id,
+            'created_issue': created,
+            'assigned_employee_key': assign_employee_key,
+            'next_run_at_ms': int(next_run.timestamp() * 1000) if next_run else None,
+            'enabled': enabled,
+        }
+
+    def run_due_scheduled_issues(self, *, now_ts: int | None = None, limit: int = 20) -> dict[str, Any]:
+        ts = int(now_ts or now_ms())
+        rows = self.db.fetch_all(
+            '''SELECT * FROM scheduled_issues
+               WHERE enabled = 1 AND next_run_at_ms IS NOT NULL AND next_run_at_ms <= ?
+               ORDER BY next_run_at_ms ASC, created_at_ms ASC
+               LIMIT ?''',
+            (ts, limit),
+        )
+        created_items = []
+        failed_items = []
+        for row in rows:
+            try:
+                created_items.append(self._create_issue_from_schedule(row, manual=False, now_ts=ts))
+            except Exception as e:
+                run_id = uid('schedrun')
+                self.db.conn.execute(
+                    '''INSERT INTO scheduled_issue_runs (
+                        id, scheduled_issue_id, status, issue_id, issue_no, error_message, details_json, created_at_ms
+                    ) VALUES (?, ?, 'failed', NULL, NULL, ?, ?, ?)''',
+                    (run_id, row['id'], str(e), json.dumps({'scheduled_issue_id': row['id']}, ensure_ascii=False), ts),
+                )
+                self.db.conn.execute(
+                    'UPDATE scheduled_issues SET last_error = ?, updated_at_ms = ? WHERE id = ?',
+                    (str(e), ts, row['id']),
+                )
+                self.db.commit()
+                failed_items.append({'scheduled_issue_id': row['id'], 'error': str(e), 'run_id': run_id})
+        return {'created': created_items, 'failed': failed_items, 'total_due': len(rows)}
+
+    def run_scheduled_issue_now(self, *, scheduled_issue_id: str) -> dict[str, Any]:
+        row = self.db.get_one('SELECT * FROM scheduled_issues WHERE id = ?', (scheduled_issue_id,))
+        return self._create_issue_from_schedule(row, manual=True)
 
     def _record_checkpoint(
         self,

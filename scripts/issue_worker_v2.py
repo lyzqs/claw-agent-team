@@ -583,7 +583,12 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
 
     description = issue.get('description_md') or 'No description.'
     acceptance = issue.get('acceptance_criteria_md') or 'No explicit acceptance criteria.'
+    retry_context = metadata.get('retry_context') if isinstance(metadata.get('retry_context'), dict) else {}
     blocker = issue.get('blocker_summary') or 'None.'
+    if retry_context and retry_context.get('attempt_role') == role:
+        retry_failure_for_blocker = str(retry_context.get('failure_summary') or '').strip()
+        if retry_failure_for_blocker and blocker == retry_failure_for_blocker:
+            blocker = 'None.'
     required_input = issue.get('required_human_input') or 'None.'
     project_name = str(issue.get('project_name') or issue.get('project_key') or '未知项目')
     project_description = str(issue.get('project_description') or metadata.get('project_context_md') or '').strip()
@@ -607,28 +612,18 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     issue_context_summary = ''
     if issue_context_path:
         issue_context_summary = (
-            "完整上下文文件：\n"
-            f"- JSON 文件路径：{issue_context_path}\n"
-            "- 文件中包含当前 issue 状态、历史 attempts、callbacks、activities、dependencies。\n"
-            "- 如果你需要完整了解上一个角色做了什么、当前为什么停在这里、还依赖什么，请先阅读这个 JSON。\n\n"
+            "完整上下文文件（需要细节时再读，不必先通读全文）：\n"
+            f"- {issue_context_path}\n\n"
         )
 
     prior_handoff = metadata.get('prior_handoff') if isinstance(metadata.get('prior_handoff'), dict) else {}
     prior_summary = ''
     if prior_handoff:
-        artifacts_text = compact_text(json.dumps(prior_handoff.get('artifacts') or [], ensure_ascii=False), limit=500) if isinstance(prior_handoff.get('artifacts'), list) and prior_handoff.get('artifacts') else ''
-        findings_text = compact_text(json.dumps(prior_handoff.get('blocking_findings') or [], ensure_ascii=False), limit=500) if isinstance(prior_handoff.get('blocking_findings'), list) and prior_handoff.get('blocking_findings') else ''
         prior_summary = (
-            "上一角色交接（这是下游继续推进的直接依据，不要忽略）：\n"
+            "上一角色交接摘要：\n"
             f"- from_role: {prior_handoff.get('from_role') or ''}\n"
-            f"- from_attempt_no: {prior_handoff.get('from_attempt_no') or ''}\n"
-            + (f"- result_summary: {prior_handoff.get('from_result_summary')}\n" if prior_handoff.get('from_result_summary') else '')
-            + f"- summary: {prior_handoff.get('summary') or prior_handoff.get('reason') or ''}\n"
-            f"- reason: {prior_handoff.get('reason') or ''}\n"
-            f"- suggested_next_role: {prior_handoff.get('suggested_next_role') or ''}\n"
-            + (f"- artifacts: {artifacts_text}\n" if artifacts_text else '')
-            + (f"- blocking_findings: {findings_text}\n" if findings_text else '')
-            + "- 你应优先基于以上交接摘要继续推进；完整原始任务文本已放在 issue_context JSON 与最近一次 attempt 中，避免在这里重复整段正文。\n\n"
+            f"- summary: {prior_handoff.get('summary') or prior_handoff.get('reason') or ''}\n"
+            f"- reason: {prior_handoff.get('reason') or ''}\n\n"
         )
 
     previous_role_context = ''
@@ -653,20 +648,13 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
             f"- next_employee_key: {human_context.get('next_employee_key') or ''}\n\n"
         )
 
-    retry_context = metadata.get('retry_context') if isinstance(metadata.get('retry_context'), dict) else {}
     retry_summary = ''
     if retry_context and retry_context.get('attempt_role') == role:
         previous_failure = str(retry_context.get('failure_summary') or '').strip()
-        previous_status = str(retry_context.get('status') or '').strip()
-        previous_completion = str(retry_context.get('completion_mode') or '').strip()
         retry_summary = (
-            "重试上下文：\n"
-            f"- previous attempt_no: {retry_context.get('attempt_no') or ''}\n"
-            f"- previous status: {previous_status}\n"
-            + (f"- previous failure_summary: {previous_failure}\n" if previous_failure else '')
-            + (f"- previous completion_mode: {previous_completion}\n" if previous_completion else '')
-            + "- 仅把上一次失败当作排障线索，不要把它原样抄回新的任务描述。\n"
-            + "- 优先延续同一 issue 的已有上下文与工作目录，避免重复从零开始。\n\n"
+            "重试提示：\n"
+            + (f"- 上一轮失败：{previous_failure}\n" if previous_failure else '')
+            + "- 直接延续当前 issue 的已有上下文继续处理，不要从零开始。\n\n"
         )
 
     recovery_summary = ''
@@ -727,7 +715,6 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
         f"你现在以 Agent Team 的 {role_label} 角色工作。Issue #{issue['issue_no']}。\n\n"
         f"{issue_context_summary}"
         f"{prior_summary}"
-        f"{previous_role_context}"
         f"{human_summary}"
         f"{retry_summary}"
         f"{recovery_summary}"

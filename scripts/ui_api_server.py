@@ -229,6 +229,11 @@ class Handler(BaseHTTPRequestHandler):
                 out = svc.delete_scheduled_issue(scheduled_issue_id=payload['scheduled_issue_id'])
             elif parsed.path == '/api/scheduled-issues/run-now':
                 out = svc.run_scheduled_issue_now(scheduled_issue_id=payload['scheduled_issue_id'])
+            elif parsed.path == '/api/scheduled-issues/set-enabled':
+                out = svc.set_scheduled_issue_enabled(
+                    scheduled_issue_id=payload['scheduled_issue_id'],
+                    enabled=bool(payload.get('enabled')),
+                )
             elif parsed.path == '/api/close':
                 out = svc.close_issue(issue_id=payload['issue_id'], resolution=payload.get('resolution', 'completed'))
             elif parsed.path == '/api/attempt-callback':

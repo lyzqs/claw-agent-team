@@ -148,6 +148,15 @@ def ensure_issue_status_schema(conn: sqlite3.Connection) -> None:
 
 
 def ensure_scheduled_issue_schema(conn: sqlite3.Connection) -> None:
+    row = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='scheduled_issues'").fetchone()
+    recreate = False
+    if row and row[0]:
+        sql = str(row[0])
+        if "'cron'" not in sql:
+            recreate = True
+    if row and recreate:
+        conn.execute('ALTER TABLE scheduled_issues RENAME TO scheduled_issues__old_schema')
+
     conn.execute(
         '''CREATE TABLE IF NOT EXISTS scheduled_issues (
           id TEXT PRIMARY KEY,
@@ -164,7 +173,7 @@ def ensure_scheduled_issue_schema(conn: sqlite3.Connection) -> None:
             CHECK (source_type IN ('user', 'system', 'detector', 'watchdog', 'human')),
           dispatch_instruction TEXT,
           schedule_kind TEXT NOT NULL
-            CHECK (schedule_kind IN ('hourly', 'daily', 'weekly', 'monthly', 'interval', 'one_time')),
+            CHECK (schedule_kind IN ('hourly', 'daily', 'weekly', 'monthly', 'interval', 'one_time', 'cron')),
           schedule_config_json TEXT NOT NULL,
           timezone TEXT NOT NULL DEFAULT 'UTC',
           enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
@@ -178,6 +187,25 @@ def ensure_scheduled_issue_schema(conn: sqlite3.Connection) -> None:
           updated_at_ms INTEGER NOT NULL
         )'''
     )
+
+    if row and recreate:
+        conn.execute(
+            '''INSERT INTO scheduled_issues (
+              id, project_id, owner_employee_id, title, description_md, acceptance_criteria_md,
+              priority, route_role, source_type, dispatch_instruction, schedule_kind,
+              schedule_config_json, timezone, enabled, next_run_at_ms, last_run_at_ms,
+              last_issue_id, last_issue_no, last_error, metadata_json, created_at_ms, updated_at_ms
+            )
+            SELECT
+              id, project_id, owner_employee_id, title, description_md, acceptance_criteria_md,
+              priority, route_role, source_type, dispatch_instruction,
+              CASE WHEN schedule_kind = 'cron' THEN 'cron' ELSE schedule_kind END,
+              schedule_config_json, timezone, enabled, next_run_at_ms, last_run_at_ms,
+              last_issue_id, last_issue_no, last_error, metadata_json, created_at_ms, updated_at_ms
+            FROM scheduled_issues__old_schema'''
+        )
+        conn.execute('DROP TABLE scheduled_issues__old_schema')
+
     conn.execute('CREATE INDEX IF NOT EXISTS idx_scheduled_issues_due ON scheduled_issues(enabled, next_run_at_ms)')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_scheduled_issues_project ON scheduled_issues(project_id, updated_at_ms DESC)')
     conn.execute(

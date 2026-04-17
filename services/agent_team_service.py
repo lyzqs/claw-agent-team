@@ -161,6 +161,188 @@ def _next_month_anchor(dt: datetime, day: int, hour: int, minute: int) -> dateti
             month = 1
 
 
+CRON_MONTH_ALIASES = {
+    'jan': 1,
+    'feb': 2,
+    'mar': 3,
+    'apr': 4,
+    'may': 5,
+    'jun': 6,
+    'jul': 7,
+    'aug': 8,
+    'sep': 9,
+    'oct': 10,
+    'nov': 11,
+    'dec': 12,
+}
+
+CRON_DOW_ALIASES = {
+    'sun': 0,
+    'mon': 1,
+    'tue': 2,
+    'wed': 3,
+    'thu': 4,
+    'fri': 5,
+    'sat': 6,
+}
+
+
+def _parse_cron_value(token: str, *, minimum: int, maximum: int, field_name: str, aliases: dict[str, int] | None = None) -> int:
+    raw = str(token or '').strip().lower()
+    if not raw:
+        raise ValidationError(f'cron {field_name} contains an empty value')
+    if aliases and raw in aliases:
+        return aliases[raw]
+    try:
+        value = int(raw)
+    except ValueError as e:
+        raise ValidationError(f'cron {field_name} contains invalid value: {token}') from e
+    if value < minimum or value > maximum:
+        raise ValidationError(f'cron {field_name} out of range: {token}')
+    return value
+
+
+def _expand_cron_field(
+    raw: str,
+    *,
+    minimum: int,
+    maximum: int,
+    field_name: str,
+    aliases: dict[str, int] | None = None,
+    allow_question: bool = False,
+) -> tuple[set[int], bool]:
+    text = str(raw or '').strip().lower()
+    if not text:
+        raise ValidationError(f'cron {field_name} is required')
+    if allow_question and text == '?':
+        text = '*'
+
+    all_values = set(range(minimum, maximum + 1))
+    values: set[int] = set()
+    for part in text.split(','):
+        piece = part.strip().lower()
+        if not piece:
+            raise ValidationError(f'cron {field_name} contains an empty segment')
+        if allow_question and piece == '?':
+            piece = '*'
+
+        step = 1
+        base = piece
+        if '/' in piece:
+            base, step_raw = piece.split('/', 1)
+            try:
+                step = int(step_raw)
+            except ValueError as e:
+                raise ValidationError(f'cron {field_name} contains invalid step: {piece}') from e
+            if step <= 0:
+                raise ValidationError(f'cron {field_name} step must be > 0: {piece}')
+
+        if base == '*':
+            start = minimum
+            end = maximum
+        elif '-' in base:
+            start_raw, end_raw = base.split('-', 1)
+            start = _parse_cron_value(start_raw, minimum=minimum, maximum=maximum, field_name=field_name, aliases=aliases)
+            end = _parse_cron_value(end_raw, minimum=minimum, maximum=maximum, field_name=field_name, aliases=aliases)
+            if end < start:
+                raise ValidationError(f'cron {field_name} range must be ascending: {piece}')
+        else:
+            start = _parse_cron_value(base, minimum=minimum, maximum=maximum, field_name=field_name, aliases=aliases)
+            end = maximum if '/' in piece else start
+
+        for value in range(start, end + 1, step):
+            values.add(value)
+
+    return values, values == all_values
+
+
+def _parse_cron_expression(expr: str) -> dict[str, Any]:
+    parts = [part for part in str(expr or '').split() if part]
+    if len(parts) == 5:
+        second_values = {0}
+        second_all = True
+        minute_raw, hour_raw, dom_raw, month_raw, dow_raw = parts
+    elif len(parts) == 6:
+        second_raw, minute_raw, hour_raw, dom_raw, month_raw, dow_raw = parts
+        second_values, second_all = _expand_cron_field(
+            second_raw,
+            minimum=0,
+            maximum=59,
+            field_name='second',
+        )
+        if second_values != {0}:
+            raise ValidationError('scheduled issue cron only supports second=0')
+    else:
+        raise ValidationError('cron expression must have 5 fields, or 6 fields with second=0')
+
+    minute_values, minute_all = _expand_cron_field(minute_raw, minimum=0, maximum=59, field_name='minute')
+    hour_values, hour_all = _expand_cron_field(hour_raw, minimum=0, maximum=23, field_name='hour')
+    dom_values, dom_all = _expand_cron_field(dom_raw, minimum=1, maximum=31, field_name='day_of_month', allow_question=True)
+    month_values, month_all = _expand_cron_field(
+        month_raw,
+        minimum=1,
+        maximum=12,
+        field_name='month',
+        aliases=CRON_MONTH_ALIASES,
+    )
+    dow_values, dow_all = _expand_cron_field(
+        dow_raw,
+        minimum=0,
+        maximum=7,
+        field_name='day_of_week',
+        aliases=CRON_DOW_ALIASES,
+        allow_question=True,
+    )
+    return {
+        'seconds': second_values,
+        'seconds_all': second_all,
+        'minutes': minute_values,
+        'minutes_all': minute_all,
+        'hours': hour_values,
+        'hours_all': hour_all,
+        'days_of_month': dom_values,
+        'days_of_month_all': dom_all,
+        'months': month_values,
+        'months_all': month_all,
+        'days_of_week': dow_values,
+        'days_of_week_all': dow_all,
+    }
+
+
+def _cron_matches(candidate: datetime, spec: dict[str, Any]) -> bool:
+    cron_dow = (candidate.weekday() + 1) % 7
+    dom_match = candidate.day in spec['days_of_month']
+    dow_match = cron_dow in spec['days_of_week'] or (cron_dow == 0 and 7 in spec['days_of_week'])
+
+    if spec['days_of_month_all'] and spec['days_of_week_all']:
+        day_match = True
+    elif spec['days_of_month_all']:
+        day_match = dow_match
+    elif spec['days_of_week_all']:
+        day_match = dom_match
+    else:
+        day_match = dom_match or dow_match
+
+    return (
+        candidate.second in spec['seconds']
+        and candidate.minute in spec['minutes']
+        and candidate.hour in spec['hours']
+        and candidate.month in spec['months']
+        and day_match
+    )
+
+
+def _next_cron_run(expr: str, *, now_dt: datetime) -> datetime:
+    spec = _parse_cron_expression(expr)
+    candidate = now_dt.replace(second=0, microsecond=0) + timedelta(minutes=1)
+    deadline = candidate + timedelta(days=366 * 5)
+    while candidate <= deadline:
+        if _cron_matches(candidate, spec):
+            return candidate
+        candidate += timedelta(minutes=1)
+    raise ValidationError(f'cron expression has no next occurrence within 5 years: {expr}')
+
+
 def compute_next_scheduled_run(*, schedule_kind: str, schedule_config: dict[str, Any], now_dt: datetime, last_run_at_ms: int | None = None) -> datetime | None:
     kind = str(schedule_kind or '').strip()
     if kind == 'hourly':
@@ -203,6 +385,11 @@ def compute_next_scheduled_run(*, schedule_kind: str, schedule_config: dict[str,
             return None
         candidate = dt_from_ms(int(run_at_ms))
         return candidate if candidate and candidate > now_dt else None
+    if kind == 'cron':
+        expr = str(schedule_config.get('expr') or '').strip()
+        if not expr:
+            return None
+        return _next_cron_run(expr, now_dt=now_dt)
     raise ValidationError(f'unsupported schedule kind: {schedule_kind}')
 
 
@@ -1047,6 +1234,33 @@ class AgentTeamService:
         row = self.db.get_one('SELECT id FROM employee_instances WHERE employee_key = ?', (employee_key,))
         return str(row['id'])
 
+    def _pick_employee_key_for_role(self, *, project_key: str, role: str) -> str:
+        if role == 'ceo':
+            row = self.db.conn.execute(
+                '''SELECT ei.employee_key
+                   FROM employee_instances ei
+                   JOIN role_templates rt ON rt.id = ei.role_template_id
+                   WHERE rt.template_key = 'ceo'
+                   ORDER BY ei.employee_key ASC
+                   LIMIT 1'''
+            ).fetchone()
+            if row:
+                return str(row[0])
+            raise ValidationError('missing CEO employee')
+        row = self.db.conn.execute(
+            '''SELECT ei.employee_key
+               FROM employee_instances ei
+               JOIN role_templates rt ON rt.id = ei.role_template_id
+               LEFT JOIN projects p ON p.id = ei.project_id
+               WHERE rt.template_key = ? AND p.project_key = ?
+               ORDER BY ei.employee_key ASC
+               LIMIT 1''',
+            (role, project_key),
+        ).fetchone()
+        if row:
+            return str(row[0])
+        raise ValidationError(f'missing employee for role={role} project={project_key}')
+
     def _default_owner_employee_key(self, project_key: str) -> str:
         row = self.db.conn.execute(
             '''SELECT ei.employee_key
@@ -1092,6 +1306,11 @@ class AgentTeamService:
             if run_at_ms is None:
                 raise ValidationError('one_time schedule requires run_at_ms')
             return {'run_at_ms': int(run_at_ms)}
+        if kind == 'cron':
+            expr = str(cfg.get('expr') or '').strip()
+            if not expr:
+                raise ValidationError('cron schedule requires expr')
+            return {'expr': expr}
         raise ValidationError(f'unsupported schedule kind: {schedule_kind}')
 
     def list_scheduled_issues(self, *, project_key: str | None = None) -> dict[str, Any]:
@@ -1194,8 +1413,9 @@ class AgentTeamService:
     def update_scheduled_issue(self, *, scheduled_issue_id: str, patch: dict[str, Any]) -> dict[str, Any]:
         row = self.db.get_one('SELECT * FROM scheduled_issues WHERE id = ?', (scheduled_issue_id,))
         current = dict(row)
-        project_key_row = self.db.get_one('SELECT project_key FROM projects WHERE id = ?', (current['project_id'],))
-        project_key = str(project_key_row['project_key'])
+        current_project_key = str(self.db.get_one('SELECT project_key FROM projects WHERE id = ?', (current['project_id'],))['project_key'])
+        project_key = str(patch.get('project_key') or current_project_key)
+        project_id = self._project_id_by_key(project_key)
         owner_key = patch.get('owner_employee_key') or (
             self.db.get_one('SELECT employee_key FROM employee_instances WHERE id = ?', (current['owner_employee_id'],))['employee_key']
             if current.get('owner_employee_id') else self._default_owner_employee_key(project_key)
@@ -1218,16 +1438,17 @@ class AgentTeamService:
         ts = now_ms()
         self.db.conn.execute(
             '''UPDATE scheduled_issues
-               SET owner_employee_id = ?, title = ?, description_md = ?, acceptance_criteria_md = ?,
+               SET project_id = ?, owner_employee_id = ?, title = ?, description_md = ?, acceptance_criteria_md = ?,
                    priority = ?, route_role = ?, source_type = ?, dispatch_instruction = ?,
                    schedule_kind = ?, schedule_config_json = ?, enabled = ?, next_run_at_ms = ?,
                    metadata_json = ?, updated_at_ms = ?
              WHERE id = ?''',
             (
+                project_id,
                 owner_id,
                 patch.get('title', current['title']),
-                patch.get('description_md', current.get('description_md') or ''),
-                patch.get('acceptance_criteria_md', current.get('acceptance_criteria_md') or ''),
+                patch.get('description', patch.get('description_md', current.get('description_md') or '')),
+                patch.get('acceptance', patch.get('acceptance_criteria_md', current.get('acceptance_criteria_md') or '')),
                 patch.get('priority', current['priority']),
                 patch.get('route_role', current['route_role']),
                 patch.get('source_type', current['source_type']),
@@ -1244,6 +1465,7 @@ class AgentTeamService:
         self.db.commit()
         return {
             'scheduled_issue_id': scheduled_issue_id,
+            'project_key': project_key,
             'enabled': enabled,
             'next_run_at_ms': int(next_run.timestamp() * 1000) if next_run else None,
         }
@@ -1280,7 +1502,7 @@ class AgentTeamService:
             source_type=str(record['source_type']),
             metadata=metadata,
         )
-        assign_employee_key = pick_employee_key(self, project_key=project_key, role=str(record['route_role']))
+        assign_employee_key = self._pick_employee_key_for_role(project_key=project_key, role=str(record['route_role']))
         triaged = self.triage_issue(issue_id=created['issue_id'], assign_employee_key=assign_employee_key)
         run_id = uid('schedrun')
         self.db.conn.execute(
@@ -1364,6 +1586,27 @@ class AgentTeamService:
     def run_scheduled_issue_now(self, *, scheduled_issue_id: str) -> dict[str, Any]:
         row = self.db.get_one('SELECT * FROM scheduled_issues WHERE id = ?', (scheduled_issue_id,))
         return self._create_issue_from_schedule(row, manual=True)
+
+    def set_scheduled_issue_enabled(self, *, scheduled_issue_id: str, enabled: bool) -> dict[str, Any]:
+        row = self.db.get_one('SELECT * FROM scheduled_issues WHERE id = ?', (scheduled_issue_id,))
+        schedule_config = parse_schedule_config(row['schedule_config_json'])
+        next_run = compute_next_scheduled_run(
+            schedule_kind=str(row['schedule_kind']),
+            schedule_config=schedule_config,
+            now_dt=datetime.now(UTC),
+            last_run_at_ms=row['last_run_at_ms'],
+        ) if enabled else None
+        ts = now_ms()
+        self.db.conn.execute(
+            'UPDATE scheduled_issues SET enabled = ?, next_run_at_ms = ?, updated_at_ms = ? WHERE id = ?',
+            (1 if enabled else 0, int(next_run.timestamp() * 1000) if next_run else None, ts, scheduled_issue_id),
+        )
+        self.db.commit()
+        return {
+            'scheduled_issue_id': scheduled_issue_id,
+            'enabled': enabled,
+            'next_run_at_ms': int(next_run.timestamp() * 1000) if next_run else None,
+        }
 
     def _record_checkpoint(
         self,

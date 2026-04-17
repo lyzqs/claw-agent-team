@@ -527,13 +527,9 @@
               <span>定时 Issue</span>
               <span>⏰</span>
             </button>
-            <button id="openCreateProjectBtn" class="panel-link">
-              <span>新增项目</span>
-              <span>＋</span>
-            </button>
-            <button id="openDeleteProjectBtn" class="panel-link">
-              <span>删除项目</span>
-              <span>－</span>
+            <button id="openProjectManagerBtn" class="panel-link">
+              <span>项目管理</span>
+              <span>📁</span>
             </button>
             <button id="openHumanQueueBtn" class="panel-link">
               <span>查看待确认</span>
@@ -562,11 +558,6 @@
             <div id="roleMeta" class="chips-wrap" style="display:none;"></div>
             <div id="instanceMeta" class="card-sub" style="display:none;"></div>
           </div>
-        </div>
-
-        <div class="card rail-card">
-          <div class="k">定时 Issue</div>
-          <div id="scheduledIssuePanel" class="card-sub"></div>
         </div>
       </aside>
 
@@ -697,6 +688,22 @@
     </div>
   </div>
 
+  <div id="scheduledIssueListModal" class="modal-backdrop">
+    <div class="modal" style="width:min(980px, 100%);">
+      <div class="modal-top">
+        <div>
+          <h2>定时 Issue</h2>
+          <div class="muted">查看、启停、编辑、立即执行和新增定时任务</div>
+        </div>
+        <button id="closeScheduledIssueListModalBtn" class="secondary">关闭</button>
+      </div>
+      <div class="entry-actions" style="margin-bottom:12px;">
+        <button id="openScheduledIssueCreateFromListBtn">新增定时 Issue</button>
+      </div>
+      <div id="scheduledIssueListBody"></div>
+    </div>
+  </div>
+
   <div id="scheduledIssueModal" class="modal-backdrop">
     <div class="modal" style="width:min(860px, 100%);">
       <div class="modal-top">
@@ -742,6 +749,7 @@
               <option value="monthly">每月</option>
               <option value="interval">固定间隔</option>
               <option value="one_time">一次性</option>
+              <option value="cron">自定义 Cron</option>
             </select>
           </div>
         </div>
@@ -781,6 +789,16 @@
             <input id="scheduledRunAt" type="datetime-local" />
           </div>
         </div>
+        <div class="filters" style="margin-bottom:0; grid-template-columns: repeat(2, minmax(0, 1fr));">
+          <div class="filter-group">
+            <label for="scheduledCronExpr">Cron 表达式</label>
+            <input id="scheduledCronExpr" placeholder="例如 0 9 * * 1" />
+          </div>
+          <div class="filter-group">
+            <label for="scheduledCronPreview">Cron 预览</label>
+            <input id="scheduledCronPreview" readonly placeholder="选择规则后自动预览" />
+          </div>
+        </div>
         <textarea id="scheduledIssueInstruction" placeholder="可选：给首个处理角色的额外说明"></textarea>
         <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475467;">
           <input id="scheduledIssueEnabled" type="checkbox" checked /> 启用后自动创建 issue
@@ -794,44 +812,40 @@
     </div>
   </div>
 
-  <div id="createProjectModal" class="modal-backdrop">
-    <div class="modal" style="width:min(760px, 100%);">
+  <div id="projectManagerModal" class="modal-backdrop">
+    <div class="modal" style="width:min(980px, 100%);">
       <div class="modal-top">
         <div>
-          <h2>新增项目</h2>
-          <div class="muted">创建项目、自动生成 PM / Dev / QA / Ops 实例，并初始化 OpenClaw 项目 session</div>
+          <h2>项目管理</h2>
+          <div class="muted">统一管理项目的新增与删除</div>
         </div>
-        <button id="closeCreateProjectModalBtn" class="secondary">关闭</button>
+        <button id="closeProjectManagerModalBtn" class="secondary">关闭</button>
       </div>
-      <div class="entry-form">
-        <input id="newProjectName" placeholder="项目名称，例如 Agent Team Labs" />
-        <input id="newProjectKey" placeholder="项目 Key，可留空自动生成，例如 agent-team-labs" />
-        <textarea id="newProjectDesc" placeholder="项目背景、目标、边界、上下文。会作为 PM / Dev / QA / Ops 的长期项目上下文初始化内容"></textarea>
-        <div class="entry-note">默认行为：自动创建四个项目角色实例，绑定到固定 5 个 Agent 中对应角色，并在 OpenClaw 中初始化该项目的 PM / Dev / QA / Ops session。CEO 保持共享，不新增 CEO 项目实例。</div>
-        <div class="entry-actions">
-          <button id="createProjectBtn">创建项目</button>
+      <div class="analytics-grid" style="grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="modal-section">
+          <h3>新增项目</h3>
+          <div class="entry-form">
+            <input id="newProjectName" placeholder="项目名称，例如 Agent Team Labs" />
+            <input id="newProjectKey" placeholder="项目 Key，可留空自动生成，例如 agent-team-labs" />
+            <textarea id="newProjectDesc" placeholder="项目背景、目标、边界、上下文。会作为 PM / Dev / QA / Ops 的长期项目上下文初始化内容"></textarea>
+            <div class="entry-note">默认行为：自动创建四个项目角色实例，绑定到固定 5 个 Agent 中对应角色，并初始化 PM / Dev / QA / Ops session。</div>
+            <div class="entry-actions">
+              <button id="createProjectBtn">创建项目</button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="deleteProjectModal" class="modal-backdrop">
-    <div class="modal" style="width:min(720px, 100%);">
-      <div class="modal-top">
-        <div>
-          <h2>删除项目</h2>
-          <div class="muted">只删除项目和对应项目实例，不删除 OpenClaw session</div>
-        </div>
-        <button id="closeDeleteProjectModalBtn" class="secondary">关闭</button>
-      </div>
-      <div class="entry-form">
-        <div class="filter-group">
-          <label for="deleteProjectSelect">选择项目</label>
-          <select id="deleteProjectSelect"></select>
-        </div>
-        <div class="entry-note">删除后会移除该项目、该项目下的 PM / Dev / QA / Ops 实例和对应运行时绑定，但不会删除 OpenClaw 里的 session 文件与 session 记录。</div>
-        <div class="entry-actions">
-          <button id="deleteProjectBtn" class="danger">确认删除项目</button>
+        <div class="modal-section">
+          <h3>删除项目</h3>
+          <div class="entry-form">
+            <div class="filter-group">
+              <label for="deleteProjectSelect">选择项目</label>
+              <select id="deleteProjectSelect"></select>
+            </div>
+            <div class="entry-note">删除后会移除项目、项目实例和对应运行时绑定，但不会删除 OpenClaw session 文件与 session 记录。</div>
+            <div class="entry-actions">
+              <button id="deleteProjectBtn" class="danger">确认删除项目</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -955,8 +969,41 @@
     function formatScheduledRun(item) {
       if (!item) return '—';
       const next = item.next_run_at_ms ? formatTime(item.next_run_at_ms) : '—';
-      const kindMap = { hourly: '每小时', daily: '每天', weekly: '每周', monthly: '每月', interval: '固定间隔', one_time: '一次性' };
+      const kindMap = { hourly: '每小时', daily: '每天', weekly: '每周', monthly: '每月', interval: '固定间隔', one_time: '一次性', cron: 'Cron' };
       return `${kindMap[item.schedule_kind] || item.schedule_kind} · 下次 ${next}`;
+    }
+
+    function buildCronPreview() {
+      const kind = document.getElementById('scheduledIssueKind').value;
+      const minute = Number(document.getElementById('scheduledMinute').value || 0);
+      const hour = Number(document.getElementById('scheduledHour').value || 9);
+      const weekday = Number(document.getElementById('scheduledWeekday').value || 0);
+      const monthDay = Number(document.getElementById('scheduledMonthDay').value || 1);
+      const everyMinutes = Number(document.getElementById('scheduledEveryMinutes').value || 60);
+      const customExpr = document.getElementById('scheduledCronExpr').value.trim();
+      let expr = '';
+      if (kind === 'hourly') expr = `${minute} * * * *`;
+      if (kind === 'daily') expr = `${minute} ${hour} * * *`;
+      if (kind === 'weekly') expr = `${minute} ${hour} * * ${((weekday + 1) % 7)}`;
+      if (kind === 'monthly') expr = `${minute} ${hour} ${monthDay} * *`;
+      if (kind === 'interval') expr = `*/${Math.max(1, everyMinutes)} * * * *`;
+      if (kind === 'one_time') expr = '一次性任务，不生成 cron';
+      if (kind === 'cron') expr = customExpr || '请输入自定义 cron';
+      document.getElementById('scheduledCronPreview').value = expr;
+      return expr;
+    }
+
+    function buildDisplayCron(item) {
+      if (!item) return '—';
+      const cfg = item.schedule_config || {};
+      if (item.schedule_kind === 'hourly') return `${cfg.minute ?? 0} * * * *`;
+      if (item.schedule_kind === 'daily') return `${cfg.minute ?? 0} ${cfg.hour ?? 9} * * *`;
+      if (item.schedule_kind === 'weekly') return `${cfg.minute ?? 0} ${cfg.hour ?? 9} * * ${(((cfg.weekday ?? 0) + 1) % 7)}`;
+      if (item.schedule_kind === 'monthly') return `${cfg.minute ?? 0} ${cfg.hour ?? 9} ${cfg.day ?? 1} * *`;
+      if (item.schedule_kind === 'interval') return `*/${Math.max(1, Number(cfg.every_minutes ?? 60))} * * * *`;
+      if (item.schedule_kind === 'one_time') return '一次性任务';
+      if (item.schedule_kind === 'cron') return cfg.expr || '—';
+      return '—';
     }
 
     function isPaused() { return workflowControl?.mode === 'paused'; }
@@ -1193,6 +1240,7 @@
         const dt = document.getElementById('scheduledRunAt').value;
         payload.schedule_config = { run_at_ms: dt ? new Date(dt).getTime() : null };
       }
+      if (kind === 'cron') payload.schedule_config = { expr: document.getElementById('scheduledCronExpr').value.trim() };
       return payload;
     }
 
@@ -1263,14 +1311,6 @@
       }
     }
 
-    function openCreateProjectModal() {
-      document.getElementById('createProjectModal').classList.add('show');
-    }
-
-    function closeCreateProjectModal() {
-      document.getElementById('createProjectModal').classList.remove('show');
-    }
-
     async function createProject() {
       const name = document.getElementById('newProjectName').value.trim();
       const projectKey = document.getElementById('newProjectKey').value.trim();
@@ -1288,7 +1328,7 @@
       if (out.ok) {
         const sessions = Object.keys(out.result.initialized_sessions || {}).join(' / ');
         showToast(`项目已创建：${out.result.project_key}${sessions ? `，已初始化 ${sessions.toUpperCase()} session` : ''}`);
-        closeCreateProjectModal();
+        closeProjectManagerModal();
         document.getElementById('newProjectName').value = '';
         document.getElementById('newProjectKey').value = '';
         document.getElementById('newProjectDesc').value = '';
@@ -1312,7 +1352,7 @@
       });
       if (out.ok) {
         showToast(`已删除项目：${projectKey}`);
-        closeDeleteProjectModal();
+        closeProjectManagerModal();
         await loadData();
       } else {
         showToast(`删除项目失败: ${out.error || 'unknown error'}`, true);
@@ -1537,67 +1577,51 @@
       }
     }
 
-    function openDeleteProjectModal() {
+    function renderScheduledIssueListModal() {
+      const root = document.getElementById('scheduledIssueListBody');
+      const items = boardData?.scheduled_issues || [];
+      if (!root) return;
+      if (!items.length) {
+        root.innerHTML = '<div class="queue-empty">当前没有定时 Issue。</div>';
+        return;
+      }
+      root.innerHTML = items.map(item => `
+        <div class="queue-item">
+          <h4>${escapeHtml(item.title)}</h4>
+          <div class="queue-meta">
+            <span class="pill">${escapeHtml(item.project_key || '')}</span>
+            <span class="pill">${escapeHtml(item.priority || 'p2')}</span>
+            <span class="pill">${escapeHtml(item.route_role || 'pm')}</span>
+            <span class="pill">${item.enabled ? 'enabled' : 'disabled'}</span>
+          </div>
+          <div><strong>计划:</strong> ${escapeHtml(formatScheduledRun(item))}</div>
+          <div style="margin-top:6px;"><strong>Cron:</strong> ${escapeHtml(buildDisplayCron(item))}</div>
+          <div style="margin-top:6px;"><strong>上次创建:</strong> ${item.last_issue_no ? `#${item.last_issue_no}` : '—'}${item.last_error ? ` · 错误: ${escapeHtml(item.last_error)}` : ''}</div>
+          <div class="queue-actions">
+            <button class="secondary" onclick="window.editScheduledIssue('${item.id}')">编辑</button>
+            <button class="secondary" onclick="window.toggleScheduledIssue('${item.id}', ${item.enabled ? 'false' : 'true'})">${item.enabled ? '禁用' : '启用'}</button>
+            <button class="success" onclick="window.runScheduledIssue('${item.id}')">立即执行一次</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openScheduledIssueListModal() {
+      renderScheduledIssueListModal();
+      document.getElementById('scheduledIssueListModal').classList.add('show');
+    }
+
+    function closeScheduledIssueListModal() {
+      document.getElementById('scheduledIssueListModal').classList.remove('show');
+    }
+
+    function openProjectManagerModal() {
       renderProjectSelectOptions();
-      document.getElementById('deleteProjectModal').classList.add('show');
+      document.getElementById('projectManagerModal').classList.add('show');
     }
 
-    function closeDeleteProjectModal() {
-      document.getElementById('deleteProjectModal').classList.remove('show');
-    }
-
-    function renderScheduledIssuePanel() {
-      const root = document.getElementById('scheduledIssuePanel');
-      const items = boardData?.scheduled_issues || [];
-      if (!root) return;
-      if (!items.length) {
-        root.innerHTML = '<div class="queue-empty">当前没有定时 Issue。你可以新增按小时 / 每天 / 每周 / 每月 / 间隔 / 一次性自动创建的 Issue。</div>';
-        return;
-      }
-      root.innerHTML = `<div class="entry-note">共 ${items.length} 条定时 Issue。到期后会由 worker 自动创建新 issue。</div>` + items.map(item => `
-        <div class="queue-item">
-          <h4>${escapeHtml(item.title)}</h4>
-          <div class="queue-meta">
-            <span class="pill">${escapeHtml(item.project_key || '')}</span>
-            <span class="pill">${escapeHtml(item.priority || 'p2')}</span>
-            <span class="pill">${escapeHtml(item.route_role || 'pm')}</span>
-            <span class="pill">${item.enabled ? 'enabled' : 'disabled'}</span>
-          </div>
-          <div><strong>计划:</strong> ${escapeHtml(formatScheduledRun(item))}</div>
-          <div style="margin-top:6px;"><strong>上次创建:</strong> ${item.last_issue_no ? `#${item.last_issue_no}` : '—'}${item.last_error ? ` · 错误: ${escapeHtml(item.last_error)}` : ''}</div>
-          <div class="queue-actions">
-            <button class="secondary" onclick="window.editScheduledIssue('${item.id}')">编辑</button>
-            <button class="success" onclick="window.runScheduledIssue('${item.id}')">立即执行一次</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function renderScheduledIssuePanel() {
-      const root = document.getElementById('scheduledIssuePanel');
-      const items = boardData?.scheduled_issues || [];
-      if (!root) return;
-      if (!items.length) {
-        root.innerHTML = '<div class="queue-empty">当前没有定时 Issue。你可以新增按小时 / 每天 / 每周 / 每月 / 间隔 / 一次性自动创建的 Issue。</div>';
-        return;
-      }
-      root.innerHTML = `<div class="entry-note">共 ${items.length} 条定时 Issue。到期后会由 worker 自动创建新 issue。</div>` + items.map(item => `
-        <div class="queue-item">
-          <h4>${escapeHtml(item.title)}</h4>
-          <div class="queue-meta">
-            <span class="pill">${escapeHtml(item.project_key || '')}</span>
-            <span class="pill">${escapeHtml(item.priority || 'p2')}</span>
-            <span class="pill">${escapeHtml(item.route_role || 'pm')}</span>
-            <span class="pill">${item.enabled ? 'enabled' : 'disabled'}</span>
-          </div>
-          <div><strong>计划:</strong> ${escapeHtml(formatScheduledRun(item))}</div>
-          <div style="margin-top:6px;"><strong>上次创建:</strong> ${item.last_issue_no ? `#${item.last_issue_no}` : '—'}${item.last_error ? ` · 错误: ${escapeHtml(item.last_error)}` : ''}</div>
-          <div class="queue-actions">
-            <button class="secondary" onclick="window.editScheduledIssue('${item.id}')">编辑</button>
-            <button class="success" onclick="window.runScheduledIssue('${item.id}')">立即执行一次</button>
-          </div>
-        </div>
-      `).join('');
+    function closeProjectManagerModal() {
+      document.getElementById('projectManagerModal').classList.remove('show');
     }
 
     function renderSummary() {
@@ -1623,7 +1647,7 @@
       const snapshotSource = snapshotMeta.fallback ? 'fallback-json' : (snapshotMeta.source || 'api');
       snapshotChip.textContent = `快照 ${snapshotMeta.schema_version || 'unknown'} · ${snapshotSource} · ${formatIsoText(snapshotMeta.generated_at)}`;
       document.getElementById('projectMeta').innerHTML = projects.length
-        ? `<div class="detail-stack">${projects.map(p => `<div class="detail-item"><div class="detail-head"><span>${escapeHtml(p.name)}</span><span>${escapeHtml(p.project_key)}</span></div><div class="detail-sub">${p.description ? `${escapeHtml(p.description)}<br/>` : ''}总 Issue ${p.total_issues}，已关闭 ${p.closed_issues}</div><div class="entry-actions" style="margin-top:10px;">${p.project_key !== 'agent-team-core' ? `<button class="danger" onclick="window.quickDeleteProject('${escapeHtml(p.project_key)}')">删除项目</button>` : ''}</div></div>`).join('')}</div>`
+        ? `<div class="detail-stack">${projects.map(p => `<div class="detail-item"><div class="detail-head"><span>${escapeHtml(p.name)}</span><span>${escapeHtml(p.project_key)}</span></div><div class="detail-sub">${p.description ? `${escapeHtml(p.description)}<br/>` : ''}总 Issue ${p.total_issues}，已关闭 ${p.closed_issues}</div></div>`).join('')}</div>`
         : '暂无项目';
       document.getElementById('roleMeta').innerHTML = fixedAgents.map(agentId => {
         const boundEmployees = employees.filter(e => e.agent_id === agentId);
@@ -2093,6 +2117,8 @@
       document.getElementById('scheduledRunAt').value = cfg.run_at_ms ? new Date(cfg.run_at_ms).toISOString().slice(0,16) : '';
       document.getElementById('scheduledIssueInstruction').value = item?.dispatch_instruction || '';
       document.getElementById('scheduledIssueEnabled').checked = item ? Boolean(item.enabled) : true;
+      document.getElementById('scheduledCronExpr').value = cfg.expr || '';
+      buildCronPreview();
       document.getElementById('deleteScheduledIssueBtn').style.display = item ? '' : 'none';
       document.getElementById('runScheduledIssueNowBtn').style.display = item ? '' : 'none';
       document.getElementById('scheduledIssueModal').classList.add('show');
@@ -2124,13 +2150,6 @@
     window.resolveQueueItem = async function(issueId, resolution) {
       openHumanActionModal(issueId, resolution);
     }
-    window.quickDeleteProject = async function(projectKey) {
-      if (!projectKey) return;
-      if (!confirm(`确认删除项目 ${projectKey}？\n\n只会删除项目和项目实例，不会删除 OpenClaw session。`)) return;
-      const out = await apiPost('/api/delete-project', { project_key: projectKey });
-      showToast(out.ok ? `已删除项目：${projectKey}` : `删除项目失败: ${out.error || 'unknown error'}`, !out.ok);
-      if (out.ok) await loadData();
-    };
     window.editScheduledIssue = function(scheduledIssueId) {
       const item = (boardData?.scheduled_issues || []).find(x => x.id === scheduledIssueId);
       if (item) openScheduledIssueModal(item);
@@ -2138,6 +2157,11 @@
     window.runScheduledIssue = async function(scheduledIssueId) {
       const out = await apiPost('/api/scheduled-issues/run-now', { scheduled_issue_id: scheduledIssueId });
       showToast(out.ok ? `已立即创建 Issue #${out.result.created_issue.issue_no}` : `执行失败: ${out.error || 'unknown error'}`, !out.ok);
+      if (out.ok) await loadData({ preserveView: true });
+    };
+    window.toggleScheduledIssue = async function(scheduledIssueId, enabled) {
+      const out = await apiPost('/api/scheduled-issues/set-enabled', { scheduled_issue_id: scheduledIssueId, enabled });
+      showToast(out.ok ? (enabled ? '已启用定时任务' : '已禁用定时任务') : `操作失败: ${out.error || 'unknown error'}`, !out.ok);
       if (out.ok) await loadData({ preserveView: true });
     };
 
@@ -2171,7 +2195,6 @@
         renderSummary();
         renderProjectSelectOptions();
         renderHumanQueuePanel();
-        renderScheduledIssuePanel();
         renderAnalytics();
         renderFilters();
         if (!preserveView) {
@@ -2195,15 +2218,15 @@
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
     document.getElementById('reloadBtn').addEventListener('click', () => loadData({ preserveView: true }));
     document.getElementById('openCreateIssueBtn').addEventListener('click', openCreateIssueModal);
-    document.getElementById('openScheduledIssueBtn').addEventListener('click', () => openScheduledIssueModal());
-    document.getElementById('openCreateProjectBtn').addEventListener('click', openCreateProjectModal);
-    document.getElementById('openDeleteProjectBtn').addEventListener('click', openDeleteProjectModal);
+    document.getElementById('openScheduledIssueBtn').addEventListener('click', openScheduledIssueListModal);
+    document.getElementById('openProjectManagerBtn').addEventListener('click', openProjectManagerModal);
     document.getElementById('openHumanQueueBtn').addEventListener('click', () => openInfoModal('待你确认', document.getElementById('humanQueuePanel').innerHTML || '当前没有待确认事项'));
     document.getElementById('createIssueBtn').addEventListener('click', () => createIssue(document.getElementById('newIssueRoute').value || 'pm'));
     document.getElementById('createCeoIssueBtn').addEventListener('click', () => createIssue('ceo'));
     document.getElementById('saveScheduledIssueBtn').addEventListener('click', saveScheduledIssue);
     document.getElementById('deleteScheduledIssueBtn').addEventListener('click', deleteScheduledIssue);
     document.getElementById('runScheduledIssueNowBtn').addEventListener('click', runScheduledIssueNow);
+    document.getElementById('openScheduledIssueCreateFromListBtn').addEventListener('click', () => openScheduledIssueModal());
     document.getElementById('createProjectBtn').addEventListener('click', createProject);
     document.getElementById('deleteProjectBtn').addEventListener('click', deleteProject);
     document.getElementById('runBtn').addEventListener('click', async () => {
@@ -2216,18 +2239,18 @@
     });
     document.getElementById('closeModalBtn').addEventListener('click', closeIssueModal);
     document.getElementById('closeCreateIssueModalBtn').addEventListener('click', closeCreateIssueModal);
+    document.getElementById('closeScheduledIssueListModalBtn').addEventListener('click', closeScheduledIssueListModal);
     document.getElementById('closeScheduledIssueModalBtn').addEventListener('click', closeScheduledIssueModal);
-    document.getElementById('closeCreateProjectModalBtn').addEventListener('click', closeCreateProjectModal);
-    document.getElementById('closeDeleteProjectModalBtn').addEventListener('click', closeDeleteProjectModal);
+    document.getElementById('closeProjectManagerModalBtn').addEventListener('click', closeProjectManagerModal);
     document.getElementById('closeHumanActionModalBtn').addEventListener('click', closeHumanActionModal);
     document.getElementById('humanActionCancelBtn').addEventListener('click', closeHumanActionModal);
     document.getElementById('humanActionSubmitBtn').addEventListener('click', submitHumanActionModal);
     document.getElementById('humanActionModal').addEventListener('click', (e) => { if (e.target.id === 'humanActionModal') closeHumanActionModal(); });
     document.getElementById('modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') closeIssueModal(); });
     document.getElementById('createIssueModal').addEventListener('click', (e) => { if (e.target.id === 'createIssueModal') closeCreateIssueModal(); });
+    document.getElementById('scheduledIssueListModal').addEventListener('click', (e) => { if (e.target.id === 'scheduledIssueListModal') closeScheduledIssueListModal(); });
     document.getElementById('scheduledIssueModal').addEventListener('click', (e) => { if (e.target.id === 'scheduledIssueModal') closeScheduledIssueModal(); });
-    document.getElementById('createProjectModal').addEventListener('click', (e) => { if (e.target.id === 'createProjectModal') closeCreateProjectModal(); });
-    document.getElementById('deleteProjectModal').addEventListener('click', (e) => { if (e.target.id === 'deleteProjectModal') closeDeleteProjectModal(); });
+    document.getElementById('projectManagerModal').addEventListener('click', (e) => { if (e.target.id === 'projectManagerModal') closeProjectManagerModal(); });
     document.getElementById('toggleProjectMetaBtn').addEventListener('click', () => {
       openInfoModal('项目说明', document.getElementById('projectMeta').innerHTML || '暂无项目');
     });
@@ -2235,6 +2258,13 @@
       openInfoModal('固定角色 / 实例说明', `${document.getElementById('roleMeta').outerHTML}${document.getElementById('instanceMeta').innerHTML}` || '暂无角色');
     });
     document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
+    document.getElementById('scheduledIssueKind').addEventListener('change', buildCronPreview);
+    document.getElementById('scheduledMinute').addEventListener('input', buildCronPreview);
+    document.getElementById('scheduledHour').addEventListener('input', buildCronPreview);
+    document.getElementById('scheduledWeekday').addEventListener('change', buildCronPreview);
+    document.getElementById('scheduledMonthDay').addEventListener('input', buildCronPreview);
+    document.getElementById('scheduledEveryMinutes').addEventListener('input', buildCronPreview);
+    document.getElementById('scheduledCronExpr').addEventListener('input', buildCronPreview);
     document.getElementById('projectFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('agentFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('sortSelect').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });

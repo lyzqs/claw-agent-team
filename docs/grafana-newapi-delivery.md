@@ -31,8 +31,8 @@
 - `deploy/grafana/provisioning/datasources/prometheus.yaml`
   - datasource uid 调整为 `prometheus-local-main`
 - `deploy/grafana/provisioning/dashboards/dashboard-provider.yaml`
-  - Host-System dashboard 落到 `AT | 10 Platform | Host-System`
-  - NewAPI dashboard 落到 `AT | 21 Project | NewAPI`
+  - Host-System dashboard 落到 `AT | 10 平台 | 主机系统`
+  - NewAPI dashboard 落到 `AT | 21 项目 | NewAPI`
 
 ### 4. NewAPI dashboards
 - `deploy/grafana/dashboards/newapi-business-overview.json`
@@ -109,7 +109,7 @@ python3 scripts/validate_newapi_observability.py
 
 ### 3. 手工检查建议
 - 打开 Grafana
-- 确认 folder `AT | 21 Project | NewAPI` 已存在
+- 确认 folder `AT | 21 项目 | NewAPI` 已存在
 - 确认 3 个 NewAPI dashboards 可见
 - 确认面板中出现：
   - 请求量 / 成功率 / 错误率

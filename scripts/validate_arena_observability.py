@@ -36,7 +36,7 @@ EXPECTED_GRAFANA_DASHBOARD_UIDS = {
     'at-arena-position-holdings-exits',
     'at-arena-review-validation-iteration',
 }
-EXPECTED_GRAFANA_FOLDER_TITLE = 'AT | 22 Project | Arena'
+EXPECTED_GRAFANA_FOLDER_TITLE = 'AT | 22 项目 | Arena'
 EXPECTED_PROMETHEUS_JOB = 'arena-exporter'
 
 

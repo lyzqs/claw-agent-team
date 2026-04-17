@@ -177,11 +177,11 @@ EXPECTED_DASHBOARDS = {
     },
 }
 EXPECTED_PROVIDER_FOLDERS = {
-    "AT | 10 Platform | Host-System",
-    "AT | 20 Project | Agent-Team",
-    "AT | 21 Project | NewAPI",
-    "AT | 22 Project | Arena",
-    "AT | 30 Ops | Uptime-Kuma",
+    "AT | 10 平台 | 主机系统",
+    "AT | 20 项目 | 智能体团队",
+    "AT | 21 项目 | NewAPI",
+    "AT | 22 项目 | Arena",
+    "AT | 30 运维 | Uptime Kuma",
 }
 
 

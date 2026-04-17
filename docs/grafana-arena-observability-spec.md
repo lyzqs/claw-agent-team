@@ -396,7 +396,7 @@
 ### 9.1 Folder
 按统一蓝图落入：
 
-`AT | 22 Project | Arena`
+`AT | 22 项目 | Arena`
 
 ### 9.2 Dashboard 建议
 
@@ -467,7 +467,7 @@
 1. 复用 Arena 的 runtime / jsonl / 本地 API 数据形成 Prometheus 可抓取指标
 2. 保持高基数字段在明细层，不默认上升到 Prometheus label
 3. 复用主机观测栈获取 Arena 进程级系统指标
-4. 在 Grafana 中建立 `AT | 22 Project | Arena` 下的 dashboard
+4. 在 Grafana 中建立 `AT | 22 项目 | Arena` 下的 dashboard
 5. 至少让用户能在 Grafana 中回答：
    - 今天有没有值得做的票
    - 为什么当前没有执行

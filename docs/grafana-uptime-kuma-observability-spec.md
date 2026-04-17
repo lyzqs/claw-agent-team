@@ -357,7 +357,7 @@ bridge / 聚合层不应负责：
 ### 11.1 Folder
 按统一蓝图落入：
 
-`AT | 30 Ops | Uptime-Kuma`
+`AT | 30 运维 | Uptime Kuma`
 
 ### 11.2 Dashboard 建议
 
@@ -412,7 +412,7 @@ bridge / 聚合层不应负责：
 
 1. 评估并复用 Kuma 原生可导出的状态与响应时间数据
 2. 如原生输出不足，补轻量 bridge，把 group 汇总指标和配置性信息转换为 Prometheus 可抓取格式
-3. 在 Grafana 中建立 `AT | 30 Ops | Uptime-Kuma` 下的 dashboard
+3. 在 Grafana 中建立 `AT | 30 运维 | Uptime Kuma` 下的 dashboard
 4. 让用户能直接回答：
    - 现在哪些服务挂了
    - 哪些分组最不稳定

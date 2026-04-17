@@ -36,7 +36,7 @@
 - `AT | Uptime-Kuma | Synthetic | Monitor Details`
 
 Folder：
-- `AT | 30 Ops | Uptime-Kuma`
+- `AT | 30 运维 | Uptime Kuma`
 
 ### 4. Grafana / provisioning 收敛
 - `deploy/grafana/provisioning/dashboards/dashboard-provider.yaml`
@@ -88,7 +88,7 @@ python3 scripts/validate_uptime_kuma_observability.py
 
 ### 3. 手工检查建议
 - 打开 Grafana
-- 确认 folder `AT | 30 Ops | Uptime-Kuma` 已存在
+- 确认 folder `AT | 30 运维 | Uptime Kuma` 已存在
 - 确认 3 个 Uptime Kuma dashboards 可见
 - 确认能够回答：
   - 当前哪些监控 down

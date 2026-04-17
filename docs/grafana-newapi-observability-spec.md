@@ -349,7 +349,7 @@
 ### 9.1 Folder
 按统一蓝图落入：
 
-`AT | 21 Project | NewAPI`
+`AT | 21 项目 | NewAPI`
 
 ### 9.2 Dashboard 建议
 
@@ -407,7 +407,7 @@
 1. 复用或桥接现有 `/api/log/stat` 与 `/api/log/channel_error_stats` 统计能力
 2. 把高价值业务指标转换为 Prometheus 可抓取形式
 3. 复用主机进程观测栈获取 new-api 的系统/运行指标
-4. 在 Grafana 中建立 `AT | 21 Project | NewAPI` 下的 dashboard
+4. 在 Grafana 中建立 `AT | 21 项目 | NewAPI` 下的 dashboard
 5. 保留错误样本 drill-down 能力，但不要把高基数原始字段做成 Prometheus label
 
 ## 12. PM 显式判断结论

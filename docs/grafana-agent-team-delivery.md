@@ -48,7 +48,7 @@
 
 ### 5. Dashboard provisioning / 安装脚本更新
 - `deploy/grafana/provisioning/dashboards/dashboard-provider.yaml`
-  - 新增 folder `AT | 20 Project | Agent-Team`
+  - 新增 folder `AT | 20 项目 | 智能体团队`
 - `deploy/grafana/install_local_grafana_stack.sh`
   - 安装 `agent-team-metrics-exporter.service`
   - 同步 Agent Team dashboards 到 `/var/lib/grafana/dashboards/agent-team-grafana/agent-team`
@@ -124,7 +124,7 @@ python3 scripts/validate_agent_team_observability.py
 
 ### 3. 手工检查建议
 - 打开 Grafana
-- 确认 folder `AT | 20 Project | Agent-Team` 已存在
+- 确认 folder `AT | 20 项目 | 智能体团队` 已存在
 - 确认 3 个 Agent Team dashboards 可见
 - 确认 Host-System dashboard 标题已切换为 `AT | Host-System | System | Overview`
 - 确认面板中出现：

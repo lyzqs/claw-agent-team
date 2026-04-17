@@ -78,18 +78,18 @@
 
 考虑 Grafana folder 在实际使用中更适合扁平命名与排序，本轮采用**带前缀的扁平 folder 方案**，而不是依赖多层嵌套：
 
-1. `AT | 00 Standards`
-2. `AT | 10 Platform | Host-System`
-3. `AT | 20 Project | Agent-Team`
-4. `AT | 21 Project | NewAPI`
-5. `AT | 22 Project | Arena`
-6. `AT | 30 Ops | Uptime-Kuma`
-7. `AT | 90 Overview | Cross-Project`
+1. `AT | 00 规范`
+2. `AT | 10 平台 | 主机系统`
+3. `AT | 20 项目 | 智能体团队`
+4. `AT | 21 项目 | NewAPI`
+5. `AT | 22 项目 | Arena`
+6. `AT | 30 运维 | Uptime Kuma`
+7. `AT | 90 总览 | 跨项目`
 
 说明：
 - `AT` 代表本轮统一的 Agent Team Grafana 目录前缀。
-- `00 Standards` 仅放命名约定、说明型 dashboard 或基线示意，不放具体系统业务图。
-- `90 Overview | Cross-Project` 预留给 `Issue #3` 在子 issue 收口后的总览检查与统一汇总视图。
+- `00 规范` 仅放命名约定、说明型 dashboard 或基线示意，不放具体系统业务图。
+- `90 总览 | 跨项目` 预留给 `Issue #3` 在子 issue 收口后的总览检查与统一汇总视图。
 
 ### 4.2 Dashboard 命名规范
 

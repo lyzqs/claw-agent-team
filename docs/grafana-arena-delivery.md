@@ -39,7 +39,7 @@
 
 ### 4. Dashboard provisioning / 安装脚本更新
 - `deploy/grafana/provisioning/dashboards/dashboard-provider.yaml`
-  - 新增 folder `AT | 22 Project | Arena`
+  - 新增 folder `AT | 22 项目 | Arena`
 - `deploy/grafana/install_local_grafana_stack.sh`
   - 安装 `arena-metrics-exporter.service`
   - 同步 Arena dashboards 到 `/var/lib/grafana/dashboards/agent-team-grafana/arena`
@@ -111,7 +111,7 @@ python3 scripts/validate_arena_observability.py
 
 ### 3. 手工检查建议
 - 打开 Grafana
-- 确认 folder `AT | 22 Project | Arena` 已存在
+- 确认 folder `AT | 22 项目 | Arena` 已存在
 - 确认 4 个 Arena dashboards 可见
 - 确认面板中出现：
   - 组合总资产 / 浮动盈亏 / 持仓数 / 执行数 / pending

@@ -566,16 +566,12 @@ def build_worker_payload(issue: dict[str, Any], last_attempt_payload: dict[str, 
     role_dispatch_instruction = extract_clean_instruction(metadata.get(f'dispatch_instruction_{role}'))
     current_worker_instruction = extract_clean_instruction(metadata.get('worker_instruction'))
     current_dispatch_instruction = extract_clean_instruction(metadata.get('dispatch_instruction'))
-    last_attempt_role = last_attempt_payload.get('attempt_role') if isinstance(last_attempt_payload.get('attempt_role'), str) else None
-    reuse_last_instruction = last_attempt_role == role
     explicit_instruction = None
     for candidate in (
         role_dispatch_instruction,
         role_worker_instruction,
         current_dispatch_instruction,
         current_worker_instruction,
-        extract_clean_instruction(metadata.get('prompt')),
-        extract_clean_instruction(last_attempt_payload.get('worker_instruction')) if (not current_worker_instruction and reuse_last_instruction) else None,
     ):
         if isinstance(candidate, str) and candidate.strip():
             explicit_instruction = candidate.strip()

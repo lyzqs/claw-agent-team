@@ -566,12 +566,12 @@
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -584,23 +584,12 @@
           },
           "editorMode": "code",
           "expr": "sum by (project) (agent_team_issue_created_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"1h\"})",
-          "legendFormat": "{{project}} 创建/小时",
+          "legendFormat": "{{project}} 新增/小时",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus-local-main"
-          },
-          "editorMode": "code",
-          "expr": "sum by (project) (agent_team_issue_closed_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"1h\"})",
-          "legendFormat": "{{project}} 关闭/小时",
-          "range": true,
-          "refId": "B"
         }
       ],
-      "title": "事项创建 / 关闭趋势（小时）",
+      "title": "按项目看 Issue 新增趋势（小时）",
       "type": "timeseries"
     },
     {
@@ -637,12 +626,72 @@
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-local-main"
+          },
+          "editorMode": "code",
+          "expr": "sum by (project) (agent_team_issue_closed_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"1h\"})",
+          "legendFormat": "{{project}} 完成/小时",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "按项目看 Issue 完成趋势（小时）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-local-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -655,10 +704,59 @@
           },
           "editorMode": "code",
           "expr": "sum by (project) (agent_team_issue_created_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"24h\"})",
-          "legendFormat": "{{project}} 创建/天",
+          "legendFormat": "{{project}} 新增/24h",
           "range": true,
           "refId": "A"
+        }
+      ],
+      "title": "按项目看 Issue 新增趋势（24h）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-local-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
         {
           "datasource": {
             "type": "prometheus",
@@ -666,12 +764,12 @@
           },
           "editorMode": "code",
           "expr": "sum by (project) (agent_team_issue_closed_window_total{project=~\"$project\",job=~\"$job\",instance=~\"$instance\",window=\"24h\"})",
-          "legendFormat": "{{project}} 关闭/天",
+          "legendFormat": "{{project}} 完成/24h",
           "range": true,
-          "refId": "B"
+          "refId": "A"
         }
       ],
-      "title": "事项创建 / 关闭趋势（天）",
+      "title": "按项目看 Issue 完成趋势（24h）",
       "type": "timeseries"
     },
     {
@@ -703,9 +801,9 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 26
       },
-      "id": 11,
+      "id": 13,
       "options": {
         "displayMode": "gradient",
         "legend": {
@@ -773,9 +871,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 26
       },
-      "id": 12,
+      "id": 14,
       "options": {
         "displayMode": "gradient",
         "legend": {
@@ -843,9 +941,9 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 26
+        "y": 34
       },
-      "id": 13,
+      "id": 15,
       "options": {
         "displayMode": "gradient",
         "legend": {
@@ -913,9 +1011,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 26
+        "y": 34
       },
-      "id": 14,
+      "id": 16,
       "options": {
         "displayMode": "gradient",
         "legend": {

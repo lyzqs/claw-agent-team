@@ -64,7 +64,19 @@ class PanelFactory:
             "type": "stat",
         }
 
-    def timeseries(self, *, title: str, targets: list[dict], unit: str, x: int, y: int, w: int = 12, h: int = 8) -> dict:
+    def timeseries(
+        self,
+        *,
+        title: str,
+        targets: list[dict],
+        unit: str,
+        x: int,
+        y: int,
+        w: int = 12,
+        h: int = 8,
+        legend_display_mode: str = "list",
+        tooltip_mode: str = "single",
+    ) -> dict:
         return {
             "datasource": self.datasource(),
             "fieldConfig": {
@@ -79,8 +91,8 @@ class PanelFactory:
             "gridPos": {"h": h, "w": w, "x": x, "y": y},
             "id": self._panel_id(),
             "options": {
-                "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": True},
-                "tooltip": {"mode": "single", "sort": "none"},
+                "legend": {"calcs": [], "displayMode": legend_display_mode, "placement": "bottom", "showLegend": True},
+                "tooltip": {"mode": tooltip_mode, "sort": "none"},
             },
             "pluginVersion": PLUGIN_VERSION,
             "targets": [
@@ -269,39 +281,63 @@ def build_runtime_overview() -> dict:
         factory.stat(title="界面 API 健康度", expr=f'max(agent_team_ui_api_health{{job=~"$job",instance=~"$instance"}})', unit="none", x=12, y=5),
         factory.stat(title="队列隔离健康", expr=f'min(agent_team_queue_isolation_health{{job=~"$job",instance=~"$instance",check="overall"}})', unit="none", x=18, y=5),
         factory.timeseries(
-            title="事项创建 / 关闭趋势（小时）",
+            title="按项目看 Issue 新增趋势（小时）",
             unit="none",
             x=0,
             y=10,
+            legend_display_mode="table",
+            tooltip_mode="multi",
             targets=[
                 {
                     "expr": f'sum by (project) (agent_team_issue_created_window_total{{{filters},window="1h"}})',
-                    "legend": "{{project}} 创建/小时",
+                    "legend": "{{project}} 新增/小时",
                     "refId": "A",
-                },
-                {
-                    "expr": f'sum by (project) (agent_team_issue_closed_window_total{{{filters},window="1h"}})',
-                    "legend": "{{project}} 关闭/小时",
-                    "refId": "B",
-                },
+                }
             ],
         ),
         factory.timeseries(
-            title="事项创建 / 关闭趋势（天）",
+            title="按项目看 Issue 完成趋势（小时）",
             unit="none",
             x=12,
             y=10,
+            legend_display_mode="table",
+            tooltip_mode="multi",
+            targets=[
+                {
+                    "expr": f'sum by (project) (agent_team_issue_closed_window_total{{{filters},window="1h"}})',
+                    "legend": "{{project}} 完成/小时",
+                    "refId": "A",
+                }
+            ],
+        ),
+        factory.timeseries(
+            title="按项目看 Issue 新增趋势（24h）",
+            unit="none",
+            x=0,
+            y=18,
+            legend_display_mode="table",
+            tooltip_mode="multi",
             targets=[
                 {
                     "expr": f'sum by (project) (agent_team_issue_created_window_total{{{filters},window="24h"}})',
-                    "legend": "{{project}} 创建/天",
+                    "legend": "{{project}} 新增/24h",
                     "refId": "A",
-                },
+                }
+            ],
+        ),
+        factory.timeseries(
+            title="按项目看 Issue 完成趋势（24h）",
+            unit="none",
+            x=12,
+            y=18,
+            legend_display_mode="table",
+            tooltip_mode="multi",
+            targets=[
                 {
                     "expr": f'sum by (project) (agent_team_issue_closed_window_total{{{filters},window="24h"}})',
-                    "legend": "{{project}} 关闭/天",
-                    "refId": "B",
-                },
+                    "legend": "{{project}} 完成/24h",
+                    "refId": "A",
+                }
             ],
         ),
         factory.bargauge(
@@ -309,7 +345,7 @@ def build_runtime_overview() -> dict:
             expr=f'sort_desc(sum by (issue_status) (agent_team_issues_total{{{issue_filters}}}))',
             unit="short",
             x=0,
-            y=18,
+            y=26,
             legend="{{issue_status}}",
         ),
         factory.bargauge(
@@ -317,7 +353,7 @@ def build_runtime_overview() -> dict:
             expr=f'sort_desc(sum by (attempt_status) (agent_team_attempts_total{{{role_filters}}}))',
             unit="short",
             x=12,
-            y=18,
+            y=26,
             legend="{{attempt_status}}",
         ),
         factory.bargauge(
@@ -325,7 +361,7 @@ def build_runtime_overview() -> dict:
             expr=f'sort_desc(sum by (role) (agent_team_role_backlog_total{{{role_filters},issue_status=~"$issue_status"}}))',
             unit="short",
             x=0,
-            y=26,
+            y=34,
             legend="{{role}}",
         ),
         factory.bargauge(
@@ -333,7 +369,7 @@ def build_runtime_overview() -> dict:
             expr='sort_desc(sum by (project) (agent_team_project_backlog_total{project=~"$project",issue_status=~"$issue_status",job=~"$job",instance=~"$instance"}))',
             unit="short",
             x=12,
-            y=26,
+            y=34,
             legend="{{project}}",
         ),
     ]

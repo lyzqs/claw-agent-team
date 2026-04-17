@@ -63,8 +63,24 @@
 - 校验 exporter 是否暴露预期 `agent_team_*` 指标
 - 校验 Grafana 搜索结果里能发现 Agent Team dashboards
 
-## 覆盖到的规格指标
-本轮已覆盖或桥接以下核心指标：
+## 本轮补充增强（Issue #36）
+
+围绕第二轮“更贴近管理视角”的 follow-up，本轮对 `AT | 智能体团队 | 运行总览` 做了项目维度趋势增强，重点不再把“创建/关闭”混在同一张泛化趋势图里，而是拆成更直观、可比较的 4 块核心面板：
+
+- `按项目看 Issue 新增趋势（小时）`
+- `按项目看 Issue 完成趋势（小时）`
+- `按项目看 Issue 新增趋势（24h）`
+- `按项目看 Issue 完成趋势（24h）`
+
+实现特征：
+- 仍复用已落地的 exporter 指标 `agent_team_issue_created_window_total` / `agent_team_issue_closed_window_total`
+- 查询统一按 `project` 维度聚合
+- 面板改为单主题 timeseries，而不是“创建 + 关闭混在同一张图里”
+- 图例使用 `table` 模式、tooltip 使用 `multi` 模式，便于在同一时刻横向比较不同项目节奏
+- 原有分布型 bargauge 下沉到更靠后位置，使首页首先回答“哪个项目新增多、哪个项目完成多、节奏如何”
+
+因此，本次增强没有新增 exporter 采集面，而是在既有指标基础上把管理视角所需的 dashboard 表达补齐到可独立验收水平。
+
 - `agent_team_issues_total`
 - `agent_team_agent_queue_total`
 - `agent_team_human_queue_total`

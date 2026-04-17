@@ -91,6 +91,7 @@ def main() -> None:
     report = {
         "status": "ok",
         "live_metrics_note": "新增吞吐窗口指标已在本地 exporter 代码路径中生成；当前 19130 端口仍跑旧 exporter 进程，因此这些新增指标暂列为 missing_optional_live_metrics，需 Ops/QA 重载服务后复核运行态。",
+        "dashboard_validation_note": "Agent Team Runtime Overview 现已强化 4 个项目维度趋势面板：按项目看 Issue 新增趋势（小时/24h）与按项目看 Issue 完成趋势（小时/24h）；Grafana 搜索命中需结合页面确认这些面板已稳定可见。",
         "metrics_url": args.metrics_url,
         "metric_count": len(zero_seen_metrics),
         "expected_metrics_present": sorted(EXPECTED_METRICS),

@@ -191,6 +191,7 @@ install_bundle_files() {
   install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/agent-team
   install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/newapi
   install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/arena
+  install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/openclaw
   install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/uptime-kuma
   install -d -m 0755 /etc/nginx/sites-available /etc/nginx/sites-enabled
   install -d -m 0755 /var/lib/agent-team-prometheus
@@ -202,6 +203,7 @@ install_bundle_files() {
   install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/newapi-metrics-exporter.service" /etc/systemd/system/newapi-metrics-exporter.service
   install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/arena-metrics-exporter.service" /etc/systemd/system/arena-metrics-exporter.service
   install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/uptime-kuma-metrics-exporter.service" /etc/systemd/system/uptime-kuma-metrics-exporter.service
+  install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/openclaw-otel-bridge.service" /etc/systemd/system/openclaw-otel-bridge.service
   install -m 0644 "${REPO_ROOT}/deploy/grafana/prometheus/prometheus.yml" /opt/agent-team-grafana/prometheus/prometheus.yml
   install -m 0644 "${REPO_ROOT}/deploy/grafana/provisioning/datasources/prometheus.yaml" /etc/grafana/provisioning/datasources/agent-team-prometheus.yaml
   install -m 0644 "${REPO_ROOT}/deploy/grafana/provisioning/dashboards/dashboard-provider.yaml" /etc/grafana/provisioning/dashboards/agent-team-dashboard-provider.yaml
@@ -214,6 +216,9 @@ install_bundle_files() {
   done
   for dashboard in "${REPO_ROOT}"/deploy/grafana/dashboards/arena-*.json; do
     install -m 0644 "$dashboard" "/var/lib/grafana/dashboards/agent-team-grafana/arena/$(basename "$dashboard")"
+  done
+  for dashboard in "${REPO_ROOT}"/deploy/grafana/dashboards/openclaw-*.json; do
+    install -m 0644 "$dashboard" "/var/lib/grafana/dashboards/agent-team-grafana/openclaw/$(basename "$dashboard")"
   done
   for dashboard in "${REPO_ROOT}"/deploy/grafana/dashboards/uptime-kuma-*.json; do
     install -m 0644 "$dashboard" "/var/lib/grafana/dashboards/agent-team-grafana/uptime-kuma/$(basename "$dashboard")"
@@ -239,6 +244,7 @@ restart_services() {
   systemctl enable --now newapi-metrics-exporter.service
   systemctl enable --now arena-metrics-exporter.service
   systemctl enable --now uptime-kuma-metrics-exporter.service
+  systemctl enable --now openclaw-otel-bridge.service
   systemctl enable --now agent-team-prometheus.service
   systemctl enable --now grafana-server.service
   systemctl enable --now nginx.service
@@ -253,6 +259,7 @@ run_health_checks() {
   wait_for_http 10 2 http://127.0.0.1:19100/metrics
   wait_for_http 10 2 http://127.0.0.1:19150/metrics
   wait_for_http 10 2 http://127.0.0.1:19120/metrics
+  wait_for_http 10 2 http://127.0.0.1:19160/metrics
   wait_for_http 10 2 http://127.0.0.1:19090/-/ready
   wait_for_http 30 2 "http://127.0.0.1:${GRAFANA_HTTP_PORT}/api/health"
   wait_for_http 15 2 -H "Host: ${PUBLIC_HOST}" http://127.0.0.1/

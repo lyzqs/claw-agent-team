@@ -41,6 +41,16 @@ providers:
     options:
       path: /var/lib/grafana/dashboards/agent-team-grafana/arena
 
+  - name: agent-team-grafana-openclaw
+    orgId: 1
+    folder: AT | 11 平台 | OpenClaw
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/agent-team-grafana/openclaw
+
   - name: agent-team-grafana-uptime-kuma
     orgId: 1
     folder: AT | 30 运维 | Uptime Kuma
@@ -50,3 +60,4 @@ providers:
     allowUiUpdates: true
     options:
       path: /var/lib/grafana/dashboards/agent-team-grafana/uptime-kuma
+

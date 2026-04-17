@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenClaw OTLP metrics bridge for Prometheus
+After=network.target openclaw-gateway.service
+Wants=openclaw-gateway.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.openclaw/workspace-agent-team
+ExecStart=/usr/bin/node /root/.openclaw/workspace-agent-team/scripts/openclaw_otel_bridge.js --listen-host 127.0.0.1 --listen-port 19160 --env local --project agent-team-grafana --system openclaw --service openclaw-gateway --job openclaw-otel-bridge
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -175,9 +175,53 @@ EXPECTED_DASHBOARDS = {
             "kuma_monitor_status",
         ],
     },
+    "openclaw-runtime-overview.json": {
+        "uid": "at-openclaw-runtime-overview",
+        "snippets": [
+            "openclaw_tokens_total",
+            "openclaw_cost_usd_total",
+            "openclaw_queue_depth_bucket",
+            "openclaw_session_stuck_total",
+            "openclaw_run_duration_ms_bucket",
+            "namedprocess_namegroup_cpu_seconds_total",
+            "namedprocess_namegroup_memory_bytes",
+            "openclaw_otel_bridge_requests_total",
+            "openclaw_message_processed_total",
+            "openclaw_queue_wait_ms_bucket",
+            "openclaw_session_state_total",
+        ],
+    },
+    "openclaw-usage-model-message-flow.json": {
+        "uid": "at-openclaw-usage-model-message-flow",
+        "snippets": [
+            "openclaw_message_queued_total",
+            "openclaw_message_processed_total",
+            "openclaw_webhook_error_total",
+            "openclaw_context_tokens_bucket",
+            "openclaw_tokens_total",
+            "openclaw_cost_usd_total",
+            "openclaw_message_duration_ms_bucket",
+            "openclaw_webhook_received_total",
+        ],
+    },
+    "openclaw-queue-sessions-channels.json": {
+        "uid": "at-openclaw-queue-sessions-channels",
+        "snippets": [
+            "openclaw_queue_lane_enqueue_total",
+            "openclaw_queue_lane_dequeue_total",
+            "openclaw_session_stuck_age_ms_bucket",
+            "openclaw_run_attempt_total",
+            "openclaw_webhook_duration_ms_bucket",
+            "openclaw_queue_depth_bucket",
+            "openclaw_queue_wait_ms_bucket",
+            "openclaw_session_stuck_total",
+            "openclaw_message_processed_total",
+        ],
+    },
 }
 EXPECTED_PROVIDER_FOLDERS = {
     "AT | 10 平台 | 主机系统",
+    "AT | 11 平台 | OpenClaw",
     "AT | 20 项目 | 智能体团队",
     "AT | 21 项目 | NewAPI",
     "AT | 22 项目 | Arena",
@@ -248,6 +292,7 @@ def main() -> None:
         BUNDLE_ROOT / "systemd" / "agent-team-metrics-exporter.service",
         BUNDLE_ROOT / "systemd" / "arena-metrics-exporter.service",
         BUNDLE_ROOT / "systemd" / "newapi-metrics-exporter.service",
+        BUNDLE_ROOT / "systemd" / "openclaw-otel-bridge.service",
         BUNDLE_ROOT / "systemd" / "uptime-kuma-metrics-exporter.service",
     ]:
         text = unit_path.read_text()
@@ -257,7 +302,7 @@ def main() -> None:
 
     prometheus_yaml = load_yaml(BUNDLE_ROOT / "prometheus" / "prometheus.yml")
     jobs = {item["job_name"] for item in prometheus_yaml.get("scrape_configs", [])}
-    for required_job in {"agent-team-exporter", "newapi-exporter", "arena-exporter", "uptime-kuma-exporter"}:
+    for required_job in {"agent-team-exporter", "newapi-exporter", "arena-exporter", "openclaw-otel-bridge", "uptime-kuma-exporter"}:
         if required_job not in jobs:
             raise ValueError(f"prometheus scrape config missing {required_job} job")
 

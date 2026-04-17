@@ -1,0 +1,42 @@
+[
+  {
+    "path": "plugins.entries.diagnostics-otel.enabled",
+    "value": true
+  },
+  {
+    "path": "diagnostics.enabled",
+    "value": true
+  },
+  {
+    "path": "diagnostics.otel.enabled",
+    "value": true
+  },
+  {
+    "path": "diagnostics.otel.endpoint",
+    "value": "http://127.0.0.1:19160"
+  },
+  {
+    "path": "diagnostics.otel.protocol",
+    "value": "http/protobuf"
+  },
+  {
+    "path": "diagnostics.otel.serviceName",
+    "value": "openclaw-gateway"
+  },
+  {
+    "path": "diagnostics.otel.metrics",
+    "value": true
+  },
+  {
+    "path": "diagnostics.otel.traces",
+    "value": false
+  },
+  {
+    "path": "diagnostics.otel.logs",
+    "value": false
+  },
+  {
+    "path": "diagnostics.otel.flushIntervalMs",
+    "value": 60000
+  }
+]

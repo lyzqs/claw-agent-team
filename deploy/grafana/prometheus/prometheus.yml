@@ -42,9 +42,7 @@ scrape_configs:
     static_configs:
       - targets:
           - 127.0.0.1:19160
-    static_configs:
-      - targets:
-          - '127.0.0.1:19111'
+          - 127.0.0.1:19111
     scrape_interval: 60s
 
   - job_name: quantitativeinvest-exporter

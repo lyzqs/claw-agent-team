@@ -14,9 +14,9 @@
     {
       "project_key": "agent-team-core",
       "name": "Agent Team Core",
-      "description": "测试更新项目描述",
+      "description": "这是更新后的项目描述，测试成功！",
       "status": "active",
-      "metadata_json": "{\"project_context_md\": \"测试更新项目描述\"}",
+      "metadata_json": "{\"project_context_md\": \"这是更新后的项目描述，测试成功！\"}",
       "total_issues": 36,
       "closed_issues": 36,
       "agent_queue_issues": 0,
@@ -34,13 +34,24 @@
       "human_queue_issues": 0
     },
     {
+      "project_key": "cigarbuttinvest",
+      "name": "CigarButtInvest",
+      "description": "该项目用于港股烟蒂股的筛选，目标是每个交易日定时筛选是否有值得买的烟蒂股。\n项目的飞书根目录文档:https://mcnbi1jv3pld.feishu.cn/wiki/HYL8wop6dicRCFkEGaDcAJbSnUc",
+      "status": "active",
+      "metadata_json": "{\"project_context_md\": \"该项目用于港股烟蒂股的筛选，目标是每个交易日定时筛选是否有值得买的烟蒂股。\\n项目的飞书根目录文档:https://mcnbi1jv3pld.feishu.cn/wiki/HYL8wop6dicRCFkEGaDcAJbSnUc\", \"created_by_employee_key\": \"shared.ceo\", \"auto_created_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"], \"created_via\": \"agent_team_service.create_project\", \"initialized_session_keys\": {\"pm\": \"agent:agent-team-pm:project:cigarbuttinvest\", \"dev\": \"agent:agent-team-dev:project:cigarbuttinvest\", \"qa\": \"agent:agent-team-qa:project:cigarbuttinvest\", \"ops\": \"agent:agent-team-ops:project:cigarbuttinvest\"}}",
+      "total_issues": 0,
+      "closed_issues": 0,
+      "agent_queue_issues": 0,
+      "human_queue_issues": 0
+    },
+    {
       "project_key": "quantitativeinvest",
       "name": "QuantitativeInvest",
       "description": "基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。飞书根目录：https://mcnbi1jv3pld.feishu.cn/wiki/WXhzwB1M8iVB6mkNHIDcQsBTnlb",
       "status": "active",
       "metadata_json": "{\"project_context_md\": \"基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。飞书根目录：https://mcnbi1jv3pld.feishu.cn/wiki/WXhzwB1M8iVB6mkNHIDcQsBTnlb\", \"created_by_employee_key\": \"shared.ceo\", \"auto_created_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"], \"created_via\": \"agent_team_service.create_project\", \"initialized_session_keys\": {\"pm\": \"agent:agent-team-pm:project:quantitativeinvest\", \"dev\": \"agent:agent-team-dev:project:quantitativeinvest\", \"qa\": \"agent:agent-team-qa:project:quantitativeinvest\", \"ops\": \"agent:agent-team-ops:project:quantitativeinvest\"}}",
-      "total_issues": 10,
-      "closed_issues": 10,
+      "total_issues": 12,
+      "closed_issues": 12,
       "agent_queue_issues": 0,
       "human_queue_issues": 0
     }
@@ -52,6 +63,9 @@
     {
       "id": "sched_fe5bc8fcf094",
       "title": "每日arena股票投资情况分析",
+      "description_md": "如果当天非交易日，则忽略此issue\n如果为交易日，则分析当天arena投资的情况，检查整个交易交易流程和复盘迭代流程是否还有可以优化的地方\n有优化点则派发对应的子issue去优化",
+      "acceptance_criteria_md": "",
+      "dispatch_instruction": "",
       "priority": "p2",
       "route_role": "pm",
       "schedule_kind": "daily",
@@ -62,7 +76,7 @@
       "last_issue_id": null,
       "last_issue_no": null,
       "last_error": null,
-      "updated_at_ms": 1776700441599,
+      "updated_at_ms": 1776701185597,
       "project_key": "agent-team-arena",
       "project_name": "Arena",
       "owner_employee_key": "agent-team-arena.pm",
@@ -206,6 +220,50 @@
       "binding_key": "agent-team-grafana.qa.primary"
     },
     {
+      "employee_key": "cigarbuttinvest.dev",
+      "display_name": "CigarButtInvest Dev",
+      "employment_scope": "project",
+      "project_key": "cigarbuttinvest",
+      "role": "dev",
+      "status": "active",
+      "agent_id": "agent-team-dev",
+      "session_key": "agent:agent-team-dev:project:cigarbuttinvest",
+      "binding_key": "cigarbuttinvest.dev.primary"
+    },
+    {
+      "employee_key": "cigarbuttinvest.ops",
+      "display_name": "CigarButtInvest Ops",
+      "employment_scope": "project",
+      "project_key": "cigarbuttinvest",
+      "role": "ops",
+      "status": "active",
+      "agent_id": "agent-team-ops",
+      "session_key": "agent:agent-team-ops:project:cigarbuttinvest",
+      "binding_key": "cigarbuttinvest.ops.primary"
+    },
+    {
+      "employee_key": "cigarbuttinvest.pm",
+      "display_name": "CigarButtInvest PM",
+      "employment_scope": "project",
+      "project_key": "cigarbuttinvest",
+      "role": "pm",
+      "status": "active",
+      "agent_id": "agent-team-pm",
+      "session_key": "agent:agent-team-pm:project:cigarbuttinvest",
+      "binding_key": "cigarbuttinvest.pm.primary"
+    },
+    {
+      "employee_key": "cigarbuttinvest.qa",
+      "display_name": "CigarButtInvest QA",
+      "employment_scope": "project",
+      "project_key": "cigarbuttinvest",
+      "role": "qa",
+      "status": "active",
+      "agent_id": "agent-team-qa",
+      "session_key": "agent:agent-team-qa:project:cigarbuttinvest",
+      "binding_key": "cigarbuttinvest.qa.primary"
+    },
+    {
       "employee_key": "quantitativeinvest.dev",
       "display_name": "QuantitativeInvest Dev",
       "employment_scope": "project",
@@ -299,6 +357,14 @@
           "issue_id": "issue_f6bf1c5a4cb7",
           "issue_no": 4,
           "title": "Run unified execution_adapter provider-error demo",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_55636c49fe8c",
+          "issue_no": 11,
+          "title": "Test Title",
           "status": "closed",
           "priority": "p1",
           "has_open_dependencies": false
@@ -700,6 +766,14 @@
           "issue_id": "issue_8d15c2950e7d",
           "issue_no": 12,
           "title": "梳理 Arena 股票竞技场观测范围、指标清单与采集方案",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_ad0f0e62a23e",
+          "issue_no": 12,
+          "title": "整理量化交易项目 Roadmap 与里程碑文档",
           "status": "closed",
           "priority": "p1",
           "has_open_dependencies": false

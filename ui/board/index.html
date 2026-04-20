@@ -2114,6 +2114,7 @@
     function _renderIssueModal(issueId) {
       const wrap = getIssueWrap(issueId);
       if (!wrap) return;
+      window._currentIssueId = issueId;
       const hasFull = !!(issueDetailCache[issueId] && issueDetailCache[issueId].attempts);
       const issue = wrap.issue;
       const attempts = Array.isArray(wrap.attempts) ? wrap.attempts : [];
@@ -2142,8 +2143,27 @@
             <div>Resume Role</div><div>${issueMeta.resume_role || '—'}</div>
             <div>Wait Strategy</div><div>${issueMeta.parent_wait_strategy || '—'}</div>
             <div>Required Input</div><div>${issue.required_human_input || ''}</div>
-            <div>Description</div><div>${issue.description_md || ''}</div>
-            <div>Acceptance</div><div>${issue.acceptance_criteria_md || ''}</div>
+            <div>Description</div><div id="modalIssueDesc">${issue.description_md || ''}</div>
+            <div>Acceptance</div><div id="modalIssueAcceptance">${issue.acceptance_criteria_md || ''}</div>
+          </div>
+        </div>
+        <div class="modal-section">
+          <h3>编辑 Issue 信息</h3>
+          <div class="entry-form">
+            <input id="modalEditTitle" value="${escapeHtml(issue.title || '')}" placeholder="Issue 标题" />
+            <textarea id="modalEditDesc" placeholder="描述 / 背景（会影响 Agent 的 prompt）">${escapeHtml(issue.description_md || '')}</textarea>
+            <textarea id="modalEditAcceptance" placeholder="验收标准（可选）">${escapeHtml(issue.acceptance_criteria_md || '')}</textarea>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="modalEditPriority">
+                <option value="p0" ${(issue.priority || 'p2') === 'p0' ? 'selected' : ''}>P0</option>
+                <option value="p1" ${(issue.priority || 'p2') === 'p1' ? 'selected' : ''}>P1</option>
+                <option value="p2" ${(issue.priority || 'p2') === 'p2' ? 'selected' : ''}>P2</option>
+                <option value="p3" ${(issue.priority || 'p2') === 'p3' ? 'selected' : ''}>P3</option>
+              </select>
+            </div>
+            <div class="entry-actions">
+              <button id="saveIssueDetailBtn" class="secondary">保存变更</button>
+            </div>
           </div>
         </div>
         ${modalActions(wrap)}
@@ -2179,6 +2199,8 @@
         </div>
       `;
       document.getElementById('modalBackdrop').classList.add('show');
+      // Bind save button after modal content is in DOM
+      document.getElementById('saveIssueDetailBtn').onclick = () => saveIssueDetail();
     }
 
     function closeHumanActionModal() {
@@ -2259,6 +2281,35 @@
         closeHumanActionModal();
       }
       showToast(out.ok ? '已处理待确认事项' : `处理失败: ${out.error || 'unknown error'}`, !out.ok);
+    }
+
+    window._currentIssueId = null;
+    async function saveIssueDetail() {
+      const issueId = window._currentIssueId;
+      if (!issueId) { showToast('无法获取 Issue ID', true); return; }
+      const title = document.getElementById('modalEditTitle').value.trim();
+      const description_md = document.getElementById('modalEditDesc').value.trim();
+      const acceptance_criteria_md = document.getElementById('modalEditAcceptance').value.trim();
+      const priority = document.getElementById('modalEditPriority').value;
+      if (!title) { showToast('标题不能为空', true); return; }
+      const out = await apiPost('/api/update-issue', {
+        issue_id: issueId,
+        title,
+        description: description_md,
+        acceptance: acceptance_criteria_md,
+        priority,
+      });
+      if (out.ok) {
+        showToast('Issue 已更新');
+        // Update local data
+        const idx = issuesData.findIndex(x => x.issue.id === issueId);
+        if (idx >= 0) {
+          issuesData[idx] = { ...issuesData[idx], issue: { ...issuesData[idx].issue, title, description_md, acceptance_criteria_md, priority } };
+        }
+        await loadData({ preserveView: true });
+      } else {
+        showToast('更新失败: ' + (out.error || 'unknown'), true);
+      }
     }
 
     function closeIssueModal() {
@@ -2457,14 +2508,14 @@
       if (document.getElementById('projectFilter').value) {
         try {
           const res = await apiGet(`/api/issues?project_key=${encodeURIComponent(document.getElementById('projectFilter').value)}&status=closed`);
-          if (res.ok && res.result?.issues) {
+          if (res.ok && res.result?.items) {
             const selectedProject = document.getElementById('projectFilter').value;
             // Replace closed issues for this project with fetched ones
             const nonClosed = issuesData.filter(x => x.issue.status !== 'closed');
             const otherClosed = issuesData.filter(x =>
               x.issue.status === 'closed' && x.issue.project_key !== selectedProject
             );
-            const fetchedItems = res.result.issues.map(issue => ({
+            const fetchedItems = res.result.items.map(issue => ({
               issue: { ...issue },
               attempt_map: {},
             }));

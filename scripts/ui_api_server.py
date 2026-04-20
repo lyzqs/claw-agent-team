@@ -293,6 +293,15 @@ class Handler(BaseHTTPRequestHandler):
                     scheduled_issue_id=payload['scheduled_issue_id'],
                     enabled=bool(payload.get('enabled')),
                 )
+            elif parsed.path == '/api/update-issue':
+                out = svc.update_issue(
+                    issue_id=payload.get('issue_id', ''),
+                    title=payload.get('title'),
+                    description_md=payload.get('description'),
+                    acceptance_criteria_md=payload.get('acceptance'),
+                    priority=payload.get('priority'),
+                    owner_employee_key=payload.get('owner_employee_key'),
+                )
             elif parsed.path == '/api/close':
                 out = svc.close_issue(issue_id=payload['issue_id'], resolution=payload.get('resolution', 'completed'))
             elif parsed.path == '/api/attempt-callback':

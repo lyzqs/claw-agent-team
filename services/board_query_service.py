@@ -162,9 +162,11 @@ class BoardQueryService:
         agent_queue = self.db.fetch_all('SELECT * FROM v_agent_queue ORDER BY updated_at_ms DESC')
         human_queue = self.db.fetch_all('SELECT * FROM v_human_queue ORDER BY updated_at_ms DESC')
         scheduled_items = self.db.fetch_all(
-            '''SELECT si.id, si.title, si.priority, si.route_role, si.schedule_kind, si.schedule_config_json,
-                      si.enabled, si.next_run_at_ms, si.last_run_at_ms, si.last_issue_id, si.last_issue_no,
-                      si.last_error, si.updated_at_ms, p.project_key, p.name AS project_name,
+            '''SELECT si.id, si.title, si.description_md, si.acceptance_criteria_md,
+                      si.dispatch_instruction, si.priority, si.route_role, si.schedule_kind,
+                      si.schedule_config_json, si.enabled, si.next_run_at_ms, si.last_run_at_ms,
+                      si.last_issue_id, si.last_issue_no, si.last_error, si.updated_at_ms,
+                      p.project_key, p.name AS project_name,
                       oe.employee_key AS owner_employee_key
                FROM scheduled_issues si
                JOIN projects p ON p.id = si.project_id
@@ -222,7 +224,8 @@ class BoardQueryService:
         No callbacks, no timelines, no activities."""
         # Non-closed: full data but no callbacks/timelines/activities
         non_closed = self.db.fetch_all(
-            '''SELECT i.id, i.issue_no, i.title, i.priority, i.status, i.active_attempt_no,
+            '''SELECT i.id, i.issue_no, i.title, i.description_md, i.acceptance_criteria_md,
+                      i.priority, i.status, i.active_attempt_no, i.owner_employee_id, i.assigned_employee_id,
                       i.created_at_ms, i.updated_at_ms, i.closed_at_ms, i.project_id,
                       ei.employee_key AS assigned_employee_key,
                       rt.template_key AS assigned_role,
@@ -237,7 +240,8 @@ class BoardQueryService:
                ORDER BY i.issue_no DESC''')
         # Closed: basic + last 2 attempts only, limit to closed_limit
         closed_rows = self.db.fetch_all(
-            '''SELECT i.id, i.issue_no, i.title, i.priority, i.status, i.active_attempt_no,
+            '''SELECT i.id, i.issue_no, i.title, i.description_md, i.acceptance_criteria_md,
+                      i.priority, i.status, i.active_attempt_no, i.owner_employee_id, i.assigned_employee_id,
                       i.created_at_ms, i.updated_at_ms, i.closed_at_ms, i.project_id,
                       ei.employee_key AS assigned_employee_key,
                       rt.template_key AS assigned_role,
@@ -293,6 +297,13 @@ class BoardQueryService:
                         'failure_summary': row['failure_summary'],
                     })
 
+        def _v(row, key, default=''):
+            try:
+                v = row[key]
+                return v if v is not None else default
+            except (KeyError, IndexError):
+                return default
+
         def to_item(row: dict) -> dict[str, Any]:
             iid = str(row['id'])
             return {
@@ -300,9 +311,13 @@ class BoardQueryService:
                     'id': row['id'],
                     'issue_no': row['issue_no'],
                     'title': row['title'],
+                    'description_md': _v(row, 'description_md'),
+                    'acceptance_criteria_md': _v(row, 'acceptance_criteria_md'),
                     'priority': row['priority'],
                     'status': row['status'],
                     'active_attempt_no': row['active_attempt_no'],
+                    'owner_employee_id': _v(row, 'owner_employee_id'),
+                    'assigned_employee_id': _v(row, 'assigned_employee_id'),
                     'project_key': row['project_key'],
                     'assigned_employee_key': row['assigned_employee_key'],
                     'assigned_role': row['assigned_role'],
@@ -310,6 +325,7 @@ class BoardQueryService:
                     'session_key': row['session_key'],
                     'created_at_ms': row['created_at_ms'],
                     'updated_at_ms': row['updated_at_ms'],
+                    'closed_at_ms': _v(row, 'closed_at_ms', None),
                 },
                 'attempts': attempt_map.get(iid, [])[:2],
                 'callbacks_by_attempt': {},

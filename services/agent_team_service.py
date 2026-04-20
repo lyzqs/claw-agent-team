@@ -1001,6 +1001,45 @@ class AgentTeamService:
             'updated_at_ms': ts,
         }
 
+    def update_issue(
+        self,
+        *,
+        issue_id: str,
+        title: str | None = None,
+        description_md: str | None = None,
+        acceptance_criteria_md: str | None = None,
+        priority: str | None = None,
+        owner_employee_key: str | None = None,
+    ) -> dict[str, Any]:
+        """Update issue fields. All fields are optional — only non-None values update."""
+        issue = self.db.get_one('SELECT id, title, description_md, acceptance_criteria_md, priority, owner_employee_id FROM issues WHERE id = ?', (issue_id,))
+        if not issue:
+            raise ValueError(f'issue not found: {issue_id}')
+        next_title = str(title).strip() if title is not None else str(issue['title'] or '')
+        next_desc = str(description_md).strip() if description_md is not None else str(issue['description_md'] or '')
+        next_acceptance = str(acceptance_criteria_md).strip() if acceptance_criteria_md is not None else str(issue['acceptance_criteria_md'] or '')
+        next_priority = str(priority) if priority is not None else str(issue['priority'] or 'p2')
+        ts = now_ms()
+        params: list[Any] = [next_title, next_desc, next_acceptance, next_priority, ts, issue_id]
+        self.db.conn.execute(
+            '''UPDATE issues
+               SET title = ?, description_md = ?, acceptance_criteria_md = ?, priority = ?, updated_at_ms = ?
+             WHERE id = ?''',
+            params,
+        )
+        if owner_employee_key is not None:
+            owner = self.db.get_one('SELECT id FROM employee_instances WHERE employee_key = ?', (owner_employee_key,))
+            self.db.conn.execute('UPDATE issues SET owner_employee_id = ?, updated_at_ms = ? WHERE id = ?', (owner['id'], ts, issue_id))
+        self.db.commit()
+        return {
+            'issue_id': issue_id,
+            'title': next_title,
+            'description_md': next_desc,
+            'acceptance_criteria_md': next_acceptance,
+            'priority': next_priority,
+            'updated_at_ms': ts,
+        }
+
     def handoff_issue(
         self,
         *,

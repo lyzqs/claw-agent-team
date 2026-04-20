@@ -127,5 +127,49 @@
     "updated_at_ms": 1776672928077,
     "session_id": "5d7994f9-eb6e-4391-afed-70edf02d43f7",
     "session_file": "/root/.openclaw/agents/agent-team-ops/sessions/5d7994f9-eb6e-4391-afed-70edf02d43f7.jsonl"
+  },
+  "agent-team-pm|cigarbuttinvest": {
+    "logical_key": "agent:agent-team-pm:project:cigarbuttinvest",
+    "current_session_key": "agent:agent-team-pm:project:cigarbuttinvest",
+    "role": "pm",
+    "project_key": "cigarbuttinvest",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776702738578,
+    "session_id": "bb4fbc86-ff24-467e-b625-597223a94ba8",
+    "session_file": "/root/.openclaw/agents/agent-team-pm/sessions/bb4fbc86-ff24-467e-b625-597223a94ba8.jsonl"
+  },
+  "agent-team-dev|cigarbuttinvest": {
+    "logical_key": "agent:agent-team-dev:project:cigarbuttinvest",
+    "current_session_key": "agent:agent-team-dev:project:cigarbuttinvest",
+    "role": "dev",
+    "project_key": "cigarbuttinvest",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776702738578,
+    "session_id": "32ceb5e9-b7ba-4028-a0cf-591de2ca31a4",
+    "session_file": "/root/.openclaw/agents/agent-team-dev/sessions/32ceb5e9-b7ba-4028-a0cf-591de2ca31a4.jsonl"
+  },
+  "agent-team-qa|cigarbuttinvest": {
+    "logical_key": "agent:agent-team-qa:project:cigarbuttinvest",
+    "current_session_key": "agent:agent-team-qa:project:cigarbuttinvest",
+    "role": "qa",
+    "project_key": "cigarbuttinvest",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776702738578,
+    "session_id": "68763b8c-b56b-4216-a52a-f9a3a50c4a8a",
+    "session_file": "/root/.openclaw/agents/agent-team-qa/sessions/68763b8c-b56b-4216-a52a-f9a3a50c4a8a.jsonl"
+  },
+  "agent-team-ops|cigarbuttinvest": {
+    "logical_key": "agent:agent-team-ops:project:cigarbuttinvest",
+    "current_session_key": "agent:agent-team-ops:project:cigarbuttinvest",
+    "role": "ops",
+    "project_key": "cigarbuttinvest",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776702738578,
+    "session_id": "b9df05f0-634f-42f4-99de-8d9cc652a4dd",
+    "session_file": "/root/.openclaw/agents/agent-team-ops/sessions/b9df05f0-634f-42f4-99de-8d9cc652a4dd.jsonl"
   }
 }

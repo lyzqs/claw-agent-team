@@ -1,0 +1,14 @@
+# CigarButtInvest 健康检查定时器
+# 每小时检查一次任务运行状态
+
+[Unit]
+Description=CigarButtInvest Health Check Timer
+Requires=cigarbuttinvest-healthcheck.service
+
+[Timer]
+# 每小时第5分钟执行
+OnCalendar=*-*-* *:05:00
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

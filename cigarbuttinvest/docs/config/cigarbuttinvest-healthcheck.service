@@ -1,0 +1,18 @@
+# CigarButtInvest 健康检查服务
+
+[Unit]
+Description=CigarButtInvest Health Check
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/.openclaw/workspace-agent-team/cigarbuttinvest
+Environment="PATH=/usr/bin/python3"
+User=root
+ExecStart=/usr/bin/python3 -m cigarbuttinvest.monitor.task_monitor
+TimeoutStartSec=60
+StandardOutput=append:/root/.openclaw/workspace-agent-team/cigarbuttinvest/logs/healthcheck.log
+StandardError=append:/root/.openclaw/workspace-agent-team/cigarbuttinvest/logs/healthcheck_error.log
+
+[Install]
+WantedBy=multi-user.target

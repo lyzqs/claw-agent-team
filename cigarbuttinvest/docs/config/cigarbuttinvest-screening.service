@@ -1,0 +1,29 @@
+# CigarButtInvest 每日筛选任务
+# systemd service 文件
+
+[Unit]
+Description=CigarButtInvest Daily HK Stock Screening
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# 工作目录
+WorkingDirectory=/root/.openclaw/workspace-agent-team/cigarbuttinvest
+# Python 环境
+Environment="PATH=/usr/bin/python3"
+# 执行用户
+User=root
+# 执行命令
+ExecStart=/usr/bin/python3 -m cigarbuttinvest.scheduler.daily_job
+# 重试机制
+Restart=on-failure
+RestartSec=60
+# 超时时间
+TimeoutStartSec=900
+# 日志输出
+StandardOutput=append:/root/.openclaw/workspace-agent-team/cigarbuttinvest/logs/daily_job.log
+StandardError=append:/root/.openclaw/workspace-agent-team/cigarbuttinvest/logs/daily_job_error.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+# CigarButtInvest 每日筛选定时器
+# 每周一至周五 9:25 执行（留5分钟缓冲）
+
+[Unit]
+Description=CigarButtInvest Daily Screening Timer
+Requires=cigarbuttinvest-screening.service
+
+[Timer]
+# 每周一至周五 9:25 执行
+OnCalendar=Mon-Fri *-*-* 09:25:00
+# 精确到分钟
+AccuracySec=1min
+# 随机延迟最多1分钟（避免多系统同时执行）
+RandomizedDelaySec=60
+# 如果错过启动时间（系统关机等），尽快恢复
+Persistent=true
+
+[Install]
+WantedBy=timers.target

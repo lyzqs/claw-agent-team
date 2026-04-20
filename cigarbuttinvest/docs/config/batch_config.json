@@ -1,0 +1,33 @@
+{
+  "full_coverage": {
+    "enabled": true,
+    "description": "港股全量数据获取配置",
+    "batch_processing": {
+      "max_workers": 10,
+      "batch_size": 50,
+      "request_delay_seconds": 0.1,
+      "timeout_seconds": 15,
+      "max_retries": 2
+    },
+    "data_quality": {
+      "min_required_fields": ["code", "price"],
+      "price_max": 1000000,
+      "pb_max": 1000,
+      "market_cap_max": 1e15,
+      "check_enabled": true
+    },
+    "cache": {
+      "stock_list_ttl_hours": 24,
+      "stock_data_ttl_hours": 24
+    }
+  },
+  "coverage_thresholds": {
+    "min_total_stocks": 2000,
+    "min_success_rate": 0.90,
+    "max_execution_time_minutes": 60
+  },
+  "list_refresh": {
+    "auto_refresh_hours": 24,
+    "force_refresh_on_error": true
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "alert_thresholds": {
+    "max_execution_time_seconds": 600,
+    "max_failed_retries": 3,
+    "max_consecutive_failures": 3,
+    "min_stocks_processed": 10
+  },
+  "alert_channels": {
+    "log": {
+      "enabled": true,
+      "log_file": "logs/alerts.log"
+    },
+    "email": {
+      "enabled": false,
+      "recipients": [],
+      "smtp": {
+        "host": "smtp.example.com",
+        "port": 587,
+        "use_tls": true,
+        "username": "",
+        "password": ""
+      }
+    },
+    "feishu": {
+      "enabled": false,
+      "webhook_url": ""
+    }
+  },
+  "notification": {
+    "on_success": false,
+    "on_failure": true,
+    "on_partial": true
+  },
+  "screening_schedule": {
+    "execution_time": "09:30",
+    "timezone": "Asia/Hong_Kong",
+    "trading_day_only": true,
+    "retry_on_failure": true,
+    "max_retries": 3
+  }
+}

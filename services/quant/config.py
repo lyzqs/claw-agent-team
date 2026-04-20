@@ -18,5 +18,15 @@ DEFAULT_STOCK_COUNT = int(os.environ.get("QUANT_FETCH_COUNT", "50"))
 # 增量更新时最多回溯天数
 INCREMENTAL_LOOKBACK_DAYS = int(os.environ.get("QUANT_LOOKBACK_DAYS", "5"))
 
-# 日志
-LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+# Risk control settings for paper trading
+RISK_CONFIG = {
+    "max_position_pct": 0.3,
+    "max_single_trade_pct": 0.1,
+    "max_total_position_pct": 0.8,
+    "stop_loss_pct": -0.10,
+    "max_loss_per_trade_pct": -0.05,
+    "max_trades_per_day": 10,
+    "min_trade_interval_minutes": 5,
+    "dry_run": False,
+}
+

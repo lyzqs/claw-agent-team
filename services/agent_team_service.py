@@ -383,8 +383,17 @@ def compute_next_scheduled_run(*, schedule_kind: str, schedule_config: dict[str,
         run_at_ms = schedule_config.get('run_at_ms')
         if run_at_ms is None:
             return None
-        candidate = dt_from_ms(int(run_at_ms))
-        return candidate if candidate and candidate > now_dt else None
+        # run_at_ms is stored as UTC ms (datetime-local interpreted as Asia/Shanghai,
+        # converted to UTC by frontend: 22:30 local => 22:30-8h = 14:30 UTC)
+        # Next run = the UTC moment, stored/returned as UTC datetime.
+        # Since the stored ms already IS the UTC interpretation of the local datetime,
+        # the UTC datetime IS the correct next run.
+        utc_dt = datetime.fromtimestamp(int(run_at_ms) / 1000, tz=UTC)
+        # The stored run_at_ms is UTC time. Compare with now_dt (UTC) directly.
+        if utc_dt <= now_dt:
+            return None
+        # Return the UTC datetime as a naive value (server is UTC, .timestamp() = correct ms)
+        return utc_dt.replace(tzinfo=None)
     if kind == 'cron':
         expr = str(schedule_config.get('expr') or '').strip()
         if not expr:

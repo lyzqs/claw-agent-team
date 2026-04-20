@@ -983,6 +983,35 @@
       return d.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
     }
 
+    // datetime-local uses browser-local timezone for parse; we want Asia/Shanghai
+    // On save: read local value, interpret as Asia/Shanghai, store as UTC ms
+    function localDatetimeValueToMs(value) {
+      if (!value) return null;
+      const [datePart, timePart] = value.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+      // Interpret "YYYY-MM-DDTHH:mm" as Asia/Shanghai (UTC+8): subtract 8h to get UTC equivalent
+      return new Date(Date.UTC(year, month - 1, day, hour, minute)).getTime() - (8 * 3600000);
+    }
+
+    // Format a UTC ms as datetime-local value in Asia/Shanghai timezone
+    function msToLocalDatetimeValue(ms) {
+      if (!ms) return '';
+      const d = new Date(ms);
+      const utcHour = d.getUTCHours();
+      const utcMin = d.getUTCMinutes();
+      let shHour = utcHour + 8;
+      let shDay = d.getUTCDate();
+      let shMonth = d.getUTCMonth() + 1;
+      let shYear = d.getUTCFullYear();
+      if (shHour >= 24) { shHour -= 24; shDay += 1; }
+      const dim = new Date(Date.UTC(shYear, shMonth, 0)).getUTCDate();
+      if (shDay > dim) { shDay = 1; shMonth += 1; }
+      if (shMonth > 12) { shMonth = 1; shYear += 1; }
+      const pad = n => String(n).padStart(2, '0');
+      return shYear + '-' + pad(shMonth) + '-' + pad(shDay) + 'T' + pad(shHour) + ':' + pad(utcMin);
+    }
+
     function formatScheduledRun(item) {
       if (!item) return '—';
       const next = item.next_run_at_ms ? formatTime(item.next_run_at_ms) : '—';
@@ -1336,7 +1365,7 @@
       if (kind === 'interval') payload.schedule_config = { every_minutes: Number(document.getElementById('scheduledEveryMinutes').value || 60) };
       if (kind === 'one_time') {
         const dt = document.getElementById('scheduledRunAt').value;
-        payload.schedule_config = { run_at_ms: dt ? new Date(dt).getTime() : null };
+        payload.schedule_config = { run_at_ms: dt ? localDatetimeValueToMs(dt) : null };
       }
       if (kind === 'cron') payload.schedule_config = { expr: document.getElementById('scheduledCronExpr').value.trim() };
       return payload;
@@ -2268,7 +2297,7 @@
       document.getElementById('scheduledWeekday').value = cfg.weekday ?? 0;
       document.getElementById('scheduledMonthDay').value = cfg.day ?? 1;
       document.getElementById('scheduledEveryMinutes').value = cfg.every_minutes ?? 60;
-      document.getElementById('scheduledRunAt').value = cfg.run_at_ms ? new Date(cfg.run_at_ms).toLocaleString('en-GB', { timeZone: 'Asia/Shanghai', hour12: false }).replace(/\/\//g, '-').replace(/\/\//g, '-').replace(/,/, ' ') : '';
+      document.getElementById('scheduledRunAt').value = msToLocalDatetimeValue(cfg.run_at_ms);
       document.getElementById('scheduledIssueInstruction').value = item?.dispatch_instruction || '';
       document.getElementById('scheduledIssueEnabled').checked = item ? Boolean(item.enabled) : true;
       document.getElementById('scheduledCronExpr').value = cfg.expr || '';

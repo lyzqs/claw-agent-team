@@ -17,22 +17,26 @@ def ema(closes: pd.Series, period: int) -> pd.Series:
 
 
 def rsi(closes: pd.Series, period: int = 14) -> pd.Series:
-    """相对强弱指数 (RSI)。"""
+    """相对强弱指数 (RSI)。
+
+    使用 EWM 计算平均涨跌幅，公式：
+        RSI = 100 - 100 / (1 + RS)
+        RS = avg_gain / avg_loss
+
+    注意：loss=0 的行保持为 0（而非 NaN），否则 rolling 会全部 NaN。
+    """
     delta = closes.diff()
     gain = delta.clip(lower=0.0)
-    loss = (-delta.clip(upper=0.0)).replace(0.0, np.nan)
+    # clip 之后再 negate，确保损失为正（而非负数）
+    loss = (-delta.clip(upper=0.0)).clip(lower=0.0)
 
-    avg_gain = gain.rolling(window=period, min_periods=period).mean()
-    avg_loss = loss.rolling(window=period, min_periods=period).mean()
+    avg_gain = gain.ewm(alpha=1.0 / period, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1.0 / period, adjust=False).mean()
 
-    # Use EMA smoothing after first SMA
-    avg_gain = avg_gain.where(avg_gain.index != avg_gain.first_valid_index(),
-                              gain.ewm(alpha=1/period, adjust=False).mean())
-    avg_loss = avg_loss.where(avg_loss.index != avg_loss.first_valid_index(),
-                             loss.ewm(alpha=1/period, adjust=False).mean())
-
+    # avg_loss=0 → RS→∞ → RSI=100
     rs = avg_gain / avg_loss.replace(0.0, np.nan)
     rsi_val = 100.0 - (100.0 / (1.0 + rs))
+    rsi_val = rsi_val.fillna(value=100.0)
     return rsi_val.clip(0.0, 100.0)
 
 

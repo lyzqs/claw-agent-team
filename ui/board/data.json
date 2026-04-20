@@ -40,23 +40,12 @@
       "status": "active",
       "metadata_json": "{\"project_context_md\": \"基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。\", \"created_by_employee_key\": \"shared.ceo\", \"auto_created_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"], \"created_via\": \"agent_team_service.create_project\", \"initialized_session_keys\": {\"pm\": \"agent:agent-team-pm:project:quantitativeinvest\", \"dev\": \"agent:agent-team-dev:project:quantitativeinvest\", \"qa\": \"agent:agent-team-qa:project:quantitativeinvest\", \"ops\": \"agent:agent-team-ops:project:quantitativeinvest\"}}",
       "total_issues": 10,
-      "closed_issues": 3,
-      "agent_queue_issues": 7,
+      "closed_issues": 5,
+      "agent_queue_issues": 5,
       "human_queue_issues": 0
     }
   ],
   "agent_queue": [
-    {
-      "id": "issue_ed5e213d1628",
-      "project_id": "proj_a3b699f5d1f3",
-      "issue_no": 9,
-      "title": "轻量量化系统回测引擎与规则策略核心实现",
-      "priority": "p1",
-      "status": "dispatching",
-      "assigned_employee_id": "emp_0b16739001d6",
-      "active_attempt_no": 2,
-      "updated_at_ms": 1776686928019
-    },
     {
       "id": "issue_3c5e0bb1a303",
       "project_id": "proj_a3b699f5d1f3",
@@ -66,7 +55,7 @@
       "status": "waiting_children",
       "assigned_employee_id": "emp_15d59cc21ed5",
       "active_attempt_no": 1,
-      "updated_at_ms": 1776686928015
+      "updated_at_ms": 1776695941848
     },
     {
       "id": "issue_68caa03fa965",
@@ -77,7 +66,7 @@
       "status": "waiting_children",
       "assigned_employee_id": "emp_3d303eefdc1b",
       "active_attempt_no": 8,
-      "updated_at_ms": 1776686928012
+      "updated_at_ms": 1776695941845
     },
     {
       "id": "issue_4dd18ceaed72",
@@ -88,29 +77,18 @@
       "status": "waiting_children",
       "assigned_employee_id": "emp_3d303eefdc1b",
       "active_attempt_no": 1,
-      "updated_at_ms": 1776686928008
+      "updated_at_ms": 1776695941841
     },
     {
-      "id": "issue_469ed8991857",
+      "id": "issue_ed5e213d1628",
       "project_id": "proj_a3b699f5d1f3",
-      "issue_no": 6,
-      "title": "轻量量化系统数据管道搭建",
+      "issue_no": 9,
+      "title": "轻量量化系统回测引擎与规则策略核心实现",
       "priority": "p1",
       "status": "dispatching",
-      "assigned_employee_id": "emp_d1e43a6cdc68",
-      "active_attempt_no": 3,
-      "updated_at_ms": 1776686837840
-    },
-    {
-      "id": "issue_f8d6801d1a22",
-      "project_id": "proj_a3b699f5d1f3",
-      "issue_no": 8,
-      "title": "轻量量化系统数据管道搭建",
-      "priority": "p1",
-      "status": "ready",
-      "assigned_employee_id": "emp_d1e43a6cdc68",
-      "active_attempt_no": 2,
-      "updated_at_ms": 1776685350808
+      "assigned_employee_id": "emp_0b16739001d6",
+      "active_attempt_no": 6,
+      "updated_at_ms": 1776694427550
     },
     {
       "id": "issue_0b4b235c49f6",
@@ -124,9 +102,32 @@
       "updated_at_ms": 1776685090014
     }
   ],
-  "dispatching_count": 2,
+  "dispatching_count": 1,
   "human_queue": [],
-  "scheduled_issues": [],
+  "scheduled_issues": [
+    {
+      "id": "sched_fe5bc8fcf094",
+      "title": "每日arena股票投资情况分析",
+      "priority": "p2",
+      "route_role": "pm",
+      "schedule_kind": "daily",
+      "schedule_config_json": "{\"hour\": 22, \"minute\": 30}",
+      "enabled": 1,
+      "next_run_at_ms": 1776724200000,
+      "last_run_at_ms": null,
+      "last_issue_id": null,
+      "last_issue_no": null,
+      "last_error": null,
+      "updated_at_ms": 1776695017374,
+      "project_key": "agent-team-arena",
+      "project_name": "Arena",
+      "owner_employee_key": "agent-team-arena.pm",
+      "schedule_config": {
+        "hour": 22,
+        "minute": 30
+      }
+    }
+  ],
   "employee_view": [
     {
       "employee_key": "agent-team-arena.dev",
@@ -586,13 +587,13 @@
       "role": "ops",
       "employee_key": "quantitativeinvest.ops",
       "display_name": "QuantitativeInvest Ops",
-      "active_issue_count": 1,
+      "active_issue_count": 0,
       "issues": [
         {
           "issue_id": "issue_469ed8991857",
           "issue_no": 6,
           "title": "轻量量化系统数据管道搭建",
-          "status": "dispatching",
+          "status": "closed",
           "priority": "p1",
           "has_open_dependencies": false
         },
@@ -600,7 +601,7 @@
           "issue_id": "issue_f8d6801d1a22",
           "issue_no": 8,
           "title": "轻量量化系统数据管道搭建",
-          "status": "ready",
+          "status": "closed",
           "priority": "p1",
           "has_open_dependencies": false
         },
@@ -733,7 +734,7 @@
           "title": "轻量量化系统回测引擎与规则策略框架",
           "status": "waiting_children",
           "priority": "p1",
-          "has_open_dependencies": true
+          "has_open_dependencies": false
         },
         {
           "issue_id": "issue_e25aed0b0b47",

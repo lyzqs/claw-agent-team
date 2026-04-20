@@ -71,23 +71,17 @@ class BacktestEngine:
         logger.info(f"Total trading days: {len(self._all_dates)}")
 
     def warm_strategy(self, strategy: Strategy) -> None:
-        """用回测开始前的历史数据热启动策略。
+        """用全部历史数据热启动策略。
 
-        只加载 start_date 之前的历史数据，避免任何未来数据泄露（look-ahead bias）。
-        在 run() 逐日循环中，每次 patch_last_bar() 覆盖最后一行（= D-1），
-        然后 on_bar() 在此基础上计算技术指标。
+        调用 strategy.warm(code, df) 让策略预计算技术指标（MA/RSI 等），
+        后续 run() 中 on_bar() 通过 date_idx 查表实现 O(1) 指标获取。
         """
         self.strategy = strategy
         for code, df in self._bars.items():
-            if self.start_date:
-                cutoff = pd.to_datetime(self.start_date)
-                hist_df = df[df["trade_date"] < cutoff].copy()
-            else:
-                hist_df = df.head(0).copy()  # 空 DataFrame
-            strategy.warm(code, hist_df)
+            strategy.warm(code, df.copy())
         logger.info(
-            f"Strategy '{strategy.name}' warmed with "
-            f"{len(self._all_dates)} trading days (data before {self.start_date})"
+            f"Strategy '{strategy.name}' warmed: "
+            f"{len(self._all_dates)} trading days × {len(self._bars)} stocks"
         )
 
     def run(self) -> dict:
@@ -100,7 +94,6 @@ class BacktestEngine:
             commission_rate=self.commission_rate,
             slippage=self.slippage,
         )
-        # 记录初始权益
         self.portfolio.record_equity(self._all_dates[0])
 
         holding: dict[str, float] = {}  # 当前持仓量
@@ -108,32 +101,27 @@ class BacktestEngine:
         bars = self._bars
         all_dates = self._all_dates
 
+        # 预计算指标在 warm_strategy 中已完成，on_bar() 通过 date_idx 查表
         for date_idx, date_ts in enumerate(all_dates):
             trade_date = date_ts.date() if hasattr(date_ts, "date") else date_ts
 
-            # 逐股票生成信号（使用已预热的 _history，计算技术指标）
             for code in self.stock_codes:
                 df = bars.get(code)
                 if df is None or df.empty:
                     continue
-
-                # 找到当天行（精确匹配）
                 row_mask = df["trade_date"] == date_ts
                 if not row_mask.any():
                     continue
                 bar = df.loc[row_mask].iloc[0]
 
-                # 用当天数据 patch 最后一行，再生成信号
-                strategy.patch_last_bar(code, bar)
-
-                signal = strategy.on_bar(code)
+                # 通过 date_idx 查预计算指标，O(1)
+                signal = strategy.on_bar(code, date_idx)
                 if signal is None:
                     continue
 
                 stock_close = float(bar["close"])
 
                 if signal.action == "buy":
-                    # 检查是否已持仓
                     if holding.get(code, 0.0) > 0:
                         continue
                     alloc = self.portfolio.cash * self.position_pct
@@ -159,6 +147,21 @@ class BacktestEngine:
                     self.portfolio.update_price(code, trade_date, float(df.loc[row_mask, "close"].iloc[0]))
             self.portfolio.record_equity(trade_date)
 
+        # 回测结束时，平掉所有剩余仓位（计入 closed_trades 以便统计）
+        last_date = all_dates[-1].date() if hasattr(all_dates[-1], "date") else all_dates[-1]
+        for code, qty in list(holding.items()):
+            if qty <= 0:
+                continue
+            df = bars.get(code)
+            if df is None or df.empty:
+                continue
+            row_mask = df["trade_date"] == all_dates[-1]
+            if not row_mask.any():
+                continue
+            price = float(df.loc[row_mask, "close"].iloc[0])
+            self.portfolio.sell(code, last_date, price, qty)
+            holding[code] = 0.0
+
         # === 计算指标 ===
         metrics = self.portfolio.compute_metrics()
         metrics["run_id"] = f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -181,9 +184,8 @@ class BacktestEngine:
                 item["value"] = round(item["value"] / base * 100, 4)
         metrics["equity_curve"] = equity_curve
 
-        # 基准收益率（买入持有策略）
+        # 基准收益率
         if equity_curve:
-            # 用第一只股票计算买入持有基准
             first_code = next(iter(self._bars.keys()))
             first_df = self._bars[first_code]
             if not first_df.empty:

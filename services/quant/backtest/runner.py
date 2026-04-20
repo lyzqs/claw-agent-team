@@ -53,8 +53,10 @@ from datetime import date
 from pathlib import Path
 from itertools import product
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parents[2]))
+# Add project root to path so 'from services.xxx' imports resolve correctly
+_repo_root = str(Path(__file__).parents[3])
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
 
 from services.quant.backtest.engine import BacktestEngine
 from services.quant.backtest.mock_data import make_mock_datafeed

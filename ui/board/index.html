@@ -786,7 +786,7 @@
             <input id="scheduledEveryMinutes" type="number" min="1" value="60" />
           </div>
           <div class="filter-group">
-            <label for="scheduledRunAt">一次性执行时间 (UTC)</label>
+            <label for="scheduledRunAt">一次性执行时间</label>
             <input id="scheduledRunAt" type="datetime-local" />
           </div>
         </div>
@@ -973,14 +973,14 @@
       if (!value) return '—';
       const d = new Date(value);
       if (Number.isNaN(d.getTime())) return String(value);
-      return d.toLocaleString('zh-CN', { hour12: false });
+      return d.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
     }
 
     function formatTime(ms) {
       if (!ms) return '—';
       const d = new Date(ms);
       if (Number.isNaN(d.getTime())) return String(ms);
-      return d.toLocaleString('zh-CN', { hour12: false });
+      return d.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
     }
 
     function formatScheduledRun(item) {
@@ -2268,7 +2268,7 @@
       document.getElementById('scheduledWeekday').value = cfg.weekday ?? 0;
       document.getElementById('scheduledMonthDay').value = cfg.day ?? 1;
       document.getElementById('scheduledEveryMinutes').value = cfg.every_minutes ?? 60;
-      document.getElementById('scheduledRunAt').value = cfg.run_at_ms ? new Date(cfg.run_at_ms).toISOString().slice(0,16) : '';
+      document.getElementById('scheduledRunAt').value = cfg.run_at_ms ? new Date(cfg.run_at_ms).toLocaleString('en-GB', { timeZone: 'Asia/Shanghai', hour12: false }).replace(/\/\//g, '-').replace(/\/\//g, '-').replace(/,/, ' ') : '';
       document.getElementById('scheduledIssueInstruction').value = item?.dispatch_instruction || '';
       document.getElementById('scheduledIssueEnabled').checked = item ? Boolean(item.enabled) : true;
       document.getElementById('scheduledCronExpr').value = cfg.expr || '';

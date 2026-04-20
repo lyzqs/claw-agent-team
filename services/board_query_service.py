@@ -1,8 +1,19 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from .activity import fetch_issue_activity
+
+
+def parse_schedule_config(raw: str | None) -> dict[str, Any]:
+    if not raw:
+        return {}
+    try:
+        value = json.loads(raw)
+        return value if isinstance(value, dict) else {}
+    except Exception:
+        return {}
 
 
 class BoardQueryService:

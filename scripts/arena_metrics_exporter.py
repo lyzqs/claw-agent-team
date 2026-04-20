@@ -27,6 +27,31 @@ PROCESS_PATTERNS = {
 }
 
 
+def _normalize_blocker_label(value) -> str:
+    text = str(value or "").strip()
+    return text or "未写明 blocker"
+
+
+def _classify_review_blocker_type(value) -> str:
+    text = _normalize_blocker_label(value)
+    lowered = text.lower()
+    if any(token in text for token in ["收盘后一小时", "盘前一小时", "交易窗口", "可提交窗口", "非运行时段", "交易日", "午间休市"]):
+        return "timing_window"
+    if "建议股数不足 100 股" in text:
+        return "lot_size"
+    if "待成交订单" in text or "pending" in lowered:
+        return "pending_limit"
+    if any(token in text for token in ["持仓数量已到上限", "当前已持有同一标的"]):
+        return "position_limit"
+    if any(token in text for token in ["今日自动下单次数已到上限", "今日已对该标的下过单"]):
+        return "daily_limit"
+    if "autopilot 未启用" in text:
+        return "mode_disabled"
+    if "分数" in text or "score" in lowered:
+        return "score_floor"
+    return "other"
+
+
 @dataclass
 class ExporterConfig:
     runtime_path: str
@@ -187,7 +212,7 @@ class ArenaCollector:
         build_info = Gauge('arena_exporter_build_info', 'Exporter build info', [*base_keys, 'layer'], registry=registry)
         candidates_total = Gauge('arena_candidates_total', 'Arena candidates count', [*base_keys, 'layer', 'market_state'], registry=registry)
         trade_tickets_total = Gauge('arena_trade_tickets_total', 'Arena trade ticket count', [*base_keys, 'layer', 'market_state', 'setup_type'], registry=registry)
-        auto_review_queue_total = Gauge('arena_auto_review_queue_total', 'Arena auto review queue size', [*base_keys, 'layer', 'market_state', 'queue'], registry=registry)
+        auto_review_queue_total = Gauge('arena_auto_review_queue_total', 'Arena review queue counts by queue_scope (all/eligible/blocked/reviewed/omitted_eligible)', [*base_keys, 'layer', 'market_state', 'queue_scope'], registry=registry)
         executed_trades_total = Gauge('arena_executed_trades_total', 'Arena executed trades count', [*base_keys, 'layer', 'side', 'session_label', 'market_state'], registry=registry)
         pending_trades_total = Gauge('arena_pending_trades_total', 'Arena pending trades count', [*base_keys, 'layer', 'session_label'], registry=registry)
         portfolio_market_value = Gauge('arena_portfolio_market_value', 'Arena portfolio total market value', [*base_keys, 'layer', 'portfolio'], registry=registry)
@@ -244,17 +269,7 @@ class ArenaCollector:
                 score_band = '<15'
             score_bands[(market_state, setup_type, score_band)] += 1
             for blocker in ticket.get('agentBlockers') or []:
-                blocker_text = str(blocker)
-                if '收盘后一小时' in blocker_text or '交易窗口' in blocker_text:
-                    blocker_type = 'timing_window'
-                elif '建议股数不足 100 股' in blocker_text:
-                    blocker_type = 'position_limit'
-                elif 'pending' in blocker_text.lower():
-                    blocker_type = 'pending_limit'
-                elif 'score' in blocker_text.lower() or '分数' in blocker_text:
-                    blocker_type = 'score_floor'
-                else:
-                    blocker_type = 'other'
+                blocker_type = _classify_review_blocker_type(blocker)
                 blocker_counts[blocker_type] += 1
             news_context = ticket.get('newsContext') or {}
             score_value = float(news_context.get('aiNewsScore') or 0.0)
@@ -274,7 +289,17 @@ class ArenaCollector:
         for (score_band, hard_risk), count in sorted(news_bands.items()):
             news_score_distribution.labels(**self.base_labels, layer='L3', score_band=score_band, hard_risk=hard_risk).set(float(count))
 
-        auto_review_queue_total.labels(**self.base_labels, layer='L3', market_state=market_state, queue='auto-review').set(float(len(strategy.get('autoReviewQueue') or [])))
+        review_queue_summary = strategy.get('reviewQueueSummary') or {}
+        queue_total = float(review_queue_summary.get('totalCount', len(strategy.get('autoReviewQueue') or [])) or 0)
+        queue_eligible = float(review_queue_summary.get('eligibleCount', 0) or 0)
+        queue_blocked = float(review_queue_summary.get('blockedCount', 0) or 0)
+        queue_reviewed = float(review_queue_summary.get('reviewedCount', 0) or 0)
+        queue_omitted = float(review_queue_summary.get('omittedEligibleCount', 0) or 0)
+        auto_review_queue_total.labels(**self.base_labels, layer='L3', market_state=market_state, queue_scope='all').set(queue_total)
+        auto_review_queue_total.labels(**self.base_labels, layer='L3', market_state=market_state, queue_scope='eligible').set(queue_eligible)
+        auto_review_queue_total.labels(**self.base_labels, layer='L3', market_state=market_state, queue_scope='blocked').set(queue_blocked)
+        auto_review_queue_total.labels(**self.base_labels, layer='L3', market_state=market_state, queue_scope='reviewed').set(queue_reviewed)
+        auto_review_queue_total.labels(**self.base_labels, layer='L3', market_state=market_state, queue_scope='omitted_eligible').set(queue_omitted)
         rotation_candidates_total.labels(**self.base_labels, layer='L3', market_state=market_state).set(float(len(strategy.get('rotationPlans') or [])))
 
         portfolio_market_value.labels(**self.base_labels, layer='L3', portfolio='main').set(float(portfolio.get('total_value') or 0.0))

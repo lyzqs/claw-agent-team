@@ -224,6 +224,137 @@ class MetricsStore {
     this.ingestErrors = 0;
     this.pointsProcessed = 0;
     this.lastExportTimestampSeconds = 0;
+    // upstream NewAPI metrics: counters per label-set
+    this.upstreamCounters = new Map(); // "name,labelsKey" -> {labels, value}
+    // upstream histogram buckets (in-memory accumulation)
+    this.upstreamHistograms = new Map(); // "labelsKey" -> {sum, count, buckets: {le -> running}}
+    // upstream event timestamps for rate calculation (ring buffer per channel)
+    this.upstreamEventTimes = new Map(); // channel -> sorted array of timestamps (ms)
+    this.upstreamEventsReceived = 0;
+    this.upstreamEventErrors = 0;
+  }
+
+  // Canonical error_type classification per spec
+  classifyErrorType(httpStatusCode, isNetworkError, isTimeout) {
+    if (isTimeout) return 'timeout';
+    if (isNetworkError) return 'network_error';
+    const code = Number(httpStatusCode);
+    if (code === 0) return 'unknown';
+    if (code === 401 || code === 403) return 'auth_failure';
+    if (code === 429) return 'rate_limit';
+    if (code >= 500 && code <= 599) return 'server_error';
+    if ([400, 404, 422].includes(code)) return 'client_error';
+    return 'unknown';
+  }
+
+  recordUpstreamEvent(event) {
+    const channel = String(event.channel || 'unknown');
+    const httpStatusCode = Number(event.http_status_code || 0);
+    const isError = event.status_family === 'error' || event.is_error === true;
+    const isTimeout = event.is_timeout === true || event.error_type === 'timeout';
+    const isNetworkError = event.is_network_error === true || event.error_type === 'network_error';
+    const durationMs = Number(event.duration_ms || 0);
+    const tokensTotal = Number(event.tokens_total || 0);
+    const tokensInput = Number(event.tokens_input || 0);
+    const tokensOutput = Number(event.tokens_output || 0);
+    const errorType = this.classifyErrorType(httpStatusCode, isNetworkError, isTimeout);
+    const statusFamily = isError ? 'error' : 'success';
+
+    // 1. openclaw_upstream_newapi_requests_total
+    this._addCounter('openclaw_upstream_newapi_requests_total',
+      'OpenClaw outbound requests to NewAPI',
+      { channel, status_family: statusFamily, http_status_code: String(httpStatusCode) }, 1);
+
+    // 2. openclaw_upstream_newapi_errors_total (only if error)
+    if (isError) {
+      this._addCounter('openclaw_upstream_newapi_errors_total',
+        'OpenClaw outbound error requests to NewAPI',
+        { channel, error_type: errorType, http_status_code: String(httpStatusCode) }, 1);
+    }
+
+    // 3. openclaw_upstream_newapi_tokens_total
+    const totalTokens = tokensTotal || (tokensInput + tokensOutput);
+    if (totalTokens > 0) {
+      this._addCounter('openclaw_upstream_newapi_tokens_total',
+        'Token consumption for OpenClaw outbound requests to NewAPI',
+        { channel }, totalTokens);
+      if (tokensInput > 0) {
+        this._addCounter('openclaw_upstream_newapi_tokens_total',
+          'Token consumption for OpenClaw outbound requests to NewAPI',
+          { channel, token_type: 'input' }, tokensInput);
+        this._addCounter('openclaw_upstream_newapi_tokens_total',
+          'Token consumption for OpenClaw outbound requests to NewAPI',
+          { channel, token_type: 'output' }, tokensOutput);
+      }
+    }
+
+    // 4. openclaw_upstream_newapi_request_duration_ms (histogram)
+    // Use pre-defined bucket boundaries matching spec: 10, 50, 100, 250, 500, 1000, 2500, 5000, 10000ms
+    const BOUNDS = [10, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
+    const bucketSamples = [];
+    const bucketLabelsBase = { channel, status_family: statusFamily };
+    let running = 0;
+    for (let i = 0; i < BOUNDS.length; i++) {
+      running += durationMs <= BOUNDS[i] ? 1 : 0;
+      const bucketLabels = Object.assign({}, bucketLabelsBase, { le: String(BOUNDS[i]) });
+      bucketSamples.push([bucketLabels, running]);
+    }
+    // overflow bucket
+    bucketSamples.push([Object.assign({}, bucketLabelsBase, { le: '+Inf' }), 1]);
+    this._setHistogram('openclaw_upstream_newapi_request_duration_ms',
+      'Request duration (ms) for OpenClaw outbound calls to NewAPI',
+      bucketLabelsBase, bucketSamples, durationMs, 1);
+
+    // 5. Track timestamps for request_rate gauge
+    const now = Date.now();
+    if (!this.upstreamEventTimes.has(channel)) {
+      this.upstreamEventTimes.set(channel, []);
+    }
+    this.upstreamEventTimes.get(channel).push(now);
+    this.upstreamEventsReceived += 1;
+  }
+
+  _labelsKey(labels) {
+    return labelsKey(labels);
+  }
+
+  _addCounter(name, help, labels, value) {
+    const key = this._labelsKey(labels);
+    const fullKey = `${name}||${key}`;
+    const existing = this.upstreamCounters.get(fullKey);
+    const nextValue = (existing ? existing.value : 0) + Number(value || 0);
+    this.upstreamCounters.set(fullKey, { name, type: 'counter', help, labels, value: nextValue });
+  }
+
+  _setHistogram(baseName, help, labels, bucketSamples, sumValue, countValue) {
+    const key = this._labelsKey(labels);
+    const base = this.upstreamHistograms.get(key) || { help, sum: 0, count: 0, buckets: {}, labels };
+    base.help = help;
+    base.sum += Number(sumValue || 0);
+    base.count += Number(countValue || 0);
+    for (const [bucketLabels, runningTotal] of bucketSamples) {
+      const bk = this._labelsKey(bucketLabels);
+      // Accumulate: each event contributes to cumulative bucket counts
+      base.buckets[bk] = (base.buckets[bk] || 0) + runningTotal;
+    }
+    this.upstreamHistograms.set(key, base);
+  }
+
+  _computeRequestRates() {
+    const now = Date.now();
+    const WINDOW_MS = 60000; // 1-minute window
+    const rates = {};
+    for (const [channel, times] of this.upstreamEventTimes) {
+      const cutoff = now - WINDOW_MS;
+      const recent = times.filter(t => t > cutoff);
+      this.upstreamEventTimes.set(channel, recent);
+      if (recent.length > 0) {
+        const windowSec = (recent[recent.length - 1] - recent[0]) / 1000;
+        const rate = windowSec > 0 ? recent.length / windowSec : 0;
+        rates[channel] = rate;
+      }
+    }
+    return rates;
   }
 
   setSimple(name, type, help, labels, value) {
@@ -276,30 +407,78 @@ class MetricsStore {
     this.setSimple('openclaw_otel_bridge_decode_errors_total', 'counter', 'Failed OTLP metric export decode attempts', labels, this.ingestErrors);
     this.setSimple('openclaw_otel_bridge_last_export_timestamp_seconds', 'gauge', 'Unix timestamp of the last successful OTLP metric export', labels, this.lastExportTimestampSeconds);
     this.setSimple('openclaw_otel_bridge_points_total', 'counter', 'Total OTLP metric points processed by the OpenClaw bridge', labels, this.pointsProcessed);
+
+    // upstream NewAPI bridge-level health
+    this.setSimple('openclaw_upstream_events_received_total', 'counter', 'Total upstream NewAPI events received by the OpenClaw bridge', labels, this.upstreamEventsReceived);
+    this.setSimple('openclaw_upstream_events_decode_errors_total', 'counter', 'Total upstream NewAPI event decode errors', labels, this.upstreamEventErrors);
   }
 
   renderPrometheus() {
     this.updateBridgeMetrics();
     const lines = [];
-    for (const [name, metric] of [...this.simpleMetrics.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-      lines.push(`# HELP ${name} ${escapeHelp(metric.help || name)}`);
-      lines.push(`# TYPE ${name} ${metric.type}`);
-      for (const sample of [...metric.samples.values()].sort((a, b) => labelsKey(a.labels).localeCompare(labelsKey(b.labels)))) {
-        lines.push(`${name}${formatLabels(sample.labels)} ${sample.value}`);
-      }
+
+    // Emit accumulated upstream NewAPI counters
+    const counterEntries = [];
+    this.upstreamCounters.forEach((metric) => { counterEntries.push(metric); });
+    counterEntries.sort((a, b) => a.name.localeCompare(b.name) || labelsKey(a.labels).localeCompare(labelsKey(b.labels)));
+    for (const metric of counterEntries) {
+      lines.push(`# HELP ${metric.name} ${escapeHelp(metric.help || metric.name)}`);
+      lines.push(`# TYPE ${metric.name} ${metric.type}`);
+      lines.push(`${metric.name}${formatLabels(metric.labels)} ${metric.value}`);
     }
-    for (const [baseName, metric] of [...this.histograms.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+
+    // Emit upstream histograms
+    const BOUNDS_ORDER = ['+Inf', '10', '50', '100', '250', '500', '1000', '2500', '5000', '10000'];
+    const histEntries = [];
+    this.upstreamHistograms.forEach((metric) => { histEntries.push(metric); });
+    histEntries.sort((a, b) => labelsKey(a.labels).localeCompare(labelsKey(b.labels)));
+    for (const metric of histEntries) {
+      const baseName = 'openclaw_upstream_newapi_request_duration_ms';
       lines.push(`# HELP ${baseName} ${escapeHelp(metric.help || baseName)}`);
       lines.push(`# TYPE ${baseName} histogram`);
-      const ordered = [...metric.samples.values()].sort((a, b) => {
-        const suffixOrder = { bucket: 0, sum: 1, count: 2 };
-        const aKey = `${suffixOrder[a.suffix]}:${labelsKey(a.labels)}`;
-        const bKey = `${suffixOrder[b.suffix]}:${labelsKey(b.labels)}`;
-        return aKey.localeCompare(bKey);
-      });
-      for (const sample of ordered) {
-        const metricName = `${baseName}_${sample.suffix}`;
-        lines.push(`${metricName}${formatLabels(sample.labels)} ${sample.value}`);
+      const bucketEntries = Object.entries(metric.buckets)
+        .filter(([k]) => k.includes('le:'))
+        .sort((a, b) => {
+          const getLe = (k) => { const m = k.match(/le:"?([^"]+)/); return m ? m[1] : ''; };
+          const ai = BOUNDS_ORDER.indexOf(getLe(a[0]));
+          const bi = BOUNDS_ORDER.indexOf(getLe(b[0]));
+          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+        });
+      for (const [bk, count] of bucketEntries) {
+        const m = bk.match(/le:"?([^"]+)/);
+        if (!m) continue;
+        const le = m[1];
+        const labelPart = bk.replace(/,le:"?[^"]+"?/, '').replace(/^\{/, '').replace(/\}$/, '');
+        const fullLabels = `{${labelPart}}`;
+        lines.push(`${baseName}_bucket${fullLabels} ${count}`);
+      }
+      const labelPart2 = Object.entries(metric.labels).map(([k, v]) => `${k}="${escapeLabelValue(v)}"`).join(',');
+      lines.push(`${baseName}_sum{${labelPart2}} ${metric.sum}`);
+      lines.push(`${baseName}_count{${labelPart2}} ${metric.count}`);
+    }
+
+    // Emit upstream request rate gauges
+    const rates = this._computeRequestRates();
+    if (Object.keys(rates).length > 0) {
+      lines.push(`# HELP openclaw_upstream_newapi_request_rate OpenClaw outbound request rate to NewAPI (requests/sec per channel)`);
+      lines.push(`# TYPE openclaw_upstream_newapi_request_rate gauge`);
+      for (const [channel, rate] of Object.entries(rates)) {
+        lines.push(`openclaw_upstream_newapi_request_rate{channel="${escapeLabelValue(channel)}"} ${rate.toFixed(6)}`);
+      }
+    }
+
+    // Emit bridge-level metrics
+    const simpleEntries = [];
+    this.simpleMetrics.forEach((metric, name) => { simpleEntries.push([name, metric]); });
+    simpleEntries.sort(([a], [b]) => a.localeCompare(b));
+    for (const [name, metric] of simpleEntries) {
+      lines.push(`# HELP ${name} ${escapeHelp(metric.help || name)}`);
+      lines.push(`# TYPE ${name} ${metric.type}`);
+      const sampleEntries = [];
+      metric.samples.forEach((sample) => { sampleEntries.push(sample); });
+      sampleEntries.sort((a, b) => labelsKey(a.labels).localeCompare(labelsKey(b.labels)));
+      for (const sample of sampleEntries) {
+        lines.push(`${name}${formatLabels(sample.labels)} ${sample.value}`);
       }
     }
     return `${lines.join('\n')}\n`;
@@ -451,6 +630,39 @@ function main() {
       const payload = Buffer.from(JSON.stringify({ status: 'ok', lastExportTimestampSeconds: store.lastExportTimestampSeconds }));
       res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': payload.length });
       res.end(payload);
+      return;
+    }
+
+    if (req.method === 'POST' && req.url.startsWith('/v1/upstream')) {
+      const chunks = [];
+      req.on('data', (chunk) => chunks.push(chunk));
+      req.on('end', () => {
+        try {
+          const body = Buffer.concat(chunks);
+          const contentType = req.headers['content-type'] || '';
+          let eventList = [];
+          if (contentType.includes('application/json') || contentType.includes('text/plain')) {
+            const text = body.toString('utf-8');
+            try { eventList = JSON.parse(text); } catch { eventList = [JSON.parse(text)]; }
+            if (!Array.isArray(eventList)) eventList = [eventList];
+          } else {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'unsupported content-type, use application/json' }));
+            return;
+          }
+          for (const event of eventList) {
+            if (event && typeof event === 'object') {
+              store.recordUpstreamEvent(event);
+            }
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'ok', events: eventList.length }));
+        } catch (error) {
+          store.upstreamEventErrors += 1;
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: String(error && error.message ? error.message : error) }));
+        }
+      });
       return;
     }
 

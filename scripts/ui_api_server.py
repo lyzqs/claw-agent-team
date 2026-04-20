@@ -104,9 +104,8 @@ class Handler(BaseHTTPRequestHandler):
             svc = AgentTeamService()
             try:
                 generated_at = now_iso()
-                closed_limit = 50
                 board = svc.board_query.get_board_snapshot()
-                issues = svc.board_query.list_lightweight_issues(closed_limit=50)
+                issues = svc.board_query.list_lightweight_issues(closed_limit=500)
                 out = {
                     'board': board,
                     'issues': issues,

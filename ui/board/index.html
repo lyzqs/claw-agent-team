@@ -1888,11 +1888,14 @@
       const agentSel = document.getElementById('agentFilter');
       const previousProject = projectSel.value;
       const previousAgent = agentSel.value;
-      const projects = [...new Set(getAllIssuesEnriched().map(x => x.issue.project_key).filter(Boolean))].sort();
+      // Collect projects from both issues data and board snapshot project_view (ensure all projects appear)
+      const projectsFromIssues = [...new Set(getAllIssuesEnriched().map(x => x.issue.project_key).filter(Boolean))];
+      const projectsFromBoard = (boardData?.project_view || []).map(p => p.project_key).filter(Boolean);
+      const allProjects = [...new Set([...projectsFromIssues, ...projectsFromBoard])].sort();
       const agents = orderedAgentIds([...new Set(getAllIssuesEnriched().map(x => x.current_agent_id))]);
-      projectSel.innerHTML = `<option value="">全部项目</option>` + projects.map(p => `<option value="${p}">${p}</option>`).join('');
+      projectSel.innerHTML = `<option value="">全部项目</option>` + allProjects.map(p => `<option value="${p}">${p}</option>`).join('');
       agentSel.innerHTML = `<option value="">全部 Agent</option>` + agents.map(a => `<option value="${a}">${displayAgentName(a)} · ${a}</option>`).join('');
-      if (projects.includes(previousProject)) projectSel.value = previousProject;
+      if (projectsFromIssues.includes(previousProject)) projectSel.value = previousProject;
       if (agents.includes(previousAgent)) agentSel.value = previousAgent;
     }
 

@@ -792,7 +792,7 @@ def fetch_ready_candidates(svc: AgentTeamService) -> list[dict[str, Any]]:
            LEFT JOIN employee_instances ei ON ei.id = i.assigned_employee_id
            LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
            LEFT JOIN runtime_bindings rb ON rb.employee_id = ei.id AND rb.is_primary = 1
-           LEFT JOIN projects p ON p.id = ei.project_id
+           LEFT JOIN projects p ON p.id = i.project_id
            WHERE i.status IN ('triaged', 'ready', 'review', 'waiting_recovery_completion', 'waiting_children')
              AND NOT EXISTS (SELECT 1 FROM issue_attempts ia WHERE ia.issue_id = i.id AND ia.status IN ('dispatching','running'))
            ORDER BY CASE

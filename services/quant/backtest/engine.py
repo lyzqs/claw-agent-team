@@ -214,8 +214,10 @@ class BacktestEngine:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         output_path: str | Path = "/root/.openclaw/workspace/quantitativeinvest/backtest_results/latest_results.json",
+        metrics_path: Optional[str | Path] = None,
     ) -> dict:
-        """一键运行并写入结果。"""
+        """一键 run + write。"""
+        self.stock_codes = stock_codes
         self.load_data(stock_codes, start_date, end_date)
         self.warm_strategy(strategy)
         self._result = self.run()

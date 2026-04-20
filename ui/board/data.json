@@ -1,6 +1,17 @@
 {
   "project_view": [
     {
+      "project_key": "agent-team-arena",
+      "name": "Arena",
+      "description": "本地的ARENA股票竞技场项目，有着完整闭环的投资流程，飞书文档根目录：https://mcnbi1jv3pld.feishu.cn/wiki/Xs0IwSrMXizVMgkbhXmc1PNpn2m",
+      "status": "active",
+      "metadata_json": "{\"project_context_md\": \"本地的ARENA股票竞技场项目，有着完整闭环的投资流程，飞书文档根目录：https://mcnbi1jv3pld.feishu.cn/wiki/Xs0IwSrMXizVMgkbhXmc1PNpn2m\", \"created_by_employee_key\": \"shared.ceo\", \"auto_created_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"], \"created_via\": \"agent_team_service.create_project\", \"initialized_session_keys\": {\"pm\": \"agent:agent-team-pm:project:agent-team-arena\", \"dev\": \"agent:agent-team-dev:project:agent-team-arena\", \"qa\": \"agent:agent-team-qa:project:agent-team-arena\", \"ops\": \"agent:agent-team-ops:project:agent-team-arena\"}}",
+      "total_issues": 7,
+      "closed_issues": 7,
+      "agent_queue_issues": 0,
+      "human_queue_issues": 0
+    },
+    {
       "project_key": "agent-team-core",
       "name": "Agent Team Core",
       "description": "Phase 1 single-project sample org for agent-team validation",
@@ -10,34 +21,114 @@
       "closed_issues": 36,
       "agent_queue_issues": 0,
       "human_queue_issues": 0
+    },
+    {
+      "project_key": "agent-team-grafana",
+      "name": "Grafana",
+      "description": "本项目用于本地搭建并维护grafana看板，同时把各个项目接入到看板中",
+      "status": "active",
+      "metadata_json": "{\"project_context_md\": \"本项目用于本地搭建并维护grafana看板，同时把各个项目接入到看板中\", \"created_by_employee_key\": \"shared.ceo\", \"auto_created_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"], \"created_via\": \"agent_team_service.create_project\", \"initialized_session_keys\": {\"pm\": \"agent:agent-team-pm:project:agent-team-grafana\", \"dev\": \"agent:agent-team-dev:project:agent-team-grafana\", \"qa\": \"agent:agent-team-qa:project:agent-team-grafana\", \"ops\": \"agent:agent-team-ops:project:agent-team-grafana\"}}",
+      "total_issues": 36,
+      "closed_issues": 36,
+      "agent_queue_issues": 0,
+      "human_queue_issues": 0
+    },
+    {
+      "project_key": "quantitativeinvest",
+      "name": "QuantitativeInvest",
+      "description": "基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。",
+      "status": "active",
+      "metadata_json": "{\"project_context_md\": \"基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。\", \"created_by_employee_key\": \"shared.ceo\", \"auto_created_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"], \"created_via\": \"agent_team_service.create_project\", \"initialized_session_keys\": {\"pm\": \"agent:agent-team-pm:project:quantitativeinvest\", \"dev\": \"agent:agent-team-dev:project:quantitativeinvest\", \"qa\": \"agent:agent-team-qa:project:quantitativeinvest\", \"ops\": \"agent:agent-team-ops:project:quantitativeinvest\"}}",
+      "total_issues": 4,
+      "closed_issues": 1,
+      "agent_queue_issues": 1,
+      "human_queue_issues": 2
     }
   ],
   "agent_queue": [
     {
-      "id": "issue_5ded875a2016",
-      "project_id": "proj_26dab475a761",
-      "issue_no": 2,
-      "title": "验证项目背景强制注入到 PM prompt",
-      "priority": "p2",
-      "status": "review",
-      "assigned_employee_id": "emp_b1ab5fb24521",
-      "active_attempt_no": 1,
-      "updated_at_ms": 1776338200991
-    },
-    {
-      "id": "issue_0b9b311f02c9",
-      "project_id": "proj_26dab475a761",
+      "id": "issue_4dd18ceaed72",
+      "project_id": "proj_a3b699f5d1f3",
       "issue_no": 1,
-      "title": "验证新增项目后的首个 PM issue",
-      "priority": "p2",
-      "status": "review",
-      "assigned_employee_id": "emp_b1ab5fb24521",
+      "title": "项目调研和搭建",
+      "priority": "p1",
+      "status": "waiting_children",
+      "assigned_employee_id": "emp_3d303eefdc1b",
       "active_attempt_no": 1,
-      "updated_at_ms": 1776338038150
+      "updated_at_ms": 1776679116334
     }
   ],
-  "human_queue": [],
+  "dispatching_count": 0,
+  "human_queue": [
+    {
+      "id": "issue_68caa03fa965",
+      "project_id": "proj_a3b699f5d1f3",
+      "issue_no": 3,
+      "title": "主机性能评估与量化系统可行性分析",
+      "priority": "p1",
+      "status": "waiting_human_approval",
+      "blocker_summary": "Issue #3 已完成（7/7验收标准），飞书文档已记录。当前硬件约束明确：Intel Celeron J4125/8GB/无GPU，仅能跑轻量系统。关键阻塞：Issue #4 架构方案（含AI迭代）在当前硬件上不可行，需人工决策——(A) 轻量路线（降级为纯规则型，≤50股票日线）或 (B) 升级硬件（CPU至Ryzen5/i5+级别 + 内存32GB+ + NVIDIA GPU如RTX3060+）后再上AI功能。请在人工队列中确认技术路线，决策后PM将重新修订Issue #4架构方案。",
+      "required_human_input": "CPU严重不足（Intel Celeron J4125无AVX2）无法运行ML/DL训练；内存严重不足（实际可用3.6GB）无法支撑ML/RL训练；无GPU（VMware SVGA软件渲染）深度学习推理完全不可行；Issue #4 AI迭代方案在当前硬件上不可行，需人工确认技术路线",
+      "updated_at_ms": 1776679017684
+    },
+    {
+      "id": "issue_a87e2527667a",
+      "project_id": "proj_a3b699f5d1f3",
+      "issue_no": 2,
+      "title": "量化投资系统产品需求定义与人工确认",
+      "priority": "p1",
+      "status": "waiting_human_approval",
+      "blocker_summary": "PM 已完成产品需求调研和定义工作。交付飞书文档 https://www.feishu.cn/docx/CUuDd3Ym8ouypFxhpk5cAby3nag，包含：①A股推荐及理由 ②4种策略类型（趋势/均值回归/ML/RL） ③数据源推荐（AKShare为主，Tushare备用） ④验收指标建议（夏普≥1.5，最大回撤≤20%） ⑤人工确认清单（资金规模/风险偏好/策略频率/风控模块）。等待用户确认4项关键参数后，结论将输出给架构 issue #4。",
+      "required_human_input": "PM已完成调研和文档输出（验收标准1-4满足）。验收标准5-6（人工确认+输出给架构issue）需等用户回复确认清单。issue metadata显示needs_human_input=true且含4项人工确认项，应保持in_progress并等待用户确认。",
+      "updated_at_ms": 1776675137451
+    }
+  ],
+  "scheduled_issues": [],
   "employee_view": [
+    {
+      "employee_key": "agent-team-arena.dev",
+      "display_name": "Arena Dev",
+      "employment_scope": "project",
+      "project_key": "agent-team-arena",
+      "role": "dev",
+      "status": "active",
+      "agent_id": "agent-team-dev",
+      "session_key": "agent:agent-team-dev:project:agent-team-arena",
+      "binding_key": "agent-team-arena.dev.primary"
+    },
+    {
+      "employee_key": "agent-team-arena.ops",
+      "display_name": "Arena Ops",
+      "employment_scope": "project",
+      "project_key": "agent-team-arena",
+      "role": "ops",
+      "status": "active",
+      "agent_id": "agent-team-ops",
+      "session_key": "agent:agent-team-ops:project:agent-team-arena",
+      "binding_key": "agent-team-arena.ops.primary"
+    },
+    {
+      "employee_key": "agent-team-arena.pm",
+      "display_name": "Arena PM",
+      "employment_scope": "project",
+      "project_key": "agent-team-arena",
+      "role": "pm",
+      "status": "active",
+      "agent_id": "agent-team-pm",
+      "session_key": "agent:agent-team-pm:project:agent-team-arena",
+      "binding_key": "agent-team-arena.pm.primary"
+    },
+    {
+      "employee_key": "agent-team-arena.qa",
+      "display_name": "Arena QA",
+      "employment_scope": "project",
+      "project_key": "agent-team-arena",
+      "role": "qa",
+      "status": "active",
+      "agent_id": "agent-team-qa",
+      "session_key": "agent:agent-team-qa:project:agent-team-arena",
+      "binding_key": "agent-team-arena.qa.primary"
+    },
     {
       "employee_key": "agent-team-core.dev",
       "display_name": "Agent Team Core Dev",
@@ -83,6 +174,94 @@
       "binding_key": "agent-team-core.qa.primary"
     },
     {
+      "employee_key": "agent-team-grafana.dev",
+      "display_name": "Grafana Dev",
+      "employment_scope": "project",
+      "project_key": "agent-team-grafana",
+      "role": "dev",
+      "status": "active",
+      "agent_id": "agent-team-dev",
+      "session_key": "agent:agent-team-dev:project:agent-team-grafana",
+      "binding_key": "agent-team-grafana.dev.primary"
+    },
+    {
+      "employee_key": "agent-team-grafana.ops",
+      "display_name": "Grafana Ops",
+      "employment_scope": "project",
+      "project_key": "agent-team-grafana",
+      "role": "ops",
+      "status": "active",
+      "agent_id": "agent-team-ops",
+      "session_key": "agent:agent-team-ops:project:agent-team-grafana",
+      "binding_key": "agent-team-grafana.ops.primary"
+    },
+    {
+      "employee_key": "agent-team-grafana.pm",
+      "display_name": "Grafana PM",
+      "employment_scope": "project",
+      "project_key": "agent-team-grafana",
+      "role": "pm",
+      "status": "active",
+      "agent_id": "agent-team-pm",
+      "session_key": "agent:agent-team-pm:project:agent-team-grafana",
+      "binding_key": "agent-team-grafana.pm.primary"
+    },
+    {
+      "employee_key": "agent-team-grafana.qa",
+      "display_name": "Grafana QA",
+      "employment_scope": "project",
+      "project_key": "agent-team-grafana",
+      "role": "qa",
+      "status": "active",
+      "agent_id": "agent-team-qa",
+      "session_key": "agent:agent-team-qa:project:agent-team-grafana",
+      "binding_key": "agent-team-grafana.qa.primary"
+    },
+    {
+      "employee_key": "quantitativeinvest.dev",
+      "display_name": "QuantitativeInvest Dev",
+      "employment_scope": "project",
+      "project_key": "quantitativeinvest",
+      "role": "dev",
+      "status": "active",
+      "agent_id": "agent-team-dev",
+      "session_key": "agent:agent-team-dev:project:quantitativeinvest",
+      "binding_key": "quantitativeinvest.dev.primary"
+    },
+    {
+      "employee_key": "quantitativeinvest.ops",
+      "display_name": "QuantitativeInvest Ops",
+      "employment_scope": "project",
+      "project_key": "quantitativeinvest",
+      "role": "ops",
+      "status": "active",
+      "agent_id": "agent-team-ops",
+      "session_key": "agent:agent-team-ops:project:quantitativeinvest",
+      "binding_key": "quantitativeinvest.ops.primary"
+    },
+    {
+      "employee_key": "quantitativeinvest.pm",
+      "display_name": "QuantitativeInvest PM",
+      "employment_scope": "project",
+      "project_key": "quantitativeinvest",
+      "role": "pm",
+      "status": "active",
+      "agent_id": "agent-team-pm",
+      "session_key": "agent:agent-team-pm:project:quantitativeinvest",
+      "binding_key": "quantitativeinvest.pm.primary"
+    },
+    {
+      "employee_key": "quantitativeinvest.qa",
+      "display_name": "QuantitativeInvest QA",
+      "employment_scope": "project",
+      "project_key": "quantitativeinvest",
+      "role": "qa",
+      "status": "active",
+      "agent_id": "agent-team-qa",
+      "session_key": "agent:agent-team-qa:project:quantitativeinvest",
+      "binding_key": "quantitativeinvest.qa.primary"
+    },
+    {
       "employee_key": "shared.ceo",
       "display_name": "Shared CEO",
       "employment_scope": "shared",
@@ -96,33 +275,6 @@
   ],
   "agent_workload": [
     {
-      "agent_id": "unassigned",
-      "session_key": null,
-      "binding_key": null,
-      "role": null,
-      "employee_key": null,
-      "display_name": null,
-      "active_issue_count": 0,
-      "issues": [
-        {
-          "issue_id": "issue_0b9b311f02c9",
-          "issue_no": 1,
-          "title": "验证新增项目后的首个 PM issue",
-          "status": "review",
-          "priority": "p2",
-          "has_open_dependencies": false
-        },
-        {
-          "issue_id": "issue_5ded875a2016",
-          "issue_no": 2,
-          "title": "验证项目背景强制注入到 PM prompt",
-          "status": "review",
-          "priority": "p2",
-          "has_open_dependencies": false
-        }
-      ]
-    },
-    {
       "agent_id": "agent-team-ceo",
       "session_key": "agent:agent-team-ceo:main",
       "binding_key": "shared.ceo.primary",
@@ -131,6 +283,30 @@
       "display_name": "Shared CEO",
       "active_issue_count": 0,
       "issues": [
+        {
+          "issue_id": "issue_4dd18ceaed72",
+          "issue_no": 1,
+          "title": "项目调研和搭建",
+          "status": "waiting_children",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_08afed383b02",
+          "issue_no": 3,
+          "title": "各项目接入grafana",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_68caa03fa965",
+          "issue_no": 3,
+          "title": "主机性能评估与量化系统可行性分析",
+          "status": "waiting_human_approval",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
         {
           "issue_id": "issue_f6bf1c5a4cb7",
           "issue_no": 4,
@@ -247,6 +423,14 @@
           "has_open_dependencies": false
         },
         {
+          "issue_id": "issue_fe993dc579e4",
+          "issue_no": 2,
+          "title": "创建grafana账号密码",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
           "issue_id": "issue_66f005d8148b",
           "issue_no": 3,
           "title": "Run unified execution_adapter timeout demo",
@@ -357,19 +541,171 @@
     },
     {
       "agent_id": "agent-team-pm",
-      "session_key": "agent:agent-team-pm:employee:agent-team-core.pm",
-      "binding_key": "agent-team-core.pm.primary",
+      "session_key": "agent:agent-team-pm:project:agent-team-arena",
+      "binding_key": "agent-team-arena.pm.primary",
       "role": "pm",
-      "employee_key": "agent-team-core.pm",
-      "display_name": "Agent Team Core PM",
+      "employee_key": "agent-team-arena.pm",
+      "display_name": "Arena PM",
       "active_issue_count": 0,
       "issues": [
+        {
+          "issue_id": "issue_9e1b1d337aad",
+          "issue_no": 1,
+          "title": "arena现状调研",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_769f4ef9835e",
+          "issue_no": 2,
+          "title": "调研本地 Arena 当前实现现状并输出结构化素材",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_a87e2527667a",
+          "issue_no": 2,
+          "title": "量化投资系统产品需求定义与人工确认",
+          "status": "waiting_human_approval",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_d7214daf50eb",
+          "issue_no": 3,
+          "title": "整理 Arena 现状调研并发布到飞书文档目录",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_3d38f614aaaa",
+          "issue_no": 4,
+          "title": "制定 Grafana 统一接入蓝图、分组与实施顺序",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_e92dc1d5d96b",
+          "issue_no": 4,
+          "title": "今日投资流程优化",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_77c1adaa8085",
+          "issue_no": 4,
+          "title": "量化系统整体架构规划",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_1ceb715ef624",
+          "issue_no": 5,
+          "title": "NewAPI 业务指标与系统指标接入 Grafana",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_1771a26d0abf",
+          "issue_no": 5,
+          "title": "统一 Arena visible-review 模式的流程语义与执行门槛",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_688e2f042ded",
+          "issue_no": 6,
+          "title": "Arena 股票竞技场业务指标与系统指标接入 Grafana",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_59923e39fb6d",
+          "issue_no": 7,
+          "title": "Uptime Kuma 指标接入 Grafana",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_08ecd3c1117e",
+          "issue_no": 7,
+          "title": "补强 Arena 流程观测，统一 review queue 口径并显式展示窗口/阻塞原因",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
         {
           "issue_id": "issue_e25aed0b0b47",
           "issue_no": 8,
           "title": "Optimize queue recovery and reporting workflow",
           "status": "closed",
           "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_783b74eb0e44",
+          "issue_no": 8,
+          "title": "Agent Team 业务指标与系统指标接入 Grafana",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_4762f6488dd6",
+          "issue_no": 10,
+          "title": "梳理 NewAPI 观测范围、指标清单与采集方案",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_8d15c2950e7d",
+          "issue_no": 12,
+          "title": "梳理 Arena 股票竞技场观测范围、指标清单与采集方案",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_5650e1454507",
+          "issue_no": 14,
+          "title": "梳理 Uptime Kuma 可复用指标、接入边界与展示方案",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_f86ec3392935",
+          "issue_no": 16,
+          "title": "梳理 Agent Team 观测范围、核心业务指标与采集方案",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_b39db5e1bb37",
+          "issue_no": 18,
+          "title": "grafana看板优化",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_312ac805b4a8",
+          "issue_no": 19,
+          "title": "指标优化",
+          "status": "closed",
+          "priority": "p2",
           "has_open_dependencies": false
         },
         {
@@ -389,9 +725,65 @@
           "has_open_dependencies": false
         },
         {
+          "issue_id": "issue_7c77f76d6bbd",
+          "issue_no": 25,
+          "title": "openclaw相关指标接入grafana",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
           "issue_id": "issue_23050f36d61d",
           "issue_no": 26,
           "title": "E2E validate auto issue_relations from create_issue_proposal",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_3f2c6aee4745",
+          "issue_no": 26,
+          "title": "梳理 OpenClaw 观测范围、OTel 接入边界与 Grafana 方案",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_e1169e0f466b",
+          "issue_no": 28,
+          "title": "grafana看板指标进一步迭代",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_32cc65cb0a42",
+          "issue_no": 29,
+          "title": "grafana看板指标进一步迭代",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_b530fa0b11c1",
+          "issue_no": 30,
+          "title": "grafana看板指标进一步迭代",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_c4c3c90a3b00",
+          "issue_no": 31,
+          "title": "grafana看板指标进一步迭代",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_801cd0888354",
+          "issue_no": 32,
+          "title": "梳理第二轮 Grafana 人类可读性改造与缺失指标清单",
           "status": "closed",
           "priority": "p1",
           "has_open_dependencies": false
@@ -408,19 +800,107 @@
     },
     {
       "agent_id": "agent-team-qa",
-      "session_key": "agent:agent-team-qa:employee:agent-team-core.qa",
-      "binding_key": "agent-team-core.qa.primary",
+      "session_key": "agent:agent-team-qa:project:agent-team-grafana",
+      "binding_key": "agent-team-grafana.qa.primary",
       "role": "qa",
-      "employee_key": "agent-team-core.qa",
-      "display_name": "Agent Team Core QA",
+      "employee_key": "agent-team-grafana.qa",
+      "display_name": "Grafana QA",
       "active_issue_count": 0,
       "issues": [
+        {
+          "issue_id": "issue_03f237f8d47c",
+          "issue_no": 1,
+          "title": "grafana面板创建",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_54a8594b5b08",
+          "issue_no": 6,
+          "title": "修复 Arena 换仓执行路径并完成最小可验证闭环",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_7e19dc4eba1c",
+          "issue_no": 9,
+          "title": "主机总体指标与进程级指标接入 Grafana",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
         {
           "issue_id": "issue_91a66f1e2cc3",
           "issue_no": 10,
           "title": "Validate queue recovery reporting improvements",
           "status": "closed",
           "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_430952f9bec0",
+          "issue_no": 11,
+          "title": "实现 NewAPI 指标接入与 Grafana 面板落地",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_29ff9281855d",
+          "issue_no": 13,
+          "title": "实现 Arena 股票竞技场指标接入与 Grafana 面板落地",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_c1694aa1b790",
+          "issue_no": 15,
+          "title": "实现 Uptime Kuma 指标接入与 Grafana 面板落地",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_74cc4aa8be95",
+          "issue_no": 17,
+          "title": "实现 Agent Team 指标接入与 Grafana 面板落地",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_eb52b7aaef37",
+          "issue_no": 20,
+          "title": "统一 Grafana 看板中文化与可读性优化",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_eeea642f97af",
+          "issue_no": 21,
+          "title": "修复 Grafana 看板 No Data 与显示异常问题",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_2bf9104ff460",
+          "issue_no": 22,
+          "title": "补齐 Arena 项目 Grafana 指标与面板接入",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_9a452fc0ab6e",
+          "issue_no": 23,
+          "title": "增强进程级时序监控，支持按时间点查看所有进程 CPU 与内存",
+          "status": "closed",
+          "priority": "p1",
           "has_open_dependencies": false
         },
         {
@@ -432,9 +912,25 @@
           "has_open_dependencies": false
         },
         {
+          "issue_id": "issue_5a0c3414163f",
+          "issue_no": 24,
+          "title": "增强 Agent Team 吞吐量与系统能力指标面板",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
           "issue_id": "issue_c9e4bf4068fd",
           "issue_no": 27,
           "title": "Verify auto-created issue relations are visible in exported issue data",
+          "status": "closed",
+          "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_4b0cd595d6b3",
+          "issue_no": 27,
+          "title": "实现 OpenClaw 指标接入与 Grafana 面板落地",
           "status": "closed",
           "priority": "p2",
           "has_open_dependencies": false
@@ -456,11 +952,43 @@
           "has_open_dependencies": false
         },
         {
+          "issue_id": "issue_ac149804ea03",
+          "issue_no": 33,
+          "title": "统一修复 Grafana 看板 No Data、难读指标与可视化表达",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
           "issue_id": "issue_f2b311db0ca5",
           "issue_no": 34,
           "title": "API adapter cancel live check",
           "status": "closed",
           "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_51ec68e6016d",
+          "issue_no": 34,
+          "title": "增强 OpenClaw 看板，支持按 Agent 维度查看消息量与 Token 趋势",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_3eeeac4d844e",
+          "issue_no": 35,
+          "title": "增强 NewAPI 看板，支持按渠道维度查看 Token 变化趋势",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_35ade5058826",
+          "issue_no": 36,
+          "title": "增强 Agent Team 看板，支持按项目维度查看 Issue 新增与完成趋势",
+          "status": "closed",
+          "priority": "p1",
           "has_open_dependencies": false
         }
       ]

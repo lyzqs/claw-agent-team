@@ -105,11 +105,14 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 generated_at = now_iso()
                 closed_limit = 50
-                out = svc.get_ui_snapshot(
-                    generated_at=generated_at,
-                    source=current_db_source(),
-                    closed_limit=closed_limit,
-                )
+                board = svc.board_query.get_board_snapshot()
+                issues = svc.board_query.list_lightweight_issues(closed_limit=50)
+                out = {
+                    'board': board,
+                    'issues': issues,
+                    'generated_at': generated_at,
+                    'source': current_db_source(),
+                }
                 out['workflow_control'] = load_control()
                 if WORKER_REPORT.exists():
                     try:
@@ -166,7 +169,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             svc = AgentTeamService()
             try:
-                detail = svc.get_issue_detail(issue_id=issue_id)
+                detail = svc.board_query.get_full_issue_detail(issue_id=issue_id)
                 self._json(200, {'ok': True, 'result': detail})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})

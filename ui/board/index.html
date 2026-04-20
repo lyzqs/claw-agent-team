@@ -2028,7 +2028,7 @@
     }
 
     function renderIssuePreview() {
-      const wrap = getAllIssuesEnriched().find(x => x.issue.id === selectedIssueId) || filteredIssues[0];
+      const wrap = getIssueWrap(selectedIssueId) || filteredIssues[0];
       const root = document.getElementById('issuePreview');
       if (!wrap) {
         root.innerHTML = '<div class="empty">暂无 issue 详情</div>';
@@ -2076,14 +2076,14 @@
       `;
     }
 
-    function openIssueModal(issueId) {
-      // Prefetch full detail in background (lightweight loads first)
-      fetchIssueDetail(issueId).catch(() => {});
+    async function openIssueModal(issueId) {
+      // Prefetch full detail before rendering
+      await fetchIssueDetail(issueId);
       _renderIssueModal(issueId);
     }
 
     function _renderIssueModal(issueId) {
-      const wrap = getAllIssuesEnriched().find(x => x.issue.id === issueId);
+      const wrap = getIssueWrap(issueId);
       if (!wrap) return;
       const hasFull = !!(issueDetailCache[issueId] && issueDetailCache[issueId].attempts);
       const issue = wrap.issue;
@@ -2093,7 +2093,7 @@
       const activities = Array.isArray(wrap.activities) ? wrap.activities : [];
       const issueMeta = safeParseJson(issue.metadata_json);
       document.getElementById('modalTitle').textContent = `#${issue.issue_no} ${issue.title}`;
-      document.getElementById('modalSubtitle').textContent = `${issue.project_key || 'unknown project'} · ${wrap.current_agent_label} · ${wrap.current_agent_id} · ${humanizeIssueStatus(issue.status)}`;
+      document.getElementById('modalSubtitle').textContent = `${issue.project_key || 'unknown project'} · ${wrap.current_agent_label || '—'} · ${wrap.current_agent_id || '—'} · ${humanizeIssueStatus(issue.status)}`;
       document.getElementById('modalBody').innerHTML = `
         <div class="modal-section">
           <div class="detail-item"><div class="detail-head"><span>当前为什么停在这里</span><span>${latest ? `Attempt #${latest.attempt_no}` : '暂无 Attempt'}</span></div><div class="detail-sub">${escapeHtml(inferIssueSituation(wrap))}<br/>${escapeHtml(summarizeAttempt(latest))}</div></div>

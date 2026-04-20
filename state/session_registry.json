@@ -83,5 +83,49 @@
     "updated_at_ms": 1776337253832,
     "session_id": "e5290801-0f90-4770-ae4e-2ab6028f39a5",
     "session_file": "/root/.openclaw/agents/agent-team-ops/sessions/e5290801-0f90-4770-ae4e-2ab6028f39a5.jsonl"
+  },
+  "agent-team-pm|quantitativeinvest": {
+    "logical_key": "agent:agent-team-pm:project:quantitativeinvest",
+    "current_session_key": "agent:agent-team-pm:project:quantitativeinvest",
+    "role": "pm",
+    "project_key": "quantitativeinvest",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776672928077,
+    "session_id": "12d8bcc8-4d6d-4700-a82a-b1434ce70574",
+    "session_file": "/root/.openclaw/agents/agent-team-pm/sessions/12d8bcc8-4d6d-4700-a82a-b1434ce70574.jsonl"
+  },
+  "agent-team-dev|quantitativeinvest": {
+    "logical_key": "agent:agent-team-dev:project:quantitativeinvest",
+    "current_session_key": "agent:agent-team-dev:project:quantitativeinvest",
+    "role": "dev",
+    "project_key": "quantitativeinvest",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776672928077,
+    "session_id": "22aa6752-325b-4eb7-ad0c-8ba117d002a8",
+    "session_file": "/root/.openclaw/agents/agent-team-dev/sessions/22aa6752-325b-4eb7-ad0c-8ba117d002a8.jsonl"
+  },
+  "agent-team-qa|quantitativeinvest": {
+    "logical_key": "agent:agent-team-qa:project:quantitativeinvest",
+    "current_session_key": "agent:agent-team-qa:project:quantitativeinvest",
+    "role": "qa",
+    "project_key": "quantitativeinvest",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776672928077,
+    "session_id": "8a9362c8-00f4-44d1-8637-88852676c7cf",
+    "session_file": "/root/.openclaw/agents/agent-team-qa/sessions/8a9362c8-00f4-44d1-8637-88852676c7cf.jsonl"
+  },
+  "agent-team-ops|quantitativeinvest": {
+    "logical_key": "agent:agent-team-ops:project:quantitativeinvest",
+    "current_session_key": "agent:agent-team-ops:project:quantitativeinvest",
+    "role": "ops",
+    "project_key": "quantitativeinvest",
+    "generation": 1,
+    "status": "active",
+    "updated_at_ms": 1776672928077,
+    "session_id": "5d7994f9-eb6e-4391-afed-70edf02d43f7",
+    "session_file": "/root/.openclaw/agents/agent-team-ops/sessions/5d7994f9-eb6e-4391-afed-70edf02d43f7.jsonl"
   }
 }

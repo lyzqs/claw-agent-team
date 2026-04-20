@@ -1281,8 +1281,21 @@ class AgentTeamService:
     def get_board_snapshot(self) -> dict[str, Any]:
         return self.board_query.get_board_snapshot()
 
-    def get_ui_snapshot(self, *, generated_at: str | None = None, source: str | None = None) -> dict[str, Any]:
-        return self.board_query.get_ui_snapshot(generated_at=generated_at, source=source)
+    def get_ui_snapshot(
+        self,
+        *,
+        generated_at: str | None = None,
+        source: str | None = None,
+        closed_limit: int = 50,
+    ) -> dict[str, Any]:
+        return self.board_query.get_ui_snapshot(
+            generated_at=generated_at,
+            source=source,
+            closed_limit=closed_limit,
+        )
+
+    def get_issue_detail(self, *, issue_id: str) -> dict[str, Any]:
+        return self.board_query.get_full_issue_detail(issue_id=issue_id)
 
     def reconcile_dependency_transitions(self) -> dict[str, Any]:
         return self.dependency_service.reconcile_dependency_transitions()

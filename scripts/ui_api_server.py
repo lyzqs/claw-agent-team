@@ -7,7 +7,7 @@ import sys
 from datetime import datetime, UTC
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 ROOT = Path('/root/.openclaw/workspace-agent-team')
 STATE_DIR = ROOT / 'state'
@@ -76,6 +76,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        parsed_qs = parse_qs(parsed.query)
         if parsed.path == '/api/workflow-control':
             self._json(200, {'ok': True, 'result': load_control()})
             return
@@ -103,9 +104,11 @@ class Handler(BaseHTTPRequestHandler):
             svc = AgentTeamService()
             try:
                 generated_at = now_iso()
+                closed_limit = 50
                 out = svc.get_ui_snapshot(
                     generated_at=generated_at,
                     source=current_db_source(),
+                    closed_limit=closed_limit,
                 )
                 out['workflow_control'] = load_control()
                 if WORKER_REPORT.exists():
@@ -121,6 +124,50 @@ class Handler(BaseHTTPRequestHandler):
                     'config': runtime_path_snapshot(),
                 }
                 self._json(200, {'ok': True, 'result': out})
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+            finally:
+                svc.close()
+            return
+
+        if parsed.path == '/api/issues':
+            svc = AgentTeamService()
+            try:
+                status_filter = parsed_qs.get('status', [None])[0] if parsed_qs.get('status') else None
+                project_filter = parsed_qs.get('project', [None])[0] if parsed_qs.get('project') else None
+                closed_limit = int(parsed_qs.get('closed_limit', ['50'])[0])
+                closed_limit = max(1, min(closed_limit, 200))
+                # Use lightweight version for board load
+                items = svc.board_query.list_lightweight_issues(closed_limit=closed_limit)
+                # Apply filters
+                if status_filter:
+                    items = [x for x in items if x['issue']['status'] == status_filter]
+                if project_filter:
+                    items = [x for x in items if x['issue'].get('project_key') == project_filter]
+                self._json(200, {
+                    'ok': True,
+                    'result': {
+                        'items': items,
+                        'total': len(items),
+                        'closed_limit': closed_limit,
+                    }
+                })
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+            finally:
+                svc.close()
+            return
+
+        # /api/issue/:id - full detail
+        if parsed.path.startswith('/api/issue/'):
+            issue_id = parsed.path[len('/api/issue/'):]
+            if not issue_id:
+                self._json(400, {'ok': False, 'error': 'issue_id is required'})
+                return
+            svc = AgentTeamService()
+            try:
+                detail = svc.get_issue_detail(issue_id=issue_id)
+                self._json(200, {'ok': True, 'result': detail})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})
             finally:

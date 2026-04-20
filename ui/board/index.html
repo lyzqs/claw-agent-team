@@ -951,6 +951,7 @@
     };
 
     let humanActionState = { issueId: null, resolution: '', issueNo: '', title: '' };
+    let issueDetailCache = {}; // issue_id -> full detail from /api/issue/:id
     let scheduledIssueState = { editingId: null };
 
     function showToast(msg, isError=false) {
@@ -1155,6 +1156,33 @@
         credentials: 'same-origin',
       });
       return await res.json();
+    }
+
+    async function fetchIssueDetail(issueId) {
+      if (issueDetailCache[issueId]) return issueDetailCache[issueId];
+      const res = await apiGet(`/api/issue/${encodeURIComponent(issueId)}`);
+      if (res.ok) {
+        issueDetailCache[issueId] = res.result;
+      }
+      return res.result || null;
+    }
+
+    function getIssueWrap(issueId) {
+      // Returns merged issue wrap: lightweight from board snapshot + full detail if cached
+      const lightweight = issuesData.find(x => x.issue.id === issueId);
+      if (!lightweight) return null;
+      const full = issueDetailCache[issueId];
+      if (!full) return lightweight;
+      // Merge: prefer full data for heavy fields
+      return {
+        issue: full.issue || lightweight.issue,
+        attempts: full.attempts || lightweight.attempts || [],
+        callbacks_by_attempt: full.callbacks_by_attempt || lightweight.callbacks_by_attempt || {},
+        timelines: full.timelines || lightweight.timelines || {},
+        activities: full.activities || lightweight.activities || [],
+        relations: full.relations || lightweight.relations || { outgoing: [], incoming: [] },
+        dependencies: full.dependencies || lightweight.dependencies || { blocking: [], blocked_dependents: [] },
+      };
     }
 
     async function toggleWorkflow(mode) {
@@ -2049,8 +2077,15 @@
     }
 
     function openIssueModal(issueId) {
+      // Prefetch full detail in background (lightweight loads first)
+      fetchIssueDetail(issueId).catch(() => {});
+      _renderIssueModal(issueId);
+    }
+
+    function _renderIssueModal(issueId) {
       const wrap = getAllIssuesEnriched().find(x => x.issue.id === issueId);
       if (!wrap) return;
+      const hasFull = !!(issueDetailCache[issueId] && issueDetailCache[issueId].attempts);
       const issue = wrap.issue;
       const attempts = Array.isArray(wrap.attempts) ? wrap.attempts : [];
       const latest = attempts.length ? attempts[attempts.length - 1] : null;
@@ -2062,6 +2097,7 @@
       document.getElementById('modalBody').innerHTML = `
         <div class="modal-section">
           <div class="detail-item"><div class="detail-head"><span>当前为什么停在这里</span><span>${latest ? `Attempt #${latest.attempt_no}` : '暂无 Attempt'}</span></div><div class="detail-sub">${escapeHtml(inferIssueSituation(wrap))}<br/>${escapeHtml(summarizeAttempt(latest))}</div></div>
+          ${!hasFull && attempts.length > 0 ? '<div class="entry-note">📥 点击加载完整详情</div>' : ''}
         </div>
         <div class="modal-section">
           <div class="kv">

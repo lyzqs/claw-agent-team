@@ -223,7 +223,7 @@ class BoardQueryService:
         # Non-closed: full data but no callbacks/timelines/activities
         non_closed = self.db.fetch_all(
             '''SELECT i.id, i.issue_no, i.title, i.priority, i.status, i.active_attempt_no,
-                      i.created_at_ms, i.updated_at_ms, i.project_id,
+                      i.created_at_ms, i.updated_at_ms, i.closed_at_ms, i.project_id,
                       ei.employee_key AS assigned_employee_key,
                       rt.template_key AS assigned_role,
                       rb.agent_id, rb.session_key,
@@ -238,7 +238,7 @@ class BoardQueryService:
         # Closed: basic + last 2 attempts only, limit to closed_limit
         closed_rows = self.db.fetch_all(
             '''SELECT i.id, i.issue_no, i.title, i.priority, i.status, i.active_attempt_no,
-                      i.created_at_ms, i.updated_at_ms, i.project_id,
+                      i.created_at_ms, i.updated_at_ms, i.closed_at_ms, i.project_id,
                       ei.employee_key AS assigned_employee_key,
                       rt.template_key AS assigned_role,
                       rb.agent_id, rb.session_key,
@@ -249,7 +249,7 @@ class BoardQueryService:
                LEFT JOIN role_templates rt ON rt.id = ei.role_template_id
                LEFT JOIN runtime_bindings rb ON rb.employee_id = ei.id AND rb.is_primary = 1
                WHERE i.status = 'closed'
-               ORDER BY i.issue_no DESC
+               ORDER BY i.closed_at_ms DESC NULLS LAST, i.issue_no DESC
                LIMIT ?''',
             (closed_limit,))
         # Build last-2-attempts map

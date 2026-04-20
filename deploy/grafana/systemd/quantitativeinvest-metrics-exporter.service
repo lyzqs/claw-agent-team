@@ -11,7 +11,7 @@ ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/quantita
     --listen-host 127.0.0.1 \
     --listen-port 19170 \
     --env local \
-    --system quantitativeinvest
+    --instance quantitativeinvest
 Restart=always
 RestartSec=3
 User=root

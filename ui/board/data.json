@@ -6,17 +6,17 @@
       "description": "本地的ARENA股票竞技场项目，有着完整闭环的投资流程，飞书文档根目录：https://mcnbi1jv3pld.feishu.cn/wiki/Xs0IwSrMXizVMgkbhXmc1PNpn2m",
       "status": "active",
       "metadata_json": "{\"project_context_md\": \"本地的ARENA股票竞技场项目，有着完整闭环的投资流程，飞书文档根目录：https://mcnbi1jv3pld.feishu.cn/wiki/Xs0IwSrMXizVMgkbhXmc1PNpn2m\", \"created_by_employee_key\": \"shared.ceo\", \"auto_created_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"], \"created_via\": \"agent_team_service.create_project\", \"initialized_session_keys\": {\"pm\": \"agent:agent-team-pm:project:agent-team-arena\", \"dev\": \"agent:agent-team-dev:project:agent-team-arena\", \"qa\": \"agent:agent-team-qa:project:agent-team-arena\", \"ops\": \"agent:agent-team-ops:project:agent-team-arena\"}}",
-      "total_issues": 7,
-      "closed_issues": 7,
+      "total_issues": 8,
+      "closed_issues": 8,
       "agent_queue_issues": 0,
       "human_queue_issues": 0
     },
     {
       "project_key": "agent-team-core",
       "name": "Agent Team Core",
-      "description": "Phase 1 single-project sample org for agent-team validation",
+      "description": "测试更新项目描述",
       "status": "active",
-      "metadata_json": null,
+      "metadata_json": "{\"project_context_md\": \"测试更新项目描述\"}",
       "total_issues": 36,
       "closed_issues": 36,
       "agent_queue_issues": 0,
@@ -36,73 +36,17 @@
     {
       "project_key": "quantitativeinvest",
       "name": "QuantitativeInvest",
-      "description": "基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。",
+      "description": "基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。飞书根目录：https://mcnbi1jv3pld.feishu.cn/wiki/WXhzwB1M8iVB6mkNHIDcQsBTnlb",
       "status": "active",
-      "metadata_json": "{\"project_context_md\": \"基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。\", \"created_by_employee_key\": \"shared.ceo\", \"auto_created_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"], \"created_via\": \"agent_team_service.create_project\", \"initialized_session_keys\": {\"pm\": \"agent:agent-team-pm:project:quantitativeinvest\", \"dev\": \"agent:agent-team-dev:project:quantitativeinvest\", \"qa\": \"agent:agent-team-qa:project:quantitativeinvest\", \"ops\": \"agent:agent-team-ops:project:quantitativeinvest\"}}",
+      "metadata_json": "{\"project_context_md\": \"基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。飞书根目录：https://mcnbi1jv3pld.feishu.cn/wiki/WXhzwB1M8iVB6mkNHIDcQsBTnlb\", \"created_by_employee_key\": \"shared.ceo\", \"auto_created_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"], \"created_via\": \"agent_team_service.create_project\", \"initialized_session_keys\": {\"pm\": \"agent:agent-team-pm:project:quantitativeinvest\", \"dev\": \"agent:agent-team-dev:project:quantitativeinvest\", \"qa\": \"agent:agent-team-qa:project:quantitativeinvest\", \"ops\": \"agent:agent-team-ops:project:quantitativeinvest\"}}",
       "total_issues": 10,
-      "closed_issues": 5,
-      "agent_queue_issues": 5,
+      "closed_issues": 10,
+      "agent_queue_issues": 0,
       "human_queue_issues": 0
     }
   ],
-  "agent_queue": [
-    {
-      "id": "issue_3c5e0bb1a303",
-      "project_id": "proj_a3b699f5d1f3",
-      "issue_no": 7,
-      "title": "轻量量化系统回测引擎与规则策略框架",
-      "priority": "p1",
-      "status": "waiting_children",
-      "assigned_employee_id": "emp_15d59cc21ed5",
-      "active_attempt_no": 1,
-      "updated_at_ms": 1776695941848
-    },
-    {
-      "id": "issue_68caa03fa965",
-      "project_id": "proj_a3b699f5d1f3",
-      "issue_no": 3,
-      "title": "主机性能评估与量化系统可行性分析",
-      "priority": "p1",
-      "status": "waiting_children",
-      "assigned_employee_id": "emp_3d303eefdc1b",
-      "active_attempt_no": 8,
-      "updated_at_ms": 1776695941845
-    },
-    {
-      "id": "issue_4dd18ceaed72",
-      "project_id": "proj_a3b699f5d1f3",
-      "issue_no": 1,
-      "title": "项目调研和搭建",
-      "priority": "p1",
-      "status": "waiting_children",
-      "assigned_employee_id": "emp_3d303eefdc1b",
-      "active_attempt_no": 1,
-      "updated_at_ms": 1776695941841
-    },
-    {
-      "id": "issue_ed5e213d1628",
-      "project_id": "proj_a3b699f5d1f3",
-      "issue_no": 9,
-      "title": "轻量量化系统回测引擎与规则策略核心实现",
-      "priority": "p1",
-      "status": "dispatching",
-      "assigned_employee_id": "emp_0b16739001d6",
-      "active_attempt_no": 6,
-      "updated_at_ms": 1776694427550
-    },
-    {
-      "id": "issue_0b4b235c49f6",
-      "project_id": "proj_a3b699f5d1f3",
-      "issue_no": 10,
-      "title": "轻量量化系统回测结果可视化",
-      "priority": "p1",
-      "status": "ready",
-      "assigned_employee_id": "emp_0b16739001d6",
-      "active_attempt_no": 2,
-      "updated_at_ms": 1776685090014
-    }
-  ],
-  "dispatching_count": 1,
+  "agent_queue": [],
+  "dispatching_count": 0,
   "human_queue": [],
   "scheduled_issues": [
     {
@@ -111,20 +55,20 @@
       "priority": "p2",
       "route_role": "pm",
       "schedule_kind": "daily",
-      "schedule_config_json": "{\"hour\": 22, \"minute\": 30}",
+      "schedule_config_json": "{\"hour\": 18, \"minute\": 0}",
       "enabled": 1,
-      "next_run_at_ms": 1776724200000,
+      "next_run_at_ms": 1776708000000,
       "last_run_at_ms": null,
       "last_issue_id": null,
       "last_issue_no": null,
       "last_error": null,
-      "updated_at_ms": 1776695017374,
+      "updated_at_ms": 1776700441599,
       "project_key": "agent-team-arena",
       "project_name": "Arena",
       "owner_employee_key": "agent-team-arena.pm",
       "schedule_config": {
-        "hour": 22,
-        "minute": 30
+        "hour": 18,
+        "minute": 0
       }
     }
   ],
@@ -331,7 +275,7 @@
           "issue_id": "issue_4dd18ceaed72",
           "issue_no": 1,
           "title": "项目调研和搭建",
-          "status": "waiting_children",
+          "status": "closed",
           "priority": "p1",
           "has_open_dependencies": false
         },
@@ -347,7 +291,7 @@
           "issue_id": "issue_68caa03fa965",
           "issue_no": 3,
           "title": "主机性能评估与量化系统可行性分析",
-          "status": "waiting_children",
+          "status": "closed",
           "priority": "p1",
           "has_open_dependencies": false
         },
@@ -448,7 +392,7 @@
       "role": "dev",
       "employee_key": "agent-team-core.dev",
       "display_name": "Agent Team Core Dev",
-      "active_issue_count": 1,
+      "active_issue_count": 0,
       "issues": [
         {
           "issue_id": "issue_1a7f7dcadcd9",
@@ -511,22 +455,6 @@
           "issue_no": 9,
           "title": "Implement queue recovery reporting improvements",
           "status": "closed",
-          "priority": "p1",
-          "has_open_dependencies": false
-        },
-        {
-          "issue_id": "issue_ed5e213d1628",
-          "issue_no": 9,
-          "title": "轻量量化系统回测引擎与规则策略核心实现",
-          "status": "dispatching",
-          "priority": "p1",
-          "has_open_dependencies": false
-        },
-        {
-          "issue_id": "issue_0b4b235c49f6",
-          "issue_no": 10,
-          "title": "轻量量化系统回测结果可视化",
-          "status": "ready",
           "priority": "p1",
           "has_open_dependencies": false
         },
@@ -732,7 +660,7 @@
           "issue_id": "issue_3c5e0bb1a303",
           "issue_no": 7,
           "title": "轻量量化系统回测引擎与规则策略框架",
-          "status": "waiting_children",
+          "status": "closed",
           "priority": "p1",
           "has_open_dependencies": false
         },
@@ -750,6 +678,14 @@
           "title": "Agent Team 业务指标与系统指标接入 Grafana",
           "status": "closed",
           "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_924196b8cc8f",
+          "issue_no": 8,
+          "title": "每日arena股票投资情况分析",
+          "status": "closed",
+          "priority": "p2",
           "has_open_dependencies": false
         },
         {
@@ -924,11 +860,27 @@
           "has_open_dependencies": false
         },
         {
+          "issue_id": "issue_ed5e213d1628",
+          "issue_no": 9,
+          "title": "轻量量化系统回测引擎与规则策略核心实现",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
           "issue_id": "issue_91a66f1e2cc3",
           "issue_no": 10,
           "title": "Validate queue recovery reporting improvements",
           "status": "closed",
           "priority": "p2",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_0b4b235c49f6",
+          "issue_no": 10,
+          "title": "轻量量化系统回测结果可视化",
+          "status": "closed",
+          "priority": "p1",
           "has_open_dependencies": false
         },
         {

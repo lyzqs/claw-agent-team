@@ -1932,8 +1932,8 @@
       const arr = [...items];
       if (laneKey === 'closed') {
         arr.sort((a, b) => {
-          const createdDiff = issueCreatedAt(b) - issueCreatedAt(a);
-          if (createdDiff !== 0) return createdDiff;
+          const closedDiff = (b.issue.closed_at_ms || 0) - (a.issue.closed_at_ms || 0);
+          if (closedDiff !== 0) return closedDiff;
           return (b.issue.issue_no || 0) - (a.issue.issue_no || 0);
         });
         return arr;
@@ -2452,7 +2452,30 @@
     document.getElementById('scheduledEveryMinutes').addEventListener('input', buildCronPreview);
     document.getElementById('scheduledCronExpr').addEventListener('input', buildCronPreview);
     document.getElementById('editProjectSelect').addEventListener('change', fillProjectEditForm);
-    document.getElementById('projectFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
+    document.getElementById('projectFilter').addEventListener('change', async () => {
+      currentPage = 1;
+      if (document.getElementById('projectFilter').value) {
+        try {
+          const res = await apiGet(`/api/issues?project_key=${encodeURIComponent(document.getElementById('projectFilter').value)}&status=closed`);
+          if (res.ok && res.result?.issues) {
+            const selectedProject = document.getElementById('projectFilter').value;
+            // Replace closed issues for this project with fetched ones
+            const nonClosed = issuesData.filter(x => x.issue.status !== 'closed');
+            const otherClosed = issuesData.filter(x =>
+              x.issue.status === 'closed' && x.issue.project_key !== selectedProject
+            );
+            const fetchedItems = res.result.issues.map(issue => ({
+              issue: { ...issue },
+              attempt_map: {},
+            }));
+            issuesData = [...nonClosed, ...otherClosed, ...fetchedItems];
+          }
+        } catch (_) {}
+      }
+      renderStoryboard();
+      renderIssueList();
+      renderIssuePreview();
+    });
     document.getElementById('agentFilter').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('sortSelect').addEventListener('change', () => { currentPage = 1; renderStoryboard(); renderIssueList(); renderIssuePreview(); });
     document.getElementById('prevPageBtn').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderIssueList(); renderIssuePreview(); } });

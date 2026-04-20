@@ -39,13 +39,46 @@
       "description": "基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。",
       "status": "active",
       "metadata_json": "{\"project_context_md\": \"基于历史已有股票数据，不断更新迭代量化策略。最终目标是在测试集/未来真实数据上赚钱。\", \"created_by_employee_key\": \"shared.ceo\", \"auto_created_roles\": [\"pm\", \"dev\", \"qa\", \"ops\"], \"created_via\": \"agent_team_service.create_project\", \"initialized_session_keys\": {\"pm\": \"agent:agent-team-pm:project:quantitativeinvest\", \"dev\": \"agent:agent-team-dev:project:quantitativeinvest\", \"qa\": \"agent:agent-team-qa:project:quantitativeinvest\", \"ops\": \"agent:agent-team-ops:project:quantitativeinvest\"}}",
-      "total_issues": 4,
-      "closed_issues": 1,
-      "agent_queue_issues": 1,
-      "human_queue_issues": 2
+      "total_issues": 10,
+      "closed_issues": 3,
+      "agent_queue_issues": 7,
+      "human_queue_issues": 0
     }
   ],
   "agent_queue": [
+    {
+      "id": "issue_ed5e213d1628",
+      "project_id": "proj_a3b699f5d1f3",
+      "issue_no": 9,
+      "title": "轻量量化系统回测引擎与规则策略核心实现",
+      "priority": "p1",
+      "status": "dispatching",
+      "assigned_employee_id": "emp_0b16739001d6",
+      "active_attempt_no": 2,
+      "updated_at_ms": 1776686928019
+    },
+    {
+      "id": "issue_3c5e0bb1a303",
+      "project_id": "proj_a3b699f5d1f3",
+      "issue_no": 7,
+      "title": "轻量量化系统回测引擎与规则策略框架",
+      "priority": "p1",
+      "status": "waiting_children",
+      "assigned_employee_id": "emp_15d59cc21ed5",
+      "active_attempt_no": 1,
+      "updated_at_ms": 1776686928015
+    },
+    {
+      "id": "issue_68caa03fa965",
+      "project_id": "proj_a3b699f5d1f3",
+      "issue_no": 3,
+      "title": "主机性能评估与量化系统可行性分析",
+      "priority": "p1",
+      "status": "waiting_children",
+      "assigned_employee_id": "emp_3d303eefdc1b",
+      "active_attempt_no": 8,
+      "updated_at_ms": 1776686928012
+    },
     {
       "id": "issue_4dd18ceaed72",
       "project_id": "proj_a3b699f5d1f3",
@@ -55,34 +88,44 @@
       "status": "waiting_children",
       "assigned_employee_id": "emp_3d303eefdc1b",
       "active_attempt_no": 1,
-      "updated_at_ms": 1776679116334
-    }
-  ],
-  "dispatching_count": 0,
-  "human_queue": [
-    {
-      "id": "issue_68caa03fa965",
-      "project_id": "proj_a3b699f5d1f3",
-      "issue_no": 3,
-      "title": "主机性能评估与量化系统可行性分析",
-      "priority": "p1",
-      "status": "waiting_human_approval",
-      "blocker_summary": "Issue #3 已完成（7/7验收标准），飞书文档已记录。当前硬件约束明确：Intel Celeron J4125/8GB/无GPU，仅能跑轻量系统。关键阻塞：Issue #4 架构方案（含AI迭代）在当前硬件上不可行，需人工决策——(A) 轻量路线（降级为纯规则型，≤50股票日线）或 (B) 升级硬件（CPU至Ryzen5/i5+级别 + 内存32GB+ + NVIDIA GPU如RTX3060+）后再上AI功能。请在人工队列中确认技术路线，决策后PM将重新修订Issue #4架构方案。",
-      "required_human_input": "CPU严重不足（Intel Celeron J4125无AVX2）无法运行ML/DL训练；内存严重不足（实际可用3.6GB）无法支撑ML/RL训练；无GPU（VMware SVGA软件渲染）深度学习推理完全不可行；Issue #4 AI迭代方案在当前硬件上不可行，需人工确认技术路线",
-      "updated_at_ms": 1776679017684
+      "updated_at_ms": 1776686928008
     },
     {
-      "id": "issue_a87e2527667a",
+      "id": "issue_469ed8991857",
       "project_id": "proj_a3b699f5d1f3",
-      "issue_no": 2,
-      "title": "量化投资系统产品需求定义与人工确认",
+      "issue_no": 6,
+      "title": "轻量量化系统数据管道搭建",
       "priority": "p1",
-      "status": "waiting_human_approval",
-      "blocker_summary": "PM 已完成产品需求调研和定义工作。交付飞书文档 https://www.feishu.cn/docx/CUuDd3Ym8ouypFxhpk5cAby3nag，包含：①A股推荐及理由 ②4种策略类型（趋势/均值回归/ML/RL） ③数据源推荐（AKShare为主，Tushare备用） ④验收指标建议（夏普≥1.5，最大回撤≤20%） ⑤人工确认清单（资金规模/风险偏好/策略频率/风控模块）。等待用户确认4项关键参数后，结论将输出给架构 issue #4。",
-      "required_human_input": "PM已完成调研和文档输出（验收标准1-4满足）。验收标准5-6（人工确认+输出给架构issue）需等用户回复确认清单。issue metadata显示needs_human_input=true且含4项人工确认项，应保持in_progress并等待用户确认。",
-      "updated_at_ms": 1776675137451
+      "status": "dispatching",
+      "assigned_employee_id": "emp_d1e43a6cdc68",
+      "active_attempt_no": 3,
+      "updated_at_ms": 1776686837840
+    },
+    {
+      "id": "issue_f8d6801d1a22",
+      "project_id": "proj_a3b699f5d1f3",
+      "issue_no": 8,
+      "title": "轻量量化系统数据管道搭建",
+      "priority": "p1",
+      "status": "ready",
+      "assigned_employee_id": "emp_d1e43a6cdc68",
+      "active_attempt_no": 2,
+      "updated_at_ms": 1776685350808
+    },
+    {
+      "id": "issue_0b4b235c49f6",
+      "project_id": "proj_a3b699f5d1f3",
+      "issue_no": 10,
+      "title": "轻量量化系统回测结果可视化",
+      "priority": "p1",
+      "status": "ready",
+      "assigned_employee_id": "emp_0b16739001d6",
+      "active_attempt_no": 2,
+      "updated_at_ms": 1776685090014
     }
   ],
+  "dispatching_count": 2,
+  "human_queue": [],
   "scheduled_issues": [],
   "employee_view": [
     {
@@ -303,7 +346,7 @@
           "issue_id": "issue_68caa03fa965",
           "issue_no": 3,
           "title": "主机性能评估与量化系统可行性分析",
-          "status": "waiting_human_approval",
+          "status": "waiting_children",
           "priority": "p1",
           "has_open_dependencies": false
         },
@@ -404,7 +447,7 @@
       "role": "dev",
       "employee_key": "agent-team-core.dev",
       "display_name": "Agent Team Core Dev",
-      "active_issue_count": 0,
+      "active_issue_count": 1,
       "issues": [
         {
           "issue_id": "issue_1a7f7dcadcd9",
@@ -471,6 +514,22 @@
           "has_open_dependencies": false
         },
         {
+          "issue_id": "issue_ed5e213d1628",
+          "issue_no": 9,
+          "title": "轻量量化系统回测引擎与规则策略核心实现",
+          "status": "dispatching",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_0b4b235c49f6",
+          "issue_no": 10,
+          "title": "轻量量化系统回测结果可视化",
+          "status": "ready",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
           "issue_id": "issue_272ccdc9c41b",
           "issue_no": 12,
           "title": "API service live check issue",
@@ -522,13 +581,29 @@
     },
     {
       "agent_id": "agent-team-ops",
-      "session_key": "agent:agent-team-ops:employee:agent-team-core.ops",
-      "binding_key": "agent-team-core.ops.primary",
+      "session_key": "agent:agent-team-ops:project:quantitativeinvest",
+      "binding_key": "quantitativeinvest.ops.primary",
       "role": "ops",
-      "employee_key": "agent-team-core.ops",
-      "display_name": "Agent Team Core Ops",
-      "active_issue_count": 0,
+      "employee_key": "quantitativeinvest.ops",
+      "display_name": "QuantitativeInvest Ops",
+      "active_issue_count": 1,
       "issues": [
+        {
+          "issue_id": "issue_469ed8991857",
+          "issue_no": 6,
+          "title": "轻量量化系统数据管道搭建",
+          "status": "dispatching",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_f8d6801d1a22",
+          "issue_no": 8,
+          "title": "轻量量化系统数据管道搭建",
+          "status": "ready",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
         {
           "issue_id": "issue_136818de138c",
           "issue_no": 11,
@@ -568,7 +643,7 @@
           "issue_id": "issue_a87e2527667a",
           "issue_no": 2,
           "title": "量化投资系统产品需求定义与人工确认",
-          "status": "waiting_human_approval",
+          "status": "closed",
           "priority": "p1",
           "has_open_dependencies": false
         },
@@ -621,6 +696,14 @@
           "has_open_dependencies": false
         },
         {
+          "issue_id": "issue_96b4c9273d6d",
+          "issue_no": 5,
+          "title": "量化系统轻量路线架构方案（修订版）",
+          "status": "closed",
+          "priority": "p1",
+          "has_open_dependencies": false
+        },
+        {
           "issue_id": "issue_688e2f042ded",
           "issue_no": 6,
           "title": "Arena 股票竞技场业务指标与系统指标接入 Grafana",
@@ -643,6 +726,14 @@
           "status": "closed",
           "priority": "p2",
           "has_open_dependencies": false
+        },
+        {
+          "issue_id": "issue_3c5e0bb1a303",
+          "issue_no": 7,
+          "title": "轻量量化系统回测引擎与规则策略框架",
+          "status": "waiting_children",
+          "priority": "p1",
+          "has_open_dependencies": true
         },
         {
           "issue_id": "issue_e25aed0b0b47",

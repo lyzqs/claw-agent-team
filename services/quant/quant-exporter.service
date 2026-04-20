@@ -1,0 +1,11 @@
+[Unit]
+Description=QuantDB Prometheus Metrics Exporter
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/services/quant/scripts/quant_exporter.py --port 19111
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

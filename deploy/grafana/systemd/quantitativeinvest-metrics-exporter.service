@@ -1,0 +1,20 @@
+[Unit]
+Description=QuantitativeInvest backtest metrics exporter for Prometheus
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.openclaw/workspace-agent-team
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/scripts/quantitativeinvest_metrics_exporter.py \
+    --data-dir /root/.openclaw/workspace/quantitativeinvest/backtest_results \
+    --results-file latest_results.json \
+    --listen-host 127.0.0.1 \
+    --listen-port 19170 \
+    --env local \
+    --system quantitativeinvest
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

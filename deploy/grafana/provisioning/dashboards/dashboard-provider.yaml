@@ -41,6 +41,16 @@ providers:
     options:
       path: /var/lib/grafana/dashboards/agent-team-grafana/arena
 
+  - name: agent-team-grafana-quantitativeinvest
+    orgId: 1
+    folder: AT | 23 项目 | QuantitativeInvest
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/agent-team-grafana/quantitativeinvest
+
   - name: agent-team-grafana-openclaw
     orgId: 1
     folder: AT | 11 平台 | OpenClaw

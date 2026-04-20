@@ -192,10 +192,10 @@ install_bundle_files() {
   install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/newapi
   install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/arena
   install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/openclaw
-  install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/uptime-kuma
-  install -d -m 0755 /etc/nginx/sites-available /etc/nginx/sites-enabled
+  install -d -m 0755 /var/lib/grafana/dashboards/agent-team-grafana/quantitativeinvest
   install -d -m 0755 /var/lib/agent-team-prometheus
 
+  install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/quantitativeinvest-metrics-exporter.service" /etc/systemd/system/quantitativeinvest-metrics-exporter.service
   install -m 0644 "${REPO_ROOT}/deploy/grafana/process-exporter/process-exporter.yml" /etc/process-exporter/process-exporter.yml
   install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/process-exporter.service" /etc/systemd/system/process-exporter.service
   install -m 0644 "${REPO_ROOT}/deploy/grafana/systemd/agent-team-prometheus.service" /etc/systemd/system/agent-team-prometheus.service
@@ -223,6 +223,9 @@ install_bundle_files() {
   for dashboard in "${REPO_ROOT}"/deploy/grafana/dashboards/uptime-kuma-*.json; do
     install -m 0644 "$dashboard" "/var/lib/grafana/dashboards/agent-team-grafana/uptime-kuma/$(basename "$dashboard")"
   done
+  for dashboard in "${REPO_ROOT}"/deploy/grafana/dashboards/quantitativeinvest-*.json; do
+    install -m 0644 "$dashboard" "/var/lib/grafana/dashboards/agent-team-grafana/quantitativeinvest/$(basename "$dashboard")"
+  done
 
   render_template \
     "${REPO_ROOT}/deploy/grafana/grafana/grafana-server.override.conf.template" \
@@ -243,6 +246,7 @@ restart_services() {
   systemctl enable --now agent-team-metrics-exporter.service
   systemctl enable --now newapi-metrics-exporter.service
   systemctl enable --now arena-metrics-exporter.service
+  systemctl enable --now quantitativeinvest-metrics-exporter.service
   systemctl enable --now uptime-kuma-metrics-exporter.service
   systemctl enable --now openclaw-otel-bridge.service
   systemctl enable --now agent-team-prometheus.service
@@ -258,6 +262,7 @@ run_health_checks() {
   wait_for_http 10 2 http://127.0.0.1:19130/metrics
   wait_for_http 10 2 http://127.0.0.1:19100/metrics
   wait_for_http 10 2 http://127.0.0.1:19150/metrics
+  wait_for_http 10 2 http://127.0.0.1:19170/metrics
   wait_for_http 10 2 http://127.0.0.1:19120/metrics
   wait_for_http 10 2 http://127.0.0.1:19160/metrics
   wait_for_http 10 2 http://127.0.0.1:19090/-/ready

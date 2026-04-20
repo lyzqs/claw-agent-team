@@ -1,0 +1,12 @@
+[Unit]
+Description=AKShare A股日线数据增量更新
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /root/.openclaw/workspace-agent-team/services/quant/scripts/fetch_akshare_em.py --incremental
+User=root
+WorkingDirectory=/root/.openclaw/workspace-agent-team
+EnvironmentFile=/etc/quant-env
+
+[Install]
+WantedBy=multi-user.target

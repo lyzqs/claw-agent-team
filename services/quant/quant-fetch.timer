@@ -1,0 +1,9 @@
+[Unit]
+Description=AKShare A股日线数据定时增量更新（工作日 16:05 执行）
+
+[Timer]
+OnCalendar=Mon..Fri 16:05:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

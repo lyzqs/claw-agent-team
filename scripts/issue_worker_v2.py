@@ -1066,6 +1066,28 @@ def main() -> int:
             report['errors'].append({'message': f'scheduled issue runner failed: {e}'})
 
         ready_items = fetch_ready_candidates(svc)
+
+        # ── Global dispatch concurrency limit ─────────────────────────────────
+        concurrency_limit = load_control().get('dispatch_concurrency_limit', 3)
+        dispatching = svc.db.fetch_all(
+            """SELECT COUNT(DISTINCT issue_id) AS cnt
+               FROM issue_attempts
+               WHERE status IN ('dispatching', 'running')"""
+        )
+        dispatching_count = dispatching[0]['cnt'] if dispatching else 0
+        available_slots = max(0, concurrency_limit - dispatching_count)
+        if available_slots <= 0:
+            report['notes'] = [
+                f'concurrency limit reached: {dispatching_count}/{concurrency_limit}, '
+                f'skipping new dispatches'
+            ]
+            report['dispatch_concurrency'] = {
+                'limit': concurrency_limit,
+                'current': dispatching_count,
+                'skipped': len(ready_items),
+            }
+        max_dispatch_this_run = min(MAX_DISPATCH_PER_RUN, available_slots)
+
         dispatched_this_run = 0
         occupied_agent_ids = {
             str(item.get('agent_id') or '').strip()
@@ -1073,7 +1095,7 @@ def main() -> int:
             if item.get('agent_has_active_issue') and str(item.get('agent_id') or '').strip()
         }
         for issue in ready_items:
-            if dispatched_this_run >= MAX_DISPATCH_PER_RUN:
+            if dispatched_this_run >= max_dispatch_this_run:
                 break
             last_attempt_rows = svc.db.fetch_all(
                 'SELECT id, input_snapshot_json FROM issue_attempts WHERE issue_id = ? ORDER BY attempt_no DESC LIMIT 1',

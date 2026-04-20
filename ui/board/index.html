@@ -509,6 +509,7 @@
         <button id="pauseBtn" class="danger">暂停流程</button>
         <div class="chip-row">
           <span id="workflowChip" class="chip">流程状态加载中…</span>
+          <span id="concurrencyChip" class="chip" style="cursor:pointer;" title="点击修改并发限制">并发: -/-</span>
           <span id="snapshotChip" class="chip snapshot-chip">快照信息加载中…</span>
         </div>
       </div>
@@ -1163,6 +1164,60 @@
         await loadData();
       }
       return out;
+    }
+
+    function updateConcurrencyChip() {
+      const chip = document.getElementById('concurrencyChip');
+      if (!chip) return;
+      const limit = workflowControl?.dispatch_concurrency_limit ?? 3;
+      const dispatching = (boardData?.dispatching_count ?? 0);
+      const atLimit = dispatching >= limit;
+      chip.textContent = `并发: ${dispatching}/${limit}`;
+      chip.style.color = atLimit ? 'var(--red, #dc2626)' : 'inherit';
+      chip.style.fontWeight = atLimit ? 'bold' : 'normal';
+      chip.title = `当前 ${dispatching} 个 dispatching，最大限制 ${limit}。点击修改限制。`;
+    }
+
+    function openConcurrencyModal() {
+      const limit = workflowControl?.dispatch_concurrency_limit ?? 3;
+      const dispatching = (boardData?.dispatching_count ?? 0);
+      const html = `
+        <div style="min-width:320px;">
+          <p style="margin-bottom:12px;">
+            限制同时处于 <strong>dispatching / running</strong> 状态的 issue 总数。<br/>
+            当前: <strong>${dispatching} 个</strong>正在执行。
+          </p>
+          <div class="filter-group">
+            <label for="concurrencyLimitInput">最大并发数</label>
+            <input id="concurrencyLimitInput" type="number" min="1" max="20" value="${limit}" style="width:100px;" />
+          </div>
+          <div class="entry-note" style="margin-top:8px;">建议设置为 1-5 之间。设置过高的值可能导致 OpenClaw Agent 端并发过高而崩溃。</div>
+          <div class="entry-actions" style="margin-top:16px;">
+            <button id="saveConcurrencyBtn" class="success">保存</button>
+            <button id="cancelConcurrencyBtn" class="secondary">取消</button>
+          </div>
+        </div>
+      `;
+      openInfoModal('并发限制', html);
+      document.getElementById('saveConcurrencyBtn').addEventListener('click', async () => {
+        const val = parseInt(document.getElementById('concurrencyLimitInput').value, 10);
+        if (!val || val < 1 || val > 20) {
+          showToast('请输入 1-20 之间的数字', true);
+          return;
+        }
+        const out = await apiPost('/api/workflow-control', {
+          dispatch_concurrency_limit: val,
+        });
+        if (out.ok) {
+          workflowControl = out.result;
+          await loadData();
+          closeModal();
+          showToast(`并发限制已更新为 ${val}`);
+        } else {
+          showToast(`更新失败: ${out.error}`, true);
+        }
+      });
+      document.getElementById('cancelConcurrencyBtn').addEventListener('click', closeModal);
     }
 
     async function doClose(issueId) {
@@ -2244,6 +2299,7 @@
         issuesData = snapshotRes.result.issues || [];
         workflowControl = snapshotRes.result.workflow_control || { mode: 'running' };
         humanQueueData = { items: boardData.human_queue || [], total: (boardData.human_queue || []).length };
+        updateConcurrencyChip();
         snapshotMeta = {
           source: snapshotRes.result.source || 'agent-team.db',
           generated_at: snapshotRes.result.generated_at || null,
@@ -2301,6 +2357,7 @@
       const out = await toggleWorkflow('paused');
       showToast(out.ok ? '总流程已暂停' : `暂停失败: ${out.error || 'unknown error'}`, !out.ok);
     });
+    document.getElementById('concurrencyChip').addEventListener('click', openConcurrencyModal);
     document.getElementById('closeModalBtn').addEventListener('click', closeIssueModal);
     document.getElementById('closeCreateIssueModalBtn').addEventListener('click', closeCreateIssueModal);
     document.getElementById('closeScheduledIssueListModalBtn').addEventListener('click', closeScheduledIssueListModal);

@@ -185,9 +185,14 @@ class BoardQueryService:
                FROM projects p
                ORDER BY p.project_key'''
         )
+        dispatching_rows = self.db.fetch_all(
+            "SELECT COUNT(DISTINCT issue_id) AS cnt FROM issue_attempts WHERE status IN ('dispatching', 'running')"
+        )
+        dispatching_count = dispatching_rows[0]['cnt'] if dispatching_rows else 0
         return {
             'project_view': [dict(r) for r in projects],
             'agent_queue': [dict(r) for r in agent_queue],
+            'dispatching_count': dispatching_count,
             'human_queue': [dict(r) for r in human_queue],
             'scheduled_issues': [
                 {

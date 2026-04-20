@@ -15,7 +15,7 @@ WORKER_REPORT = STATE_DIR / 'worker_report.json'
 sys.path.insert(0, str(ROOT))
 from services.agent_team_service import AgentTeamService  # noqa: E402
 from services.config import current_db_path, current_db_source, runtime_path_snapshot  # noqa: E402
-from services.workflow_control import load_control, set_mode  # noqa: E402
+from services.workflow_control import load_control, set_mode, set_dispatch_concurrency_limit  # noqa: E402
 
 EXPORT_BOARD = str(ROOT / 'scripts' / 'export_board_snapshot.py')
 EXPORT_ISSUES = str(ROOT / 'scripts' / 'export_issue_details.py')
@@ -143,7 +143,10 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == '/api/workflow-control':
             try:
-                out = set_mode(payload['mode'], updated_by='ui', note=payload.get('note', ''))
+                if 'dispatch_concurrency_limit' in payload:
+                    out = set_dispatch_concurrency_limit(int(payload['dispatch_concurrency_limit']), updated_by='ui')
+                else:
+                    out = set_mode(payload['mode'], updated_by='ui', note=payload.get('note', ''))
                 self._json(200, {'ok': True, 'result': out})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})

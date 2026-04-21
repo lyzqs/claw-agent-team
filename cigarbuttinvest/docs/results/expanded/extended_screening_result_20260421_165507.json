@@ -1,0 +1,999 @@
+{
+  "timestamp": "2026-04-21T16:54:55.525162",
+  "total_stocks": 8006,
+  "passed_stocks": [
+    {
+      "code": "00003.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00003",
+      "_original_name": "香港中华煤气",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00006.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00006",
+      "_original_name": "电能实业",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00001.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00001",
+      "_original_name": "长和",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00005.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00005",
+      "_original_name": "汇丰控股",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00011.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00011",
+      "_original_name": "恒生银行",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00012.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00012",
+      "_original_name": "恒基兆业",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00019.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00019",
+      "_original_name": "太古股份公司A",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00017.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00017",
+      "_original_name": "新世界发展",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00016.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00016",
+      "_original_name": "新鸿基地产",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00023.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00023",
+      "_original_name": "东亚银行",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00027.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00027",
+      "_original_name": "银河娱乐",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00066.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00066",
+      "_original_name": "港铁公司",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00083.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00083",
+      "_original_name": "信和置业",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00101.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00101",
+      "_original_name": "华光地产",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00135.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00135",
+      "_original_name": "中国石油",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00151.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00151",
+      "_original_name": "长江生命科技",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00175.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00175",
+      "_original_name": "吉利汽车",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00182.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00182",
+      "_original_name": "融创中国",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00188.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00188",
+      "_original_name": "中国燃气",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00270.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00270",
+      "_original_name": "金沙中国",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00291.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00291",
+      "_original_name": "华润啤酒",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00293.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00293",
+      "_original_name": "国泰航空",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00322.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00322",
+      "_original_name": "康师傅控股",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00336.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00336",
+      "_original_name": "华宝国际",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00338.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00338",
+      "_original_name": "上海石油化工",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00386.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00386",
+      "_original_name": "中国石油化工",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00388.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00388",
+      "_original_name": "香港交易所",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00390.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00390",
+      "_original_name": "中国中铁",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00688.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00688",
+      "_original_name": "中国海外发展",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00700.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00700",
+      "_original_name": "腾讯控股",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00728.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00728",
+      "_original_name": "中国电信",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00817.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00817",
+      "_original_name": "中国金茂",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00813.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00813",
+      "_original_name": "世茂集团",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00811.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00811",
+      "_original_name": "新秀丽",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00823.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00823",
+      "_original_name": "领展房产基金",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00772.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "",
+      "quote_type": "",
+      "market": "",
+      "_original_code": "00772",
+      "_original_name": "阅文集团",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00836.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00836",
+      "_original_name": "华润电力",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00857.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00857",
+      "_original_name": "中国石油股份",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00883.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00883",
+      "_original_name": "中国海洋石油",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00902.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00902",
+      "_original_name": "华能国际电力",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00898.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00898",
+      "_original_name": "长城汽车",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00941.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00941",
+      "_original_name": "中国移动",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00939.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00939",
+      "_original_name": "建设银行",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00992.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00992",
+      "_original_name": "联想集团",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "00998.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "00998",
+      "_original_name": "中信银行",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "01038.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "01038",
+      "_original_name": "长江基建集团",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "01088.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "01088",
+      "_original_name": "海天国际",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "01055.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "01055",
+      "_original_name": "中国南方航空",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    },
+    {
+      "code": "01109.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_original_code": "01109",
+      "_original_name": "华润置地",
+      "_filter_reasons": [
+        "PB缺失",
+        "股息率缺失"
+      ]
+    }
+  ],
+  "failed_stocks": [],
+  "data_errors": 0,
+  "data_missing": 0,
+  "criteria": {
+    "pb_max": 0.5,
+    "dividend_yield_min": 6.0,
+    "market_cap_range": "0M - 1000000M",
+    "price_min": 0.0,
+    "exclude_st": true,
+    "exclude_warn": true
+  },
+  "pass_rate": 0.006120409692730452,
+  "pass_rate_pct": "0.61%"
+}

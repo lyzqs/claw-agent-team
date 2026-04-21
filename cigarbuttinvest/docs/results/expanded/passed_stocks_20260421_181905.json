@@ -1,0 +1,206 @@
+[
+  {
+    "code": "2007.HK",
+    "name": "COUNTRY GARDEN",
+    "price": 0.295,
+    "market_cap": 12728005632,
+    "pb": -8.553109,
+    "dividend_yield": null,
+    "pe": 2.1071427,
+    "sector": "Real Estate",
+    "industry": "Real Estate - Development",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=-8.553满足要求"
+    ]
+  },
+  {
+    "code": "3333.HK",
+    "name": "3333.HK,0P0000N8VK,0",
+    "price": 0.163,
+    "market_cap": 2152300800,
+    "pb": -0.0039024157,
+    "dividend_yield": null,
+    "pe": null,
+    "sector": "",
+    "industry": "",
+    "exchange": "HKG",
+    "quote_type": "MUTUALFUND",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=-0.004满足要求"
+    ]
+  },
+  {
+    "code": "2098.HK",
+    "name": "ZALL SMARTCOM",
+    "price": 0.098,
+    "market_cap": 1215151488,
+    "pb": 0.07510328,
+    "dividend_yield": null,
+    "pe": 9.8,
+    "sector": "Industrials",
+    "industry": "Conglomerates",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=0.075满足要求"
+    ]
+  },
+  {
+    "code": "9668.HK",
+    "name": "CBHB",
+    "price": 0.85,
+    "market_cap": 15097701376,
+    "pb": 0.10487043,
+    "dividend_yield": null,
+    "pe": 2.5757575,
+    "sector": "Financial Services",
+    "industry": "Banks - Regional",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=0.105满足要求"
+    ]
+  },
+  {
+    "code": "0017.HK",
+    "name": "NEW WORLD DEV",
+    "price": 8.82,
+    "market_cap": 22196412416,
+    "pb": 0.13027872,
+    "dividend_yield": null,
+    "pe": null,
+    "sector": "Real Estate",
+    "industry": "Real Estate - Diversified",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=0.130满足要求"
+    ]
+  },
+  {
+    "code": "0986.HK",
+    "name": "DUFU LIQUOR GP",
+    "price": 0.04,
+    "market_cap": 51788240,
+    "pb": 0.13986012,
+    "dividend_yield": null,
+    "pe": 2.0,
+    "sector": "Consumer Cyclical",
+    "industry": "Luxury Goods",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=0.140满足要求"
+    ]
+  },
+  {
+    "code": "1800.HK",
+    "name": "CHINA COMM CONS",
+    "price": 4.54,
+    "market_cap": 120297275392,
+    "pb": 0.2223854,
+    "dividend_yield": 0.0666,
+    "pe": 3.0884352,
+    "sector": "Industrials",
+    "industry": "Engineering & Construction",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=0.222满足要求"
+    ]
+  },
+  {
+    "code": "3319.HK",
+    "name": "A-LIVING",
+    "price": 2.0,
+    "market_cap": 2837081088,
+    "pb": 0.26254073,
+    "dividend_yield": 0.0676,
+    "pe": 25.0,
+    "sector": "Real Estate",
+    "industry": "Real Estate Services",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=0.263满足要求"
+    ]
+  },
+  {
+    "code": "2202.HK",
+    "name": "CHINA VANKE",
+    "price": 3.03,
+    "market_cap": 53141835776,
+    "pb": 0.26919815,
+    "dividend_yield": null,
+    "pe": null,
+    "sector": "Real Estate",
+    "industry": "Real Estate - Development",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=0.269满足要求"
+    ]
+  },
+  {
+    "code": "0390.HK",
+    "name": "CHINA RAILWAY",
+    "price": 4.06,
+    "market_cap": 143392800768,
+    "pb": 0.27382824,
+    "dividend_yield": 0.0703,
+    "pe": 4.185567,
+    "sector": "Industrials",
+    "industry": "Engineering & Construction",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=0.274满足要求"
+    ]
+  },
+  {
+    "code": "0188.HK",
+    "name": "SUNWAH KINGSWAY",
+    "price": 0.24,
+    "market_cap": 183500416,
+    "pb": 0.30690536,
+    "dividend_yield": 0.0833,
+    "pe": null,
+    "sector": "Financial Services",
+    "industry": "Capital Markets",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=0.307满足要求"
+    ]
+  },
+  {
+    "code": "9991.HK",
+    "name": "BAOZUN-W",
+    "price": 7.99,
+    "market_cap": 1392789632,
+    "pb": 0.33287483,
+    "dividend_yield": null,
+    "pe": null,
+    "sector": "Consumer Cyclical",
+    "industry": "Internet Retail",
+    "exchange": "HKG",
+    "quote_type": "EQUITY",
+    "market": "hk_market",
+    "_filter_reasons": [
+      "PB=0.333满足要求"
+    ]
+  }
+]

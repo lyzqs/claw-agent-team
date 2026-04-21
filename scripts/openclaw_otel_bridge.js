@@ -333,7 +333,10 @@ class MetricsStore {
     base.sum += Number(sumValue || 0);
     base.count += Number(countValue || 0);
     for (const [bucketLabels, runningTotal] of bucketSamples) {
-      const bk = this._labelsKey(bucketLabels);
+      // Build bucket key in JSON-object format (not entries-array format) for regex compatibility
+      const bk = JSON.stringify(Object.fromEntries(
+        Object.entries(bucketLabels).sort(([a], [b]) => a.localeCompare(b))
+      ));
       // Accumulate: each event contributes to cumulative bucket counts
       base.buckets[bk] = (base.buckets[bk] || 0) + runningTotal;
     }
@@ -437,20 +440,32 @@ class MetricsStore {
       lines.push(`# HELP ${baseName} ${escapeHelp(metric.help || baseName)}`);
       lines.push(`# TYPE ${baseName} histogram`);
       const bucketEntries = Object.entries(metric.buckets)
-        .filter(([k]) => k.includes('le:'))
+        .filter(([k]) => k.includes('"le"'))
         .sort((a, b) => {
-          const getLe = (k) => { const m = k.match(/le:"?([^"]+)/); return m ? m[1] : ''; };
+          const getLe = (k) => {
+            try { return JSON.parse(k).le || ''; } catch (e) { return ''; }
+          };
           const ai = BOUNDS_ORDER.indexOf(getLe(a[0]));
           const bi = BOUNDS_ORDER.indexOf(getLe(b[0]));
           return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
         });
       for (const [bk, count] of bucketEntries) {
-        const m = bk.match(/le:"?([^"]+)/);
-        if (!m) continue;
-        const le = m[1];
-        const labelPart = bk.replace(/,le:"?[^"]+"?/, '').replace(/^\{/, '').replace(/\}$/, '');
-        const fullLabels = `{${labelPart}}`;
-        lines.push(`${baseName}_bucket${fullLabels} ${count}`);
+        // Extract le value via JSON.parse (reliable for sorted-JSON-object bucket keys)
+        let le;
+        try {
+          const parsed = JSON.parse(bk);
+          le = parsed.le;
+        } catch (e) {
+          continue;
+        }
+        // Extract non-le labels into Prometheus format
+        const nonLeEntries = Object.entries(JSON.parse(bk))
+          .filter(([k]) => k !== 'le')
+          .map(([k, v]) => `${k}="${String(v).replace(/"/g, '\\"')}"`);
+        const labelPart = nonLeEntries.join(',');
+        const fullLabels = labelPart ? `{${labelPart},le="${le}"}` : `{le="${le}"}`;
+        const bucketLine = `${baseName}_bucket${fullLabels} ${count}`;
+        lines.push(bucketLine);
       }
       const labelPart2 = Object.entries(metric.labels).map(([k, v]) => `${k}="${escapeLabelValue(v)}"`).join(',');
       lines.push(`${baseName}_sum{${labelPart2}} ${metric.sum}`);

@@ -901,7 +901,7 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "sum(increase(openclaw_upstream_newapi_errors_total{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[24h])) / clamp_min(sum(increase(openclaw_upstream_newapi_requests_total{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[24h])), 1)",
+          "expr": "clamp_min(sum(increase(openclaw_upstream_newapi_errors_total{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[24h])), 1) / sum(increase(openclaw_upstream_newapi_requests_total{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[24h]))",
           "legendFormat": "错误率",
           "range": true,
           "refId": "A"

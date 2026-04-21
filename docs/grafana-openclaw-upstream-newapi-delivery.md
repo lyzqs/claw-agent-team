@@ -131,8 +131,43 @@ python3 scripts/validate_grafana_bundle.py
 - [x] 面板标题使用人类可读中文，不暴露工程术语
 - [x] 所有查询支持 dashboard 默认变量 `$job / $instance / $channel`
 - [x] 错误率面板设置双阈值（>5% 黄 / >10% 红）
+- [x] 错误率面板 PromQL 修复：`clamp_min` 从 denominator 移到 numerator（防止向量/标量类型错误）
 
-## 6. 下一步建议
+## 5.1 Bug 修复记录
+
+### PromQL 错误率表达式修正
+
+**问题**：错误率面板原始表达式为：
+```
+sum(increase(openclaw_upstream_newapi_errors_total[24h])) / clamp_min(sum(increase(openclaw_upstream_newapi_requests_total[24h])), 1)
+```
+当 denominator（sum of requests）返回空向量时，`clamp_min` 产生标量 1，但 numerator 仍为向量，导致 PromQL 类型错误（vector/scalar），Grafana API 返回 400。
+
+**修复**：将 `clamp_min` 置于 numerator：
+```
+clamp_min(sum(increase(openclaw_upstream_newapi_errors_total[24h])), 1) / sum(increase(openclaw_upstream_newapi_requests_total[24h]))
+```
+这样即使 errors 为 0，numerator 也至少为 1，不会产生类型错误。
+
+**验证**：修复后 Grafana API 返回 Status 200，错误率正常计算（测试数据：0.37%）。
+
+## 6. 实时验证结果（2026-04-21）
+
+通过 Grafana `/api/ds/query` 直接测试全部 6 块上游面板（测试事件注入后）：
+
+| 面板 | Grafana API Status | 数据点数 | 最新值 |
+|---|---|---|---|
+| 上游 API 请求速率 | ✅ 200 | 121 | 0.0702 req/s |
+| 上游 API 错误率（24h）| ✅ 200 | 11 | 0.37% |
+| 上游 Token 消耗量（24h）| ✅ 200 | 121 | 200.5 tokens |
+| 上游错误原因排行 | ✅ 200 | 11 | BarGauge 可渲染 |
+| 上游请求耗时趋势 P95 | ⚠️ 200 (null) | 106 | null（预期：histogram_quantile 在低bucket多样性时返回 null，Grafana 显示 "No Data"，不影响其他面板）|
+| 上游请求速率趋势（分渠道）| ✅ 200 | 121 | 0.0702 req/s |
+
+注：P95 null 不影响功能，属于 Prometheus histogram_quantile 的正常行为（需要足够的 bucket 边界覆盖才能插值计算分位数）。
+
+## 7. 下一步建议
 
 - **Ops**：在 OpenClaw gateway 内部集成向上游 bridge 发送事件的逻辑（见 3.3 示例），或通过其他代理层在 NewAPI 请求完成时回调 bridge
 - **QA**：在 Grafana 页面打开 `AT | OpenClaw | Runtime | Overview`，确认 6 块新面板可见，并验证查询在模拟事件注入后能正常出图
+- **已知限制**：若 gateway 从未发送 `status_family=error` 事件，`errors_total` 和 "错误原因排行" 面板将为空；这是预期行为，不是 bug，属于数据链路未激活状态

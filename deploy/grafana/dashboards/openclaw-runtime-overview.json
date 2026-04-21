@@ -1128,7 +1128,7 @@
             "uid": "prometheus-local-main"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (channel) (rate(openclaw_upstream_newapi_request_duration_ms_bucket{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le, channel) (rate(openclaw_upstream_newapi_request_duration_ms_bucket{job=~\"$job\",instance=~\"$instance\",channel=~\"$channel\",status_family=~\"success\"}[24h])))",
           "legendFormat": "P95 {{channel}}",
           "range": true,
           "refId": "A"

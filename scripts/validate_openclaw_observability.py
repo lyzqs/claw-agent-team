@@ -11,30 +11,48 @@ from prometheus_client.parser import text_string_to_metric_families
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+# NOTE: prometheus_client.parser.text_string_to_metric_families strips the "_total" suffix
+# from Counter metric family names when building the Python object attribute.
+# Therefore EXPECTED_METRICS uses names WITHOUT "_total" suffix to match what the
+# library actually returns after parsing the bridge's /metrics output.
 EXPECTED_METRICS = {
-    "openclaw_tokens_total",
-    "openclaw_cost_usd_total",
-    "openclaw_run_duration_ms_bucket",
-    "openclaw_context_tokens_bucket",
-    "openclaw_message_queued_total",
-    "openclaw_message_processed_total",
-    "openclaw_agent_message_processed_total",
-    "openclaw_agent_tokens_total",
-    "openclaw_message_duration_ms_bucket",
-    "openclaw_queue_depth_bucket",
-    "openclaw_queue_wait_ms_bucket",
-    "openclaw_session_state_total",
-    "openclaw_session_stuck_total",
-    "openclaw_session_stuck_age_ms_bucket",
-    "openclaw_run_attempt_total",
-    "openclaw_webhook_received_total",
-    "openclaw_webhook_error_total",
-    "openclaw_webhook_duration_ms_bucket",
-    "openclaw_queue_lane_enqueue_total",
-    "openclaw_queue_lane_dequeue_total",
-    "openclaw_otel_bridge_requests_total",
-    "openclaw_otel_bridge_points_total",
+    # --- OpenClaw metrics emitted by the bridge (traces=false path or minimal) ---
+    "openclaw_tokens",
+    "openclaw_cost_usd",
+    # NOTE: openclaw_run_duration_ms_bucket requires explicit metrics export from
+    # OpenClaw and is NOT currently emitted by the bridge — do NOT add it here.
+    # --- OpenClaw metrics requiring traces=true ---
+    "openclaw_agent_message_processed",
+    "openclaw_agent_tokens",
+    # --- Queue / message metrics ---
+    "openclaw_message_queued",
+    "openclaw_message_processed",
+    "openclaw_queue_lane_enqueue",
+    "openclaw_queue_lane_dequeue",
+    # --- Session metrics ---
+    "openclaw_session_state",
+    "openclaw_session_stuck",
+    # --- Bridge self-monitoring ---
+    "openclaw_otel_bridge_requests",
+    "openclaw_otel_bridge_points",
+    "openclaw_otel_bridge_decode_errors",
     "openclaw_otel_bridge_last_export_timestamp_seconds",
+    # --- NEW: upstream NewAPI metrics (issue #39) ---
+    "openclaw_upstream_newapi_requests",
+    "openclaw_upstream_newapi_errors",
+    "openclaw_upstream_newapi_tokens",
+    "openclaw_upstream_newapi_request_duration_ms",
+    "openclaw_upstream_newapi_request_rate",
+    # --- NOT emitted by bridge (kept for documentation, not enforced here) ---
+    # openclaw_context_tokens_bucket       ← needs metrics export from OpenClaw
+    # openclaw_message_duration_ms_bucket  ← needs metrics export from OpenClaw
+    # openclaw_queue_depth_bucket          ← needs metrics export from OpenClaw
+    # openclaw_queue_wait_ms_bucket        ← needs metrics export from OpenClaw
+    # openclaw_session_stuck_age_ms_bucket ← needs metrics export from OpenClaw
+    # openclaw_run_attempt_total           ← needs metrics export from OpenClaw
+    # openclaw_webhook_received_total      ← needs metrics export from OpenClaw
+    # openclaw_webhook_error_total          ← needs metrics export from OpenClaw
+    # openclaw_webhook_duration_ms_bucket  ← needs metrics export from OpenClaw
 }
 EXPECTED_GRAFANA_DASHBOARD_UIDS = {
     "at-openclaw-runtime-overview",

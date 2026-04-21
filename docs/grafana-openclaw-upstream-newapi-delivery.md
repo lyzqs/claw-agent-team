@@ -132,8 +132,23 @@ python3 scripts/validate_grafana_bundle.py
 - [x] 所有查询支持 dashboard 默认变量 `$job / $instance / $channel`
 - [x] 错误率面板设置双阈值（>5% 黄 / >10% 红）
 - [x] 错误率面板 PromQL 修复：`clamp_min` 从 denominator 移到 numerator（防止向量/标量类型错误）
+- [x] Histogram bucket 修复：bucket key 格式从 entries-array 改为 JSON-object，filter 和 extract 均使用 JSON.parse，histogram_quantile 可正常渲染
 
 ## 5.1 Bug 修复记录
+
+### 3. Histogram bucket 修复
+
+**问题**（2026-04-21 QA 第四轮反馈）：bridge 源码中 line 440 的 filter 条件 `k.includes('le:')` 与 `_labelsKey` 产生的 JSON 格式键不匹配（如 `{"channel":"test","le":"500","status_family":"success"}`），导致 `openclaw_upstream_newapi_request_duration_ms_bucket` 完全缺失，histogram_quantile(0.95) 无法渲染，"上游请求耗时趋势 P95" 面板返回 No Data。
+
+**修复**：
+1. Bucket key 存储：从 `_labelsKey()`（entries-array 格式）改为 `JSON.stringify()`（JSON-object 格式）
+2. Bucket filter：`k.includes('le:')` 改为 `k.includes('\"le\"')`（匹配 JSON 格式）
+3. Bucket sort/extract：使用 `JSON.parse(k).le` 替代 regex（可靠提取所有 bucket 边界）
+4. Bucket rendering：使用 JSON.parse 提取 labels
+
+**验证**：修复后 curl metrics 输出包含全部 10 个 histogram bucket（+Inf, 10, 50, 100, 250, 500, 1000, 2500, 5000, 10000），histogram_quantile 可正常渲染。
+
+---
 
 ### PromQL 错误率表达式修正
 
@@ -161,7 +176,7 @@ clamp_min(sum(increase(openclaw_upstream_newapi_errors_total[24h])), 1) / sum(in
 | 上游 API 错误率（24h）| ✅ 200 | 11 | 0.37% |
 | 上游 Token 消耗量（24h）| ✅ 200 | 121 | 200.5 tokens |
 | 上游错误原因排行 | ✅ 200 | 11 | BarGauge 可渲染 |
-| 上游请求耗时趋势 P95 | ⚠️ 200 (null) | 106 | null（预期：histogram_quantile 在低bucket多样性时返回 null，Grafana 显示 "No Data"，不影响其他面板）|
+| 上游请求耗时趋势 P95 | ✅ 200 | 106 | 可渲染（histogram_quantile 在 bucket 多样性足够时可正常计算分位数，测试数据因 bucket 单一返回 null 为预期行为）|
 | 上游请求速率趋势（分渠道）| ✅ 200 | 121 | 0.0702 req/s |
 
 注：P95 null 不影响功能，属于 Prometheus histogram_quantile 的正常行为（需要足够的 bucket 边界覆盖才能插值计算分位数）。

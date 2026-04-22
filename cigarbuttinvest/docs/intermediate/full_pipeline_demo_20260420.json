@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-04-20",
+  "module_version": "Issue #7",
+  "results": [
+    {
+      "code": "0083.HK",
+      "name": "SINO LAND",
+      "price": 11.74,
+      "pb": 0.653093,
+      "div_yield": 4.94,
+      "nav_tier": "T2",
+      "p1_status": "MARGINAL",
+      "matched": [],
+      "rating": "D",
+      "passed": false
+    },
+    {
+      "code": "0001.HK",
+      "name": "CKH HOLDINGS",
+      "price": 64.2,
+      "pb": 0.43692487,
+      "div_yield": 3.6,
+      "nav_tier": "T2",
+      "p1_status": "MARGINAL",
+      "matched": [],
+      "rating": "D",
+      "passed": false
+    },
+    {
+      "code": "0823.HK",
+      "name": "LINK REIT",
+      "price": 38.42,
+      "pb": 0.6279214,
+      "div_yield": 6.88,
+      "nav_tier": "T2",
+      "p1_status": "MARGINAL",
+      "matched": [],
+      "rating": "D",
+      "passed": false
+    }
+  ]
+}

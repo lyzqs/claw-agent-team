@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-04-20T20:01:56.605762",
+  "total_stocks": 100,
+  "mainboard_count": 0,
+  "gem_count": 0,
+  "success_count": 100,
+  "failed_count": 0,
+  "success_rate": 1.0,
+  "batch_count": 4,
+  "avg_time_per_stock": 0.3200708413124084,
+  "total_time_seconds": 32.007084131240845,
+  "success_rate_pct": "100.0%"
+}

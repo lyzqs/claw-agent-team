@@ -1,0 +1,2090 @@
+{
+  "stocks": [
+    {
+      "code": "0011.HK",
+      "name": "恒生银行",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "fifty_two_week_high": null,
+      "fifty_two_week_low": null,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": null,
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": null,
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（2个警告）",
+        "warnings": [
+          "PB 数据缺失",
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 2,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "0017.HK",
+      "name": "NEW WORLD DEV",
+      "price": 8.55,
+      "market_cap": 21516931072.0,
+      "pb": 0.1262906,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Diversified",
+      "fifty_two_week_high": 12.45,
+      "fifty_two_week_low": 4.28,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "0019.HK",
+      "name": "SWIRE PACIFIC A",
+      "price": 84.6,
+      "market_cap": 306922061824.0,
+      "pb": 0.43954214,
+      "dividend_yield": 4.49,
+      "pe": 40.094788,
+      "sector": "Industrials",
+      "industry": "Conglomerates",
+      "fifty_two_week_high": 89.8,
+      "fifty_two_week_low": 62.7,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率4.5% ≥ 4% 且 PB=0.44 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=78.5%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "0083.HK",
+      "name": "SINO LAND",
+      "price": 11.74,
+      "market_cap": 111347965952.0,
+      "pb": 0.653093,
+      "dividend_yield": 4.93,
+      "pe": 28.634146,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "fifty_two_week_high": 13.3,
+      "fifty_two_week_low": 7.63,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率4.9% ≥ 4% 且 PB=0.65 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "0101.HK",
+      "name": "HANG LUNG PPT",
+      "price": 9.04,
+      "market_cap": 45712084992.0,
+      "pb": 0.3392884,
+      "dividend_yield": 5.64,
+      "pe": 24.432432,
+      "sector": "Real Estate",
+      "industry": "Real Estate Services",
+      "fifty_two_week_high": 10.3,
+      "fifty_two_week_low": 6.04,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率5.6% ≥ 4% 且 PB=0.34 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "0188.HK",
+      "name": "SUNWAH KINGSWAY",
+      "price": 0.24,
+      "market_cap": 183500416.0,
+      "pb": 0.30690536,
+      "dividend_yield": 8.33,
+      "pe": null,
+      "sector": "Financial Services",
+      "industry": "Capital Markets",
+      "fifty_two_week_high": 0.38,
+      "fifty_two_week_low": 0.224,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率8.3% ≥ 6% 且 PB=0.31 ≤ 0.5"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "0195.HK",
+      "name": "GREENTECH INTL",
+      "price": 0.28,
+      "market_cap": 382480000.0,
+      "pb": 0.38199183,
+      "dividend_yield": null,
+      "pe": 5.6,
+      "sector": "Basic Materials",
+      "industry": "Other Industrial Metals & Mining",
+      "fifty_two_week_high": 0.45,
+      "fifty_two_week_low": 0.249,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "0267.HK",
+      "name": "CITIC",
+      "price": 12.82,
+      "market_cap": 372937162752.0,
+      "pb": 0.41462538,
+      "dividend_yield": 5.12,
+      "pe": 5.5497837,
+      "sector": "Industrials",
+      "industry": "Conglomerates",
+      "fifty_two_week_high": 13.18,
+      "fifty_two_week_low": 8.86,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率5.1% ≥ 4% 且 PB=0.41 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "0318.HK",
+      "name": "VONGROUP",
+      "price": 0.62,
+      "market_cap": 178720512.0,
+      "pb": 0.32224533,
+      "dividend_yield": null,
+      "pe": 15.5,
+      "sector": "Technology",
+      "industry": "Information Technology Services",
+      "fifty_two_week_high": 0.8,
+      "fifty_two_week_low": 0.305,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "0386.HK",
+      "name": "SINOPEC CORP",
+      "price": 4.54,
+      "market_cap": 758457303040.0,
+      "pb": 0.5770754,
+      "dividend_yield": 4.91,
+      "pe": 14.645161,
+      "sector": "Energy",
+      "industry": "Oil & Gas Integrated",
+      "fifty_two_week_high": 5.7,
+      "fifty_two_week_low": 3.86,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率4.9% ≥ 4% 且 PB=0.58 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=85.8%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "0390.HK",
+      "name": "CHINA RAILWAY",
+      "price": 4.05,
+      "market_cap": 143039627264.0,
+      "pb": 0.27290994,
+      "dividend_yield": 7.03,
+      "pe": 4.1752577,
+      "sector": "Industrials",
+      "industry": "Engineering & Construction",
+      "fifty_two_week_high": 5.28,
+      "fifty_two_week_low": 3.32,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率7.0% ≥ 6% 且 PB=0.27 ≤ 0.5"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=88.1%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "0449.HK",
+      "name": "佐丹奴",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "fifty_two_week_high": null,
+      "fifty_two_week_low": null,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": null,
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": null,
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（2个警告）",
+        "warnings": [
+          "PB 数据缺失",
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 2,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "0604.HK",
+      "name": "SHENZHEN INVEST",
+      "price": 0.77,
+      "market_cap": 6852070912.0,
+      "pb": 0.19225967,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "fifty_two_week_high": 1.3,
+      "fifty_two_week_low": 0.68,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "0823.HK",
+      "name": "LINK REIT",
+      "price": 38.42,
+      "market_cap": 99851239424.0,
+      "pb": 0.6279214,
+      "dividend_yield": 6.87,
+      "pe": null,
+      "sector": "Real Estate",
+      "industry": "REIT - Retail",
+      "fifty_two_week_high": 45.05,
+      "fifty_two_week_low": 34.12,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率6.9% ≥ 4% 且 PB=0.63 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "0912.HK",
+      "name": "SUGA INT'L",
+      "price": 1.09,
+      "market_cap": 310421120.0,
+      "pb": 0.3913824,
+      "dividend_yield": 7.34,
+      "pe": 9.909091,
+      "sector": "Technology",
+      "industry": "Consumer Electronics",
+      "fifty_two_week_high": 1.36,
+      "fifty_two_week_low": 0.9,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率7.3% ≥ 6% 且 PB=0.39 ≤ 0.5"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "1109.HK",
+      "name": "CHINA RES LAND",
+      "price": 31.4,
+      "market_cap": 223911493632.0,
+      "pb": 0.6727913,
+      "dividend_yield": 4.19,
+      "pe": 7.6772614,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "fifty_two_week_high": 34.12,
+      "fifty_two_week_low": 24.25,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率4.2% ≥ 4% 且 PB=0.67 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "1282.HK",
+      "name": "RENZE HARVEST",
+      "price": 0.107,
+      "market_cap": 535000000.0,
+      "pb": 0.06691682,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Industrials",
+      "industry": "Industrial Distribution",
+      "fifty_two_week_high": 0.239,
+      "fifty_two_week_low": 0.081,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（2个警告）",
+        "warnings": [
+          "PB=0.07 极低，可能存在特殊情况",
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 2,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "1288.HK",
+      "name": "ABC",
+      "price": 6.17,
+      "market_cap": 3090397790208.0,
+      "pb": 0.6787294,
+      "dividend_yield": 4.61,
+      "pe": 6.855556,
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified",
+      "fifty_two_week_high": 6.41,
+      "fifty_two_week_low": 4.53,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率4.6% ≥ 4% 且 PB=0.68 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=93.9%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "1382.HK",
+      "name": "PACIFICTEXTILES",
+      "price": 1.18,
+      "market_cap": 1635915392.0,
+      "pb": 0.56351477,
+      "dividend_yield": 8.77,
+      "pe": 11.799999,
+      "sector": "Consumer Cyclical",
+      "industry": "Textile Manufacturing",
+      "fifty_two_week_high": 1.58,
+      "fifty_two_week_low": 1.06,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率8.8% ≥ 4% 且 PB=0.56 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "1398.HK",
+      "name": "ICBC",
+      "price": 7.19,
+      "market_cap": 3363883712512.0,
+      "pb": 0.5775157,
+      "dividend_yield": 4.94,
+      "pe": 6.252174,
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified",
+      "fifty_two_week_high": 7.2,
+      "fifty_two_week_low": 5.15,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率4.9% ≥ 4% 且 PB=0.58 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=81.4%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "1700.HK",
+      "name": "同仁堂",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "fifty_two_week_high": null,
+      "fifty_two_week_low": null,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": null,
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": null,
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（2个警告）",
+        "warnings": [
+          "PB 数据缺失",
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 2,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "1798.HK",
+      "name": "DATANG RENEW",
+      "price": 1.51,
+      "market_cap": 10983287808.0,
+      "pb": 0.48934788,
+      "dividend_yield": 6.6,
+      "pe": 5.0333333,
+      "sector": "Utilities",
+      "industry": "Utilities - Renewable",
+      "fifty_two_week_high": 2.82,
+      "fifty_two_week_low": 1.44,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率6.6% ≥ 6% 且 PB=0.49 ≤ 0.5"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=65.6%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "1800.HK",
+      "name": "CHINA COMM CONS",
+      "price": 4.57,
+      "market_cap": 121092202496.0,
+      "pb": 0.20785014,
+      "dividend_yield": 6.62,
+      "pe": 3.1088436,
+      "sector": "Industrials",
+      "industry": "Engineering & Construction",
+      "fifty_two_week_high": 6.11,
+      "fifty_two_week_low": 4.34,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率6.6% ≥ 6% 且 PB=0.21 ≤ 0.5"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=55.4%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "1988.HK",
+      "name": "MINSHENG BANK",
+      "price": 3.66,
+      "market_cap": 171128061952.0,
+      "pb": 0.2470469,
+      "dividend_yield": 6.05,
+      "pe": 5.083333,
+      "sector": "Financial Services",
+      "industry": "Banks - Regional",
+      "fifty_two_week_high": 5.55,
+      "fifty_two_week_low": 3.51,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率6.0% ≥ 6% 且 PB=0.25 ≤ 0.5"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=82.2%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "2007.HK",
+      "name": "COUNTRY GARDEN",
+      "price": 0.3,
+      "market_cap": 12943735808.0,
+      "pb": -8.698078,
+      "dividend_yield": null,
+      "pe": 2.1428573,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "fifty_two_week_high": 0.72,
+      "fifty_two_week_low": 0.25,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "D",
+        "rating_desc": "否决: PB 为负，财务数据异常",
+        "warnings": [
+          "股息率数据缺失"
+        ],
+        "rejects": [
+          "PB 为负，财务数据异常"
+        ],
+        "warning_count": 1,
+        "reject_count": 1
+      },
+      "rating": "D",
+      "passed": false
+    },
+    {
+      "code": "2078.HK",
+      "name": "PANASIALUM",
+      "price": 0.125,
+      "market_cap": 149925632.0,
+      "pb": 0.21777004,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Basic Materials",
+      "industry": "Aluminum",
+      "fifty_two_week_high": 0.193,
+      "fifty_two_week_low": 0.069,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "2098.HK",
+      "name": "ZALL SMARTCOM",
+      "price": 0.097,
+      "market_cap": 1202752000.0,
+      "pb": 0.074270554,
+      "dividend_yield": null,
+      "pe": 9.700001,
+      "sector": "Industrials",
+      "industry": "Conglomerates",
+      "fifty_two_week_high": 0.31,
+      "fifty_two_week_low": 0.085,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（2个警告）",
+        "warnings": [
+          "PB=0.07 极低，可能存在特殊情况",
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 2,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "2202.HK",
+      "name": "CHINA VANKE",
+      "price": 3.05,
+      "market_cap": 53492609024.0,
+      "pb": 0.2707331,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "fifty_two_week_high": 6.18,
+      "fifty_two_week_low": 2.85,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（2个警告）",
+        "warnings": [
+          "股息率数据缺失",
+          "市值计算偏差=87.4%"
+        ],
+        "rejects": [],
+        "warning_count": 2,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "3300.HK",
+      "name": "CHINA GLASS",
+      "price": 0.495,
+      "market_cap": 833688064.0,
+      "pb": -0.17284417,
+      "dividend_yield": null,
+      "pe": 7.071429,
+      "sector": "Basic Materials",
+      "industry": "Building Materials",
+      "fifty_two_week_high": 0.76,
+      "fifty_two_week_low": 0.231,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "D",
+        "rating_desc": "否决: PB 为负，财务数据异常",
+        "warnings": [
+          "股息率数据缺失"
+        ],
+        "rejects": [
+          "PB 为负，财务数据异常"
+        ],
+        "warning_count": 1,
+        "reject_count": 1
+      },
+      "rating": "D",
+      "passed": false
+    },
+    {
+      "code": "3319.HK",
+      "name": "A-LIVING",
+      "price": 2.01,
+      "market_cap": 2851266560.0,
+      "pb": 0.26361784,
+      "dividend_yield": 7.0,
+      "pe": 25.125,
+      "sector": "Real Estate",
+      "industry": "Real Estate Services",
+      "fifty_two_week_high": 3.93,
+      "fifty_two_week_low": 1.7,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率7.0% ≥ 6% 且 PB=0.26 ≤ 0.5"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "3328.HK",
+      "name": "BANKCOMM",
+      "price": 7.25,
+      "market_cap": 738128232448.0,
+      "pb": 0.48883423,
+      "dividend_yield": 5.07,
+      "pe": 5.8,
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified",
+      "fifty_two_week_high": 7.62,
+      "fifty_two_week_low": 6.33,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率5.1% ≥ 4% 且 PB=0.49 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=65.6%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "3333.HK",
+      "name": "3333.HK,0P0000N8VK,0",
+      "price": 0.163,
+      "market_cap": 2152300800.0,
+      "pb": -0.0039024157,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "fifty_two_week_high": 0.212,
+      "fifty_two_week_low": 0.162,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "D",
+        "rating_desc": "否决: PB 为负，财务数据异常",
+        "warnings": [
+          "股息率数据缺失"
+        ],
+        "rejects": [
+          "PB 为负，财务数据异常"
+        ],
+        "warning_count": 1,
+        "reject_count": 1
+      },
+      "rating": "D",
+      "passed": false
+    },
+    {
+      "code": "3360.HK",
+      "name": "FE HORIZON",
+      "price": 7.43,
+      "market_cap": 35166040064.0,
+      "pb": 0.59763306,
+      "dividend_yield": 7.51,
+      "pe": 7.8210526,
+      "sector": "Financial Services",
+      "industry": "Credit Services",
+      "fifty_two_week_high": 8.54,
+      "fifty_two_week_low": 5.73,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率7.5% ≥ 4% 且 PB=0.60 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "3383.HK",
+      "name": "AGILE GROUP",
+      "price": 0.243,
+      "market_cap": 1226189568.0,
+      "pb": 0.5523432,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "fifty_two_week_high": 0.56,
+      "fifty_two_week_low": 0.23,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "3800.HK",
+      "name": "GCL TECH",
+      "price": 1.01,
+      "market_cap": 33028808704.0,
+      "pb": 0.6550846,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Technology",
+      "industry": "Solar",
+      "fifty_two_week_high": 1.51,
+      "fifty_two_week_low": 0.75,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "3868.HK",
+      "name": "XINYI ENERGY",
+      "price": 1.2,
+      "market_cap": 10223654912.0,
+      "pb": 0.6716662,
+      "dividend_yield": 6.15,
+      "pe": 8.571429,
+      "sector": "Utilities",
+      "industry": "Utilities - Renewable",
+      "fifty_two_week_high": 1.98,
+      "fifty_two_week_low": 0.86,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率6.2% ≥ 4% 且 PB=0.67 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    },
+    {
+      "code": "3969.HK",
+      "name": "CHINA CRSC",
+      "price": 3.65,
+      "market_cap": 65019432960.0,
+      "pb": 0.7100869,
+      "dividend_yield": 5.13,
+      "pe": 9.358975,
+      "sector": "Industrials",
+      "industry": "Railroads",
+      "fifty_two_week_high": 3.95,
+      "fifty_two_week_low": 3.02,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=88.9%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "3988.HK",
+      "name": "BANK OF CHINA",
+      "price": 5.21,
+      "market_cap": 2211812212736.0,
+      "pb": 0.5420043,
+      "dividend_yield": 4.95,
+      "pe": 6.1294117,
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified",
+      "fifty_two_week_high": 5.23,
+      "fifty_two_week_low": 4.11,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率5.0% ≥ 4% 且 PB=0.54 ≤ 0.7（放宽标准）"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（1个警告）",
+        "warnings": [
+          "市值计算偏差=80.3%"
+        ],
+        "rejects": [],
+        "warning_count": 1,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "6837.HK",
+      "name": "海通证券",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "fifty_two_week_high": null,
+      "fifty_two_week_low": null,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": null,
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": null,
+      "subtype": {
+        "matched": false,
+        "matched_types": [],
+        "A": {
+          "matched": false,
+          "reason": ""
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "B",
+        "rating_desc": "可接受（2个警告）",
+        "warnings": [
+          "PB 数据缺失",
+          "股息率数据缺失"
+        ],
+        "rejects": [],
+        "warning_count": 2,
+        "reject_count": 0
+      },
+      "rating": "B",
+      "passed": false
+    },
+    {
+      "code": "6989.HK",
+      "name": "EXCELLENCE CM",
+      "price": 0.66,
+      "market_cap": 805429760.0,
+      "pb": 0.18638737,
+      "dividend_yield": 21.12,
+      "pe": 2.4444444,
+      "sector": "Real Estate",
+      "industry": "Real Estate Services",
+      "fifty_two_week_high": 1.55,
+      "fifty_two_week_low": 0.59,
+      "nav": {
+        "t0": null,
+        "t1": null,
+        "t2": null,
+        "best_tier": "N/A",
+        "margin_t0": null,
+        "margin_t1": null,
+        "margin_t2": null
+      },
+      "nav_tier": "N/A",
+      "subtype": {
+        "matched": true,
+        "matched_types": [
+          "A"
+        ],
+        "A": {
+          "matched": true,
+          "reason": "股息率21.1% ≥ 6% 且 PB=0.19 ≤ 0.5"
+        },
+        "B": {
+          "matched": false,
+          "reason": "数据不足，无法计算控股折价"
+        },
+        "C": {
+          "matched": false,
+          "reason": "数据不足，无法判断事件催化"
+        }
+      },
+      "factcheck": {
+        "rating": "A",
+        "rating_desc": "通过 Fact Check",
+        "warnings": [],
+        "rejects": [],
+        "warning_count": 0,
+        "reject_count": 0
+      },
+      "rating": "A",
+      "passed": false
+    }
+  ],
+  "params": {
+    "type_a_dividend_yield": 6.0,
+    "type_a_pb": 0.5,
+    "type_a_consecutive_years": 5,
+    "type_b_discount": 0.3,
+    "type_b_coverage": 0.3,
+    "type_c_nav_ratio": 1.5,
+    "type_c_probability": 0.5,
+    "nav_t0_threshold": 1.0,
+    "nav_t1_threshold": 0.8,
+    "nav_t2_threshold": 0.7
+  },
+  "filtered_at": "2026-04-20T18:48:14.495885"
+}

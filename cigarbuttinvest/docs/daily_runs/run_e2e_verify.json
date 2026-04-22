@@ -1,0 +1,35 @@
+{
+  "run_id": "e2e_verify",
+  "start_time": "2026-04-20T18:53:08.912755",
+  "status": "running",
+  "trading_day": true,
+  "dry_run": true,
+  "steps": [
+    {
+      "name": "trading_day_check",
+      "status": "success"
+    },
+    {
+      "name": "data_fetch",
+      "status": "success",
+      "stocks_count": 3
+    },
+    {
+      "name": "screening",
+      "status": "success",
+      "filtered_count": 0
+    },
+    {
+      "name": "report_generation",
+      "status": "success",
+      "report_path": "/root/.openclaw/workspace-agent-team/cigarbuttinvest/docs/daily_runs/烟蒂股筛选报告_2026-04-20.md"
+    },
+    {
+      "name": "save_run_record",
+      "status": "running"
+    }
+  ],
+  "errors": [],
+  "end_time": "2026-04-20T18:53:13.673766",
+  "duration_seconds": 4.761011
+}

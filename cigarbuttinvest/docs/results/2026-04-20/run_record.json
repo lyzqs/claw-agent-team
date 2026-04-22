@@ -1,0 +1,37 @@
+{
+  "run_id": "first_run_20260420",
+  "start_time": "2026-04-20T18:44:00Z",
+  "end_time": "2026-04-20T18:48:14.500785",
+  "stocks_fetched": 100,
+  "stocks_filtered": 40,
+  "stocks_passed": 0,
+  "subtype_distribution": {
+    "A": 22,
+    "B": 0,
+    "C": 0
+  },
+  "nav_tier_distribution": {
+    "T0": 0,
+    "T1": 0,
+    "T2": 0,
+    "T1(near)": 0,
+    "N/A": 36
+  },
+  "rating_distribution": {
+    "B": 25,
+    "A": 12,
+    "D": 3
+  },
+  "steps": [
+    {
+      "step": "data_fetch",
+      "stocks": 100,
+      "time": "2026-04-20T18:48:14.476349"
+    },
+    {
+      "step": "screening",
+      "filtered": 40,
+      "time": "2026-04-20T18:48:14.495721"
+    }
+  ]
+}

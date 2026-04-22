@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-04-20T22:50:36.470448",
+  "samples": [
+    {
+      "code": "0001.HK",
+      "name": "CKH HOLDINGS",
+      "price": 64.2,
+      "nav_tier": "T2",
+      "matched_types": [],
+      "pillar1": "MARGINAL",
+      "pillar2": "UNKNOWN",
+      "pillar3": "NO_PATH",
+      "total_score": 2,
+      "fc_rating": "D"
+    },
+    {
+      "code": "0083.HK",
+      "name": "SINO LAND",
+      "price": 11.74,
+      "nav_tier": "T2",
+      "matched_types": [],
+      "pillar1": "MARGINAL",
+      "pillar2": "UNKNOWN",
+      "pillar3": "NO_PATH",
+      "total_score": 2,
+      "fc_rating": "D"
+    },
+    {
+      "code": "0823.HK",
+      "name": "LINK REIT",
+      "price": 38.42,
+      "nav_tier": "T2",
+      "matched_types": [],
+      "pillar1": "MARGINAL",
+      "pillar2": "UNKNOWN",
+      "pillar3": "NO_PATH",
+      "total_score": 2,
+      "fc_rating": "D"
+    }
+  ]
+}

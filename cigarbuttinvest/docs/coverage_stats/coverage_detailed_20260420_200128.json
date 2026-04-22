@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-04-20T20:01:14.721938",
+  "total_stocks": 50,
+  "mainboard_count": 0,
+  "gem_count": 0,
+  "success_count": 50,
+  "failed_count": 0,
+  "success_rate": 1.0,
+  "batch_count": 2,
+  "avg_time_per_stock": 0.27382813930511474,
+  "total_time_seconds": 13.691406965255737,
+  "success_rate_pct": "100.0%",
+  "quality_check": {
+    "total": 50,
+    "valid": 50,
+    "invalid": 0,
+    "quality_rate": 1.0,
+    "issues_summary": {}
+  },
+  "failed_sample": [],
+  "elapsed_seconds": 13.691449642181396,
+  "parameters": {
+    "max_stocks": 50,
+    "batch_size": 25,
+    "max_workers": 5,
+    "timeout": 10,
+    "max_retries": 1
+  }
+}

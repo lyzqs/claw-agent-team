@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-04-20T22:50:38.626933",
+  "samples": [
+    {
+      "code": "0001.HK",
+      "name": "CKH HOLDINGS",
+      "rating": "D",
+      "warnings": 0,
+      "rejects": 1,
+      "items_passed": 23,
+      "items_total": 23
+    },
+    {
+      "code": "0083.HK",
+      "name": "SINO LAND",
+      "rating": "D",
+      "warnings": 1,
+      "rejects": 1,
+      "items_passed": 22,
+      "items_total": 23
+    },
+    {
+      "code": "0823.HK",
+      "name": "LINK REIT",
+      "rating": "D",
+      "warnings": 1,
+      "rejects": 1,
+      "items_passed": 22,
+      "items_total": 23
+    }
+  ]
+}

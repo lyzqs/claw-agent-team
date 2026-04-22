@@ -1,8 +1,7 @@
 """
 港股烟蒂股筛选引擎
 
-⚠️ 导出模块 - 由 Dev (Issue #3) 实现
-此文件整合所有引擎子模块
+导出模块 - 整合所有引擎子模块
 """
 
 from .ai_analyzer import AIStockAnalyzer, AIAnalysisResult, AnalysisConfig
@@ -13,6 +12,7 @@ from .nav import calculate_nav
 from .subtype import determine_subtype
 from .pillars import verify_all_pillars
 from .factcheck import run_factcheck
+from .pipeline import CigarButtPipeline, PipelineConfig, run_pipeline
 
 __all__ = [
     # AI 分析模块
@@ -33,4 +33,8 @@ __all__ = [
     "determine_subtype",
     "verify_all_pillars",
     "run_factcheck",
+    # Pipeline
+    "CigarButtPipeline",
+    "PipelineConfig",
+    "run_pipeline",
 ]

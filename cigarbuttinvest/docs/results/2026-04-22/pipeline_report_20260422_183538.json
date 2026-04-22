@@ -1,0 +1,56 @@
+{
+  "run_id": "run_20260422_183538",
+  "started_at": "2026-04-22T18:35:38.962085",
+  "completed_at": "2026-04-22T18:35:38.962267",
+  "config": {
+    "pb_max": 0.5,
+    "dividend_yield_min": 0.06,
+    "use_ai": false,
+    "ai_timeout": 300,
+    "ai_max_retries": 3
+  },
+  "stages": [
+    {
+      "name": "initial_screen",
+      "started_at": "2026-04-22T18:35:38.962132",
+      "completed_at": "2026-04-22T18:35:38.962181",
+      "duration_ms": 0,
+      "status": "done",
+      "records_processed": 8,
+      "records_passed": 7,
+      "details": {
+        "criteria": "PB≤0.5, 股息率≥6%",
+        "passed_stocks": [
+          "1800.HK",
+          "3319.HK",
+          "0390.HK",
+          "0188.HK",
+          "9668.HK",
+          "0017.HK",
+          "2202.HK"
+        ],
+        "pass_rate": "87.5%"
+      }
+    },
+    {
+      "name": "ai_analysis",
+      "started_at": "2026-04-22T18:35:38.962231",
+      "completed_at": null,
+      "duration_ms": 0,
+      "status": "skipped",
+      "records_processed": 0,
+      "records_passed": 0,
+      "details": {
+        "reason": "use_ai=False"
+      }
+    }
+  ],
+  "summary": {
+    "total_stocks": 8,
+    "passed_initial_screen": 7,
+    "ai_analyzed": 0,
+    "pass_rate": "87.5%"
+  },
+  "ai_results": [],
+  "errors": []
+}

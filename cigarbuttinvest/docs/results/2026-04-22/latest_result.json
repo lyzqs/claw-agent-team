@@ -1,0 +1,1837 @@
+{
+  "timestamp": "2026-04-22T18:29:52.960888",
+  "total_stocks": 104,
+  "passed_stocks": [
+    {
+      "code": "2007.HK",
+      "name": "COUNTRY GARDEN",
+      "price": 0.285,
+      "market_cap": 12296548352,
+      "pb": -8.271597,
+      "dividend_yield": null,
+      "pe": 2.0357141,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=-8.272满足要求"
+      ]
+    },
+    {
+      "code": "3333.HK",
+      "name": "3333.HK,0P0000N8VK,0",
+      "price": 0.163,
+      "market_cap": 2152300800,
+      "pb": -0.0039024157,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "HKG",
+      "quote_type": "MUTUALFUND",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=-0.004满足要求"
+      ]
+    },
+    {
+      "code": "2098.HK",
+      "name": "ZALL SMARTCOM",
+      "price": 0.095,
+      "market_cap": 1177953024,
+      "pb": 0.072804205,
+      "dividend_yield": null,
+      "pe": 9.5,
+      "sector": "Industrials",
+      "industry": "Conglomerates",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.073满足要求"
+      ]
+    },
+    {
+      "code": "9668.HK",
+      "name": "CBHB",
+      "price": 0.9,
+      "market_cap": 15985800192,
+      "pb": 0.11115247,
+      "dividend_yield": null,
+      "pe": 2.7272725,
+      "sector": "Financial Services",
+      "industry": "Banks - Regional",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.111满足要求"
+      ]
+    },
+    {
+      "code": "0017.HK",
+      "name": "NEW WORLD DEV",
+      "price": 8.75,
+      "market_cap": 22020249600,
+      "pb": 0.12924477,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Diversified",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.129满足要求"
+      ]
+    },
+    {
+      "code": "0986.HK",
+      "name": "DUFU LIQUOR GP",
+      "price": 0.043,
+      "market_cap": 55672360,
+      "pb": 0.15034965,
+      "dividend_yield": null,
+      "pe": 2.15,
+      "sector": "Consumer Cyclical",
+      "industry": "Luxury Goods",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.150满足要求"
+      ]
+    },
+    {
+      "code": "1800.HK",
+      "name": "CHINA COMM CONS",
+      "price": 4.52,
+      "market_cap": 119767334912,
+      "pb": 0.22120805,
+      "dividend_yield": 0.067,
+      "pe": 3.0748298,
+      "sector": "Industrials",
+      "industry": "Engineering & Construction",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.221满足要求"
+      ]
+    },
+    {
+      "code": "2202.HK",
+      "name": "CHINA VANKE",
+      "price": 2.98,
+      "market_cap": 52264910848,
+      "pb": 0.2647892,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.265满足要求"
+      ]
+    },
+    {
+      "code": "3319.HK",
+      "name": "A-LIVING",
+      "price": 2.05,
+      "market_cap": 2908007936,
+      "pb": 0.269138,
+      "dividend_yield": 0.0679,
+      "pe": 25.625,
+      "sector": "Real Estate",
+      "industry": "Real Estate Services",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.269满足要求"
+      ]
+    },
+    {
+      "code": "0390.HK",
+      "name": "CHINA RAILWAY",
+      "price": 4.09,
+      "market_cap": 144452354048,
+      "pb": 0.2758863,
+      "dividend_yield": 0.0701,
+      "pe": 4.216495,
+      "sector": "Industrials",
+      "industry": "Engineering & Construction",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.276满足要求"
+      ]
+    },
+    {
+      "code": "0188.HK",
+      "name": "SUNWAH KINGSWAY",
+      "price": 0.24,
+      "market_cap": 183500416,
+      "pb": 0.30690536,
+      "dividend_yield": 0.0833,
+      "pe": null,
+      "sector": "Financial Services",
+      "industry": "Capital Markets",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.307满足要求"
+      ]
+    },
+    {
+      "code": "9991.HK",
+      "name": "BAOZUN-W",
+      "price": 7.9,
+      "market_cap": 1377101184,
+      "pb": 0.32916665,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Consumer Cyclical",
+      "industry": "Internet Retail",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.329满足要求"
+      ]
+    },
+    {
+      "code": "9918.HK",
+      "name": "WISE ALLY INTL",
+      "price": 0.93,
+      "market_cap": 93000000,
+      "pb": 0.49076518,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Technology",
+      "industry": "Electronic Components",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB=0.491满足要求"
+      ]
+    }
+  ],
+  "failed_stocks": [
+    {
+      "code": "1282.HK",
+      "name": "RENZE HARVEST",
+      "price": 0.096,
+      "market_cap": 480000000,
+      "pb": 0.060037524,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Industrials",
+      "industry": "Industrial Distribution",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "ST股"
+      ]
+    },
+    {
+      "code": "0604.HK",
+      "name": "SHENZHEN INVEST",
+      "price": 0.78,
+      "market_cap": 6941058560,
+      "pb": 0.19475654,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "ST股"
+      ]
+    },
+    {
+      "code": "1988.HK",
+      "name": "MINSHENG BANK",
+      "price": 3.66,
+      "market_cap": 171128061952,
+      "pb": 0.24707982,
+      "dividend_yield": 0.058499999999999996,
+      "pe": 5.083333,
+      "sector": "Financial Services",
+      "industry": "Banks - Regional",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "股息率<6%(0.06%)"
+      ]
+    },
+    {
+      "code": "2238.HK",
+      "name": "GAC GROUP",
+      "price": 3.16,
+      "market_cap": 60535992320,
+      "pb": 0.2754354,
+      "dividend_yield": 0.0137,
+      "pe": null,
+      "sector": "Consumer Cyclical",
+      "industry": "Auto Manufacturers",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "股息率<6%(0.01%)"
+      ]
+    },
+    {
+      "code": "0688.HK",
+      "name": "CHINA OVERSEAS",
+      "price": 12.63,
+      "market_cap": 138233888768,
+      "pb": 0.3102429,
+      "dividend_yield": 0.0395,
+      "pe": 9.496241,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "0267.HK",
+      "name": "CITIC",
+      "price": 12.91,
+      "market_cap": 375555293184,
+      "pb": 0.41796178,
+      "dividend_yield": 0.051500000000000004,
+      "pe": 5.5887446,
+      "sector": "Industrials",
+      "industry": "Conglomerates",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "1113.HK",
+      "name": "CK ASSET",
+      "price": 48.28,
+      "market_cap": 168969289728,
+      "pb": 0.4262156,
+      "dividend_yield": 0.0364,
+      "pe": 15.574194,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "0001.HK",
+      "name": "CKH HOLDINGS",
+      "price": 64.5,
+      "market_cap": 247037870080,
+      "pb": 0.4389666,
+      "dividend_yield": 0.0356,
+      "pe": 20.873787,
+      "sector": "Industrials",
+      "industry": "Conglomerates",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "0019.HK",
+      "name": "SWIRE PACIFIC A",
+      "price": 85.0,
+      "market_cap": 308373225472,
+      "pb": 0.44162038,
+      "dividend_yield": 0.044000000000000004,
+      "pe": 40.284363,
+      "sector": "Industrials",
+      "industry": "Conglomerates",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "3328.HK",
+      "name": "BANKCOMM",
+      "price": 7.23,
+      "market_cap": 736092028928,
+      "pb": 0.4866875,
+      "dividend_yield": 0.049800000000000004,
+      "pe": 5.830645,
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "9989.HK",
+      "name": "HEPALINK",
+      "price": 4.97,
+      "market_cap": 16784644096,
+      "pb": 0.5272526,
+      "dividend_yield": 0.0332,
+      "pe": 18.407406,
+      "sector": "Healthcare",
+      "industry": "Drug Manufacturers - Specialty & Generic",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.53)",
+        "股息率<6%(0.03%)"
+      ]
+    },
+    {
+      "code": "9898.HK",
+      "name": "WB-SW",
+      "price": 67.7,
+      "market_cap": 16574670848,
+      "pb": 0.5275518,
+      "dividend_yield": 0.0701,
+      "pe": 5.086401,
+      "sector": "Communication Services",
+      "industry": "Internet Content & Information",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.53)"
+      ]
+    },
+    {
+      "code": "3988.HK",
+      "name": "BANK OF CHINA",
+      "price": 5.11,
+      "market_cap": 2169359171584,
+      "pb": 0.53214306,
+      "dividend_yield": 0.0482,
+      "pe": 6.0117645,
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.53)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "0386.HK",
+      "name": "SINOPEC CORP",
+      "price": 4.5,
+      "market_cap": 751774859264,
+      "pb": 0.5725741,
+      "dividend_yield": 0.0487,
+      "pe": 14.516129,
+      "sector": "Energy",
+      "industry": "Oil & Gas Integrated",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.57)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "1398.HK",
+      "name": "ICBC",
+      "price": 7.13,
+      "market_cap": 3335812284416,
+      "pb": 0.57328016,
+      "dividend_yield": 0.0478,
+      "pe": 6.2000003,
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.57)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "3311.HK",
+      "name": "CHINA STATE CON",
+      "price": 8.88,
+      "market_cap": 46906081280,
+      "pb": 0.58020157,
+      "dividend_yield": 0.0646,
+      "pe": 4.7234044,
+      "sector": "Industrials",
+      "industry": "Engineering & Construction",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.58)"
+      ]
+    },
+    {
+      "code": "3900.HK",
+      "name": "GREENTOWN CHINA",
+      "price": 9.34,
+      "market_cap": 23719852032,
+      "pb": 0.58699906,
+      "dividend_yield": 0.0345,
+      "pe": 311.33334,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.59)",
+        "股息率<6%(0.03%)"
+      ]
+    },
+    {
+      "code": "1772.HK",
+      "name": "GANFENGLITHIUM",
+      "price": 78.3,
+      "market_cap": 207932653568,
+      "pb": 0.6174083,
+      "dividend_yield": 0.0021,
+      "pe": 86.04396,
+      "sector": "Basic Materials",
+      "industry": "Chemicals",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.62)",
+        "股息率<6%(0.00%)"
+      ]
+    },
+    {
+      "code": "6886.HK",
+      "name": "HTSC",
+      "price": 16.33,
+      "market_cap": 194343895040,
+      "pb": 0.6380273,
+      "dividend_yield": 0.0351,
+      "pe": 8.20603,
+      "sector": "Financial Services",
+      "industry": "Capital Markets",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.64)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "0823.HK",
+      "name": "LINK REIT",
+      "price": 39.04,
+      "market_cap": 101462589440,
+      "pb": 0.6380545,
+      "dividend_yield": 0.0684,
+      "pe": null,
+      "sector": "Real Estate",
+      "industry": "REIT - Retail",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.64)"
+      ]
+    },
+    {
+      "code": "0016.HK",
+      "name": "SHK PPT",
+      "price": 138.0,
+      "market_cap": 399893659648,
+      "pb": 0.6432757,
+      "dividend_yield": 0.0273,
+      "pe": 18.205805,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.64)",
+        "股息率<6%(0.03%)"
+      ]
+    },
+    {
+      "code": "3800.HK",
+      "name": "GCL TECH",
+      "price": 1.0,
+      "market_cap": 32701790208,
+      "pb": 0.64727515,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Technology",
+      "industry": "Solar",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.65)"
+      ]
+    },
+    {
+      "code": "1339.HK",
+      "name": "PICC GROUP",
+      "price": 5.43,
+      "market_cap": 332893749248,
+      "pb": 0.6761946,
+      "dividend_yield": 0.0387,
+      "pe": 4.7217393,
+      "sector": "Financial Services",
+      "industry": "Insurance - Property & Casualty",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.68)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "0083.HK",
+      "name": "SINO LAND",
+      "price": 12.16,
+      "market_cap": 115331457024,
+      "pb": 0.6764575,
+      "dividend_yield": 0.04769999999999999,
+      "pe": 29.658537,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.68)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "1288.HK",
+      "name": "ABC",
+      "price": 6.17,
+      "market_cap": 3090397790208,
+      "pb": 0.6794213,
+      "dividend_yield": 0.0446,
+      "pe": 6.855556,
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.68)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "1109.HK",
+      "name": "CHINA RES LAND",
+      "price": 32.5,
+      "market_cap": 231755530240,
+      "pb": 0.6970703,
+      "dividend_yield": 0.041100000000000005,
+      "pe": 7.94621,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.70)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "9955.HK",
+      "name": "CLOUDR",
+      "price": 0.69,
+      "market_cap": 445546016,
+      "pb": 0.71059823,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Healthcare",
+      "industry": "Medical Distribution",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.71)"
+      ]
+    },
+    {
+      "code": "9922.HK",
+      "name": "JIUMAOJIU",
+      "price": 1.91,
+      "market_cap": 2587117312,
+      "pb": 0.71787375,
+      "dividend_yield": 0.0103,
+      "pe": 38.199997,
+      "sector": "Consumer Cyclical",
+      "industry": "Restaurants",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.72)",
+        "股息率<6%(0.01%)"
+      ]
+    },
+    {
+      "code": "1908.HK",
+      "name": "C&D INTL GROUP",
+      "price": 14.43,
+      "market_cap": 30302603264,
+      "pb": 0.9351782,
+      "dividend_yield": 0.0611,
+      "pe": 8.152543,
+      "sector": "Real Estate",
+      "industry": "Real Estate - Development",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.94)"
+      ]
+    },
+    {
+      "code": "2318.HK",
+      "name": "PING AN",
+      "price": 61.3,
+      "market_cap": 1217792180224,
+      "pb": 0.9660723,
+      "dividend_yield": 0.0493,
+      "pe": 7.1695905,
+      "sector": "Financial Services",
+      "industry": "Insurance - Life",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.97)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "2328.HK",
+      "name": "PICC P&C",
+      "price": 14.29,
+      "market_cap": 317849108480,
+      "pb": 0.96773916,
+      "dividend_yield": 0.0431,
+      "pe": 6.837321,
+      "sector": "Financial Services",
+      "industry": "Insurance - Property & Casualty",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(0.97)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "9979.HK",
+      "name": "GREENTOWN MGMT",
+      "price": 2.22,
+      "market_cap": 4354409984,
+      "pb": 1.0683796,
+      "dividend_yield": 0.1998,
+      "pe": 6.9375005,
+      "sector": "Real Estate",
+      "industry": "Real Estate Services",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.07)"
+      ]
+    },
+    {
+      "code": "9888.HK",
+      "name": "BIDU-SW",
+      "price": 121.1,
+      "market_cap": 329636773888,
+      "pb": 1.0776559,
+      "dividend_yield": null,
+      "pe": 71.6568,
+      "sector": "Communication Services",
+      "industry": "Internet Content & Information",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.08)"
+      ]
+    },
+    {
+      "code": "0941.HK",
+      "name": "CHINA MOBILE",
+      "price": 83.4,
+      "market_cap": 1825722335232,
+      "pb": 1.1011587,
+      "dividend_yield": 0.0602,
+      "pe": 11.519338,
+      "sector": "Communication Services",
+      "industry": "Telecom Services",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.10)"
+      ]
+    },
+    {
+      "code": "0880.HK",
+      "name": "SJM HOLDINGS",
+      "price": 2.09,
+      "market_cap": 14842773504,
+      "pb": 1.1017395,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Consumer Cyclical",
+      "industry": "Resorts & Casinos",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.10)"
+      ]
+    },
+    {
+      "code": "2362.HK",
+      "name": "JINCHUAN INTL",
+      "price": 0.64,
+      "market_cap": 8404532224,
+      "pb": 1.1042595,
+      "dividend_yield": 0.0031,
+      "pe": 32.0,
+      "sector": "Basic Materials",
+      "industry": "Copper",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.10)",
+        "股息率<6%(0.00%)"
+      ]
+    },
+    {
+      "code": "3888.HK",
+      "name": "KINGSOFT",
+      "price": 24.58,
+      "market_cap": 33610876928,
+      "pb": 1.1176736,
+      "dividend_yield": 0.0053,
+      "pe": 14.807229,
+      "sector": "Communication Services",
+      "industry": "Electronic Gaming & Multimedia",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.12)",
+        "股息率<6%(0.01%)"
+      ]
+    },
+    {
+      "code": "2333.HK",
+      "name": "GWMOTOR",
+      "price": 13.3,
+      "market_cap": 188010774528,
+      "pb": 1.1274691,
+      "dividend_yield": 0.036699999999999997,
+      "pe": 10.0,
+      "sector": "Consumer Cyclical",
+      "industry": "Auto Manufacturers",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.13)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "0066.HK",
+      "name": "MTR CORPORATION",
+      "price": 34.82,
+      "market_cap": 216405803008,
+      "pb": 1.1276271,
+      "dividend_yield": 0.0375,
+      "pe": 14.754238,
+      "sector": "Industrials",
+      "industry": "Railroads",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.13)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "2628.HK",
+      "name": "CHINA LIFE",
+      "price": 27.28,
+      "market_cap": 1250589933568,
+      "pb": 1.1279582,
+      "dividend_yield": 0.035,
+      "pe": 4.3578277,
+      "sector": "Financial Services",
+      "industry": "Insurance - Life",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.13)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "1755.HK",
+      "name": "S-ENJOY SERVICE",
+      "price": 2.8,
+      "market_cap": 2439726848,
+      "pb": 1.1297238,
+      "dividend_yield": null,
+      "pe": 4.5901637,
+      "sector": "Real Estate",
+      "industry": "Real Estate Services",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.13)"
+      ]
+    },
+    {
+      "code": "1336.HK",
+      "name": "NCI",
+      "price": 49.92,
+      "market_cap": 200240955392,
+      "pb": 1.2156019,
+      "dividend_yield": 0.057999999999999996,
+      "pe": 3.736527,
+      "sector": "Financial Services",
+      "industry": "Insurance - Life",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.22)",
+        "股息率<6%(0.06%)"
+      ]
+    },
+    {
+      "code": "2888.HK",
+      "name": "STANCHART",
+      "price": 192.0,
+      "market_cap": 423818526720,
+      "pb": 1.2218791,
+      "dividend_yield": 0.024900000000000002,
+      "pe": 12.929293,
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.22)",
+        "股息率<6%(0.02%)"
+      ]
+    },
+    {
+      "code": "1044.HK",
+      "name": "HENGAN INT'L",
+      "price": 26.48,
+      "market_cap": 30613950464,
+      "pb": 1.2302855,
+      "dividend_yield": 0.059000000000000004,
+      "pe": 10.34375,
+      "sector": "Consumer Defensive",
+      "industry": "Household & Personal Products",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.23)",
+        "股息率<6%(0.06%)"
+      ]
+    },
+    {
+      "code": "6030.HK",
+      "name": "CITIC SEC",
+      "price": 27.4,
+      "market_cap": 461352501248,
+      "pb": 1.2551448,
+      "dividend_yield": 0.0233,
+      "pe": 12.177777,
+      "sector": "Financial Services",
+      "industry": "Capital Markets",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.26)",
+        "股息率<6%(0.02%)"
+      ]
+    },
+    {
+      "code": "1038.HK",
+      "name": "CKI HOLDINGS",
+      "price": 66.3,
+      "market_cap": 167050215424,
+      "pb": 1.3059922,
+      "dividend_yield": 0.0395,
+      "pe": 19.217392,
+      "sector": "Utilities",
+      "industry": "Utilities - Regulated Electric",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.31)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "0293.HK",
+      "name": "CATHAY PAC AIR",
+      "price": 11.96,
+      "market_cap": 80421478400,
+      "pb": 1.3376579,
+      "dividend_yield": 0.0699,
+      "pe": 7.382716,
+      "sector": "Industrials",
+      "industry": "Airlines",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.34)"
+      ]
+    },
+    {
+      "code": "9961.HK",
+      "name": "TRIP.COM-S",
+      "price": 422.8,
+      "market_cap": 276343521280,
+      "pb": 1.4162607,
+      "dividend_yield": 0.0058,
+      "pe": 7.723785,
+      "sector": "Consumer Cyclical",
+      "industry": "Travel Services",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.42)",
+        "股息率<6%(0.01%)"
+      ]
+    },
+    {
+      "code": "0006.HK",
+      "name": "POWER ASSETS",
+      "price": 63.9,
+      "market_cap": 136177623040,
+      "pb": 1.5009867,
+      "dividend_yield": 0.0438,
+      "pe": 21.808874,
+      "sector": "Utilities",
+      "industry": "Utilities - Independent Power Producers",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.50)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "2018.HK",
+      "name": "AAC TECH",
+      "price": 38.82,
+      "market_cap": 44227235840,
+      "pb": 1.619547,
+      "dividend_yield": 0.0091,
+      "pe": 15.528,
+      "sector": "Technology",
+      "industry": "Communication Equipment",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.62)",
+        "股息率<6%(0.01%)"
+      ]
+    },
+    {
+      "code": "3600.HK",
+      "name": "MODERN DENTAL",
+      "price": 6.06,
+      "market_cap": 5665190912,
+      "pb": 1.7225697,
+      "dividend_yield": 0.049100000000000005,
+      "pe": 11.882353,
+      "sector": "Healthcare",
+      "industry": "Medical Instruments & Supplies",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.72)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "1171.HK",
+      "name": "YANKUANG ENERGY",
+      "price": 14.49,
+      "market_cap": 182760570880,
+      "pb": 1.7375515,
+      "dividend_yield": 0.0538,
+      "pe": 15.09375,
+      "sector": "Energy",
+      "industry": "Thermal Coal",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.74)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "0002.HK",
+      "name": "CLP HOLDINGS",
+      "price": 75.15,
+      "market_cap": 189862772736,
+      "pb": 1.7643745,
+      "dividend_yield": 0.0694,
+      "pe": 18.152174,
+      "sector": "Utilities",
+      "industry": "Utilities - Regulated Electric",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.76)"
+      ]
+    },
+    {
+      "code": "0005.HK",
+      "name": "HSBC HOLDINGS",
+      "price": 144.0,
+      "market_cap": 2477606305792,
+      "pb": 1.7753881,
+      "dividend_yield": 0.0408,
+      "pe": 15.31915,
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.78)",
+        "股息率<6%(0.04%)"
+      ]
+    },
+    {
+      "code": "0027.HK",
+      "name": "GALAXY ENT",
+      "price": 34.2,
+      "market_cap": 149770043392,
+      "pb": 1.7995266,
+      "dividend_yield": 0.045899999999999996,
+      "pe": 14.016394,
+      "sector": "Consumer Cyclical",
+      "industry": "Resorts & Casinos",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.80)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "0753.HK",
+      "name": "AIR CHINA",
+      "price": 5.19,
+      "market_cap": 121018580992,
+      "pb": 1.8527691,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Industrials",
+      "industry": "Airlines",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.85)"
+      ]
+    },
+    {
+      "code": "1088.HK",
+      "name": "CHINA SHENHUA",
+      "price": 46.52,
+      "market_cap": 1008992452608,
+      "pb": 1.9506238,
+      "dividend_yield": 0.0481,
+      "pe": 15.202615,
+      "sector": "Energy",
+      "industry": "Thermal Coal",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(1.95)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "9988.HK",
+      "name": "BABA-W",
+      "price": 131.5,
+      "market_cap": 2523799224320,
+      "pb": 2.0446215,
+      "dividend_yield": 0.0076,
+      "pe": 23.65108,
+      "sector": "Consumer Cyclical",
+      "industry": "Internet Retail",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(2.04)",
+        "股息率<6%(0.01%)"
+      ]
+    },
+    {
+      "code": "9698.HK",
+      "name": "GDS-SW",
+      "price": 42.88,
+      "market_cap": 68737540096,
+      "pb": 2.250729,
+      "dividend_yield": null,
+      "pe": 68.06349,
+      "sector": "Technology",
+      "industry": "Information Technology Services",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(2.25)"
+      ]
+    },
+    {
+      "code": "0291.HK",
+      "name": "CHINA RES BEER",
+      "price": 25.86,
+      "market_cap": 83889840128,
+      "pb": 2.264068,
+      "dividend_yield": 0.0489,
+      "pe": 21.731092,
+      "sector": "Consumer Defensive",
+      "industry": "Beverages - Brewers",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(2.26)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "0003.HK",
+      "name": "HK & CHINA GAS",
+      "price": 7.27,
+      "market_cap": 135657259008,
+      "pb": 2.2854447,
+      "dividend_yield": 0.0481,
+      "pe": 24.233332,
+      "sector": "Utilities",
+      "industry": "Utilities - Regulated Gas",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(2.29)",
+        "股息率<6%(0.05%)"
+      ]
+    },
+    {
+      "code": "1789.HK",
+      "name": "AK MEDICAL",
+      "price": 6.89,
+      "market_cap": 7672230400,
+      "pb": 2.3144615,
+      "dividend_yield": 0.0179,
+      "pe": 19.685715,
+      "sector": "Healthcare",
+      "industry": "Medical Devices",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(2.31)",
+        "股息率<6%(0.02%)"
+      ]
+    },
+    {
+      "code": "2600.HK",
+      "name": "CHALCO",
+      "price": 11.94,
+      "market_cap": 224457015296,
+      "pb": 2.3806024,
+      "dividend_yield": 0.0236,
+      "pe": 14.047058,
+      "sector": "Basic Materials",
+      "industry": "Aluminum",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(2.38)",
+        "股息率<6%(0.02%)"
+      ]
+    },
+    {
+      "code": "0175.HK",
+      "name": "GEELY AUTO",
+      "price": 24.9,
+      "market_cap": 268897501184,
+      "pb": 2.5518231,
+      "dividend_yield": 0.020499999999999997,
+      "pe": 13.315508,
+      "sector": "Consumer Cyclical",
+      "industry": "Auto Manufacturers",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(2.55)",
+        "股息率<6%(0.02%)"
+      ]
+    },
+    {
+      "code": "1093.HK",
+      "name": "CSPC PHARMA",
+      "price": 8.77,
+      "market_cap": 100174905344,
+      "pb": 2.6249535,
+      "dividend_yield": 0.0334,
+      "pe": 22.48718,
+      "sector": "Healthcare",
+      "industry": "Drug Manufacturers - General",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(2.62)",
+        "股息率<6%(0.03%)"
+      ]
+    },
+    {
+      "code": "1810.HK",
+      "name": "XIAOMI-W",
+      "price": 31.8,
+      "market_cap": 821485240320,
+      "pb": 2.6944416,
+      "dividend_yield": null,
+      "pe": 17.765364,
+      "sector": "Technology",
+      "industry": "Consumer Electronics",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(2.69)"
+      ]
+    },
+    {
+      "code": "3690.HK",
+      "name": "MEITUAN-W",
+      "price": 84.25,
+      "market_cap": 520191770624,
+      "pb": 2.9513578,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Consumer Cyclical",
+      "industry": "Internet Retail",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(2.95)"
+      ]
+    },
+    {
+      "code": "9999.HK",
+      "name": "NTES-S",
+      "price": 177.6,
+      "market_cap": 566657810432,
+      "pb": 3.079017,
+      "dividend_yield": 0.0254,
+      "pe": 14.763093,
+      "sector": "Communication Services",
+      "industry": "Electronic Gaming & Multimedia",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(3.08)",
+        "股息率<6%(0.03%)"
+      ]
+    },
+    {
+      "code": "9987.HK",
+      "name": "YUM CHINA",
+      "price": 382.4,
+      "market_cap": 134894821376,
+      "pb": 3.213796,
+      "dividend_yield": 0.023399999999999997,
+      "pe": 19.45066,
+      "sector": "Consumer Cyclical",
+      "industry": "Restaurants",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(3.21)",
+        "股息率<6%(0.02%)"
+      ]
+    },
+    {
+      "code": "9973.HK",
+      "name": "CHERY AUTO",
+      "price": 33.48,
+      "market_cap": 194472083456,
+      "pb": 3.3540332,
+      "dividend_yield": 0.0297,
+      "pe": 8.497461,
+      "sector": "Consumer Cyclical",
+      "industry": "Auto Manufacturers",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(3.35)",
+        "股息率<6%(0.03%)"
+      ]
+    },
+    {
+      "code": "0700.HK",
+      "name": "TENCENT",
+      "price": 504.0,
+      "market_cap": 4554597335040,
+      "pb": 3.4344497,
+      "dividend_yield": 0.0102,
+      "pe": 18.149082,
+      "sector": "Communication Services",
+      "industry": "Internet Content & Information",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(3.43)",
+        "股息率<6%(0.01%)"
+      ]
+    },
+    {
+      "code": "1211.HK",
+      "name": "BYD COMPANY",
+      "price": 107.0,
+      "market_cap": 1058566373376,
+      "pb": 3.7197278,
+      "dividend_yield": 0.0132,
+      "pe": 26.034063,
+      "sector": "Consumer Cyclical",
+      "industry": "Auto Manufacturers",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(3.72)",
+        "股息率<6%(0.01%)"
+      ]
+    },
+    {
+      "code": "1872.HK",
+      "name": "GUAN CHAO HLDGS",
+      "price": 6.25,
+      "market_cap": 4073131520,
+      "pb": 4.1892633,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Consumer Cyclical",
+      "industry": "Auto & Truck Dealerships",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(4.19)"
+      ]
+    },
+    {
+      "code": "2899.HK",
+      "name": "ZIJIN MINING",
+      "price": 37.84,
+      "market_cap": 1006192623616,
+      "pb": 4.722373,
+      "dividend_yield": 0.014199999999999999,
+      "pe": 17.278538,
+      "sector": "Basic Materials",
+      "industry": "Gold",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(4.72)",
+        "股息率<6%(0.01%)"
+      ]
+    },
+    {
+      "code": "9966.HK",
+      "name": "ALPHAMAB-B",
+      "price": 11.8,
+      "market_cap": 11435081728,
+      "pb": 5.8177767,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Healthcare",
+      "industry": "Biotechnology",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(5.82)"
+      ]
+    },
+    {
+      "code": "9939.HK",
+      "name": "KINTOR PHARMA-B",
+      "price": 2.68,
+      "market_cap": 1256662528,
+      "pb": 5.9527063,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Healthcare",
+      "industry": "Biotechnology",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(5.95)"
+      ]
+    },
+    {
+      "code": "1209.HK",
+      "name": "CHINA RES MIXC",
+      "price": 47.22,
+      "market_cap": 107779653632,
+      "pb": 6.06323,
+      "dividend_yield": 0.024,
+      "pe": 23.61,
+      "sector": "Real Estate",
+      "industry": "Real Estate Services",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(6.06)",
+        "股息率<6%(0.02%)"
+      ]
+    },
+    {
+      "code": "9992.HK",
+      "name": "POP MART",
+      "price": 160.2,
+      "market_cap": 211583090688,
+      "pb": 8.324463,
+      "dividend_yield": 0.0165,
+      "pe": 14.563636,
+      "sector": "Consumer Cyclical",
+      "industry": "Leisure",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(8.32)",
+        "股息率<6%(0.02%)"
+      ]
+    },
+    {
+      "code": "2282.HK",
+      "name": "MGM CHINA",
+      "price": 11.27,
+      "market_cap": 42776584192,
+      "pb": 13.181287,
+      "dividend_yield": 0.0795,
+      "pe": 8.473684,
+      "sector": "Consumer Cyclical",
+      "industry": "Resorts & Casinos",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(13.18)"
+      ]
+    },
+    {
+      "code": "9986.HK",
+      "name": "DASHAN EDU",
+      "price": 1.88,
+      "market_cap": 1622146816,
+      "pb": 17.033735,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "Consumer Defensive",
+      "industry": "Education & Training Services",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(17.03)"
+      ]
+    },
+    {
+      "code": "9633.HK",
+      "name": "NONGFU SPRING",
+      "price": 48.14,
+      "market_cap": 541404856320,
+      "pb": 38.913612,
+      "dividend_yield": 0.0232,
+      "pe": 29.71605,
+      "sector": "Consumer Defensive",
+      "industry": "Beverages - Non-Alcoholic",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(38.91)",
+        "股息率<6%(0.02%)"
+      ]
+    },
+    {
+      "code": "9900.HK",
+      "name": "ZCLOUD TECH CON",
+      "price": 4.0,
+      "market_cap": 11904000000,
+      "pb": 39.60396,
+      "dividend_yield": null,
+      "pe": 400.0,
+      "sector": "Industrials",
+      "industry": "Engineering & Construction",
+      "exchange": "HKG",
+      "quote_type": "EQUITY",
+      "market": "hk_market",
+      "_filter_reasons": [
+        "PB>0.5(39.60)"
+      ]
+    },
+    {
+      "code": "1700.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "",
+      "quote_type": "NONE",
+      "market": "",
+      "_filter_reasons": [
+        "PB和股息率均无数据"
+      ]
+    },
+    {
+      "code": "6837.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "",
+      "quote_type": "NONE",
+      "market": "",
+      "_filter_reasons": [
+        "PB和股息率均无数据"
+      ]
+    },
+    {
+      "code": "7283.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "",
+      "quote_type": "",
+      "market": "",
+      "_filter_reasons": [
+        "PB和股息率均无数据"
+      ]
+    },
+    {
+      "code": "0011.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "",
+      "quote_type": "",
+      "market": "",
+      "_filter_reasons": [
+        "PB和股息率均无数据"
+      ]
+    },
+    {
+      "code": "7600.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "",
+      "quote_type": "",
+      "market": "",
+      "_filter_reasons": [
+        "PB和股息率均无数据"
+      ]
+    },
+    {
+      "code": "9098.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_filter_reasons": [
+        "PB和股息率均无数据"
+      ]
+    },
+    {
+      "code": "9021.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_filter_reasons": [
+        "PB和股息率均无数据"
+      ]
+    },
+    {
+      "code": "9800.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "",
+      "quote_type": "",
+      "market": "",
+      "_filter_reasons": [
+        "PB和股息率均无数据"
+      ]
+    },
+    {
+      "code": "9818.HK",
+      "name": "",
+      "price": null,
+      "market_cap": null,
+      "pb": null,
+      "dividend_yield": null,
+      "pe": null,
+      "sector": "",
+      "industry": "",
+      "exchange": "YHD",
+      "quote_type": "MUTUALFUND",
+      "market": "us_market",
+      "_filter_reasons": [
+        "PB和股息率均无数据"
+      ]
+    }
+  ],
+  "data_errors": 0,
+  "data_missing": 0,
+  "criteria": {
+    "pb_max": 0.5,
+    "dividend_yield_min": 6.0,
+    "market_cap_range": "0M - 1000000M",
+    "price_min": 0.0,
+    "exclude_st": true,
+    "exclude_warn": true
+  },
+  "pass_rate": 0.125,
+  "pass_rate_pct": "12.50%"
+}
